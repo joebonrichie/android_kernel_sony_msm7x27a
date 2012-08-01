@@ -1780,11 +1780,12 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	if (!load_565rle_image(INIT_IMAGE_FILE, bf_supported));
 #else
 
-	draw_logo(fbi);
+	
 	mdp_set_dma_pan_info(fbi, NULL, TRUE);
 	msm_fb_blank_sub(FB_BLANK_UNBLANK, fbi, mfd->op_enable);
 	mdp_dma_pan_update(fbi);
 	msm_fb_set_backlight(mfd,9);
+	draw_logo(fbi);
 
 	/* File node: /sys/class/graphics/fb?/display_battery */
 	ret = device_create_file(fbi->dev, &dev_attr_display_battery);
@@ -3608,12 +3609,14 @@ static int msmfb_notify_update(struct fb_info *info, unsigned long *argp)
 
 	if (notify == NOTIFY_UPDATE_START) {
 		INIT_COMPLETION(mfd->msmfb_update_notify);
-		wait_for_completion_interruptible(&mfd->msmfb_update_notify);
+		ret = wait_for_completion_interruptible_timeout(
+		&mfd->msmfb_update_notify, 4*HZ);
 	} else {
 		INIT_COMPLETION(mfd->msmfb_no_update_notify);
-		wait_for_completion_interruptible(&mfd->msmfb_no_update_notify);
+		ret = wait_for_completion_interruptible_timeout(
+		&mfd->msmfb_no_update_notify, 4*HZ);
 	}
-	return 0;
+	return (ret > 0) ? 0 : -1;
 }
 
 static int msmfb_handle_pp_ioctl(struct msm_fb_data_type *mfd,
