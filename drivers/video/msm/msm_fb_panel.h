@@ -169,6 +169,8 @@ struct msm_panel_info {
 	__u32 is_3d_panel;
 	__u32 frame_rate;
 
+	__u32 frame_interval;	
+
 #ifndef CONFIG_FIH_PROJECT_NAN
 	__u32 width;
 	__u32 height;
