@@ -92,6 +92,18 @@ enum cyttsp_powerstate {
 	CY_RESET_STATE,
 };
 /*FIH-SW-PERIPHERAL-CH-Feature_Change-00++]*/
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++[*/
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+enum cyttsp_esd_workaround {
+	CY_FACE_DOWN=0,
+	CY_FACE_UP,
+	CY_PLUG_USB,
+	CY_UNPLUG_USB,
+	CY_PLUG_HS,
+	CY_UNPLUG_HS,
+};
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++]*/
 
 struct cyttsp_platform_data {
 	u32 maxx;
@@ -131,5 +143,10 @@ struct cyttsp_platform_data {
 	unsigned col_pins_number:10;
 	/* FIH-SW1-PERIPHERAL-OH-TAP_TOUCH_TestMode-00+} */	
 };
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++[*/
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+int TOUCH_ESD_WORKAROUND(int enable);
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++]*/
 
 #endif /* _CYTTSP_H_ */

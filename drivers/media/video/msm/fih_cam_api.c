@@ -18,12 +18,17 @@
 #define CAM_LSB_MASK	0x00FF
 #define CAM_MASK		0xFF
 
+//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01+{
+bool bMainCameraIsReset = false;
+bool bFrontCameraIsReset = false;
+//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01+}
+
 /* FIH-SW3-MM-UW-modify MCLK config-00+*/
 int fih_enable_mclk(int gpio_id, int clk_rate)
 {
     int rc = 0;
     
-    rc = gpio_tlmm_config(GPIO_CFG(gpio_id, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+    rc = gpio_tlmm_config(GPIO_CFG(gpio_id, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_4MA), GPIO_CFG_ENABLE);
     if (rc < 0) {
         pr_err("FIH_Disable_MCLK: msm_camio_clk_enable() failed !, rc = %d.\n", rc);
         goto error;
@@ -40,7 +45,7 @@ int fih_enable_mclk(int gpio_id, int clk_rate)
 
     printk ("FIH_Enable_MCLK: clk_rate = %d, End. \n", clk_rate);  
 
-    rc = gpio_tlmm_config(GPIO_CFG(gpio_id, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+    rc = gpio_tlmm_config(GPIO_CFG(gpio_id, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_4MA), GPIO_CFG_ENABLE);
     if (rc < 0) {
         pr_err("FIH_Enable_MCLK: msm_camio_clk_enable() failed !, rc = %d.\n", rc);
         goto error;
@@ -57,7 +62,7 @@ int fih_disable_mclk(int gpio_id, int clk_rate)
 {
     int rc = 0;
 
-    rc = gpio_tlmm_config(GPIO_CFG(gpio_id, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+    rc = gpio_tlmm_config(GPIO_CFG(gpio_id, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_4MA), GPIO_CFG_ENABLE);
     if (rc < 0) {
         pr_err("FIH_Disable_MCLK: msm_camio_clk_enable() failed !, rc = %d.\n", rc);
         goto error;
@@ -208,28 +213,28 @@ int32_t fih_i2c_write(const struct i2c_client *client, unsigned short waddr, uns
     case WORD_POLL: {//W_Addr : W_Data
     do {
             count++;
-            cam_msleep(20);
+            cam_msleep(10);
             rc = fih_i2c_read(client, waddr, &poll_val, WORD_LEN);
             if (rc < 0) {
-                pr_err("WORD_POLL: Read Back(0x%x) failed !\n", waddr);
+                pr_err("WORD_POLL: fih_i2c_write: Read Back(0x%x) failed, count = %d !\n", waddr, count);
                 break;
             }
-            printk("[Debug Info] Read Back!!, raddr = 0x%x, rdata = 0x%x.\n", waddr, poll_val);
-        } while( (poll_val != wdata) && (count <20) );
+        } while( (poll_val != wdata) && (count <100) );
+        printk("WORD_POLL: fih_i2c_write: raddr = 0x%x, rdata = 0x%x, count = %d.\n", waddr, poll_val, count);
     }
     break;
 
     case BYTE_POLL: {//W_Addr : B_Data
         do {
             count++;
-            cam_msleep(20);
+            cam_msleep(10);
             rc = fih_i2c_read(client, waddr, &poll_val, BYTE_LEN);
             if (rc < 0) {
-                pr_err("BYTE_POLL: Read Back(0x%x) failed !\n", waddr);
+                pr_err("BYTE_POLL: fih_i2c_write: Read Back(0x%x) failed, count = %d !\n", waddr, count);
                 break;
             }
-            printk("[Debug Info] Read Back!!, raddr = 0x%x, rdata = 0x%x.\n", waddr, poll_val);
-        } while( (poll_val != wdata) && (count <20) );
+        } while( (poll_val != wdata) && (count <100) );
+        printk("BYTE_POLL: fih_i2c_write: raddr = 0x%x, rdata = 0x%x, count = %d.\n", waddr, poll_val, count);
     }
     break;
 
@@ -238,7 +243,7 @@ int32_t fih_i2c_write(const struct i2c_client *client, unsigned short waddr, uns
     }
 
     if (rc < 0)
-        pr_err("i2c_write failed, addr = 0x%x, val = 0x%x !\n", waddr, wdata);
+        pr_err("i2c_write fih_i2c_write, addr = 0x%x, val = 0x%x !\n", waddr, wdata);
 
     return rc;
 }

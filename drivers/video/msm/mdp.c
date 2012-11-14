@@ -58,7 +58,9 @@ struct completion mdp_ppp_comp;
 struct semaphore mdp_ppp_mutex;
 struct semaphore mdp_pipe_ctrl_mutex;
 
-unsigned long mdp_timer_duration = (HZ/20);   /* 50 msecond */
+/* FIH-SW-MM-VH-DISPLAY-34*[ */
+unsigned long mdp_timer_duration = (HZ/3);   /* ~333 msecond */
+/* FIH-SW-MM-VH-DISPLAY-34*] */
 
 boolean mdp_ppp_waiting = FALSE;
 uint32 mdp_tv_underflow_cnt;
@@ -1307,12 +1309,12 @@ void mdp_pipe_kickoff(uint32 term, struct msm_fb_data_type *mfd)
 		INIT_COMPLETION(mdp_ppp_comp);
 		mdp_ppp_waiting = TRUE;
 		outpdw(MDP_BASE + 0x30, 0x1000);
-/* FIH-SW-MM-VH-DISPLAY-32*[ */
-		if(!wait_for_completion_killable_timeout(&mdp_ppp_comp, 7* HZ)) {
+/* FIH-SW-MM-VH-DISPLAY-35*[ */
+		if(!wait_for_completion_killable_timeout(&mdp_ppp_comp, 50* HZ)) {
 			printk("%s: mdp_ppp_comp timeout.\r\n", __func__);
 			mdp_dump();
 		}
-/* FIH-SW-MM-VH-DISPLAY-32*] */
+/* FIH-SW-MM-VH-DISPLAY-35*] */
 		mdp_disable_irq(term);
 
 		if (mdp_debug[MDP_PPP_BLOCK]) {
@@ -1410,9 +1412,14 @@ void mdp_pipe_ctrl(MDP_BLOCK_TYPE block, MDP_BLOCK_POWER_STATE state,
 	 * power to ON
 	 */
 	WARN_ON(isr == TRUE && state == MDP_BLOCK_POWER_ON);
-
+	
+/* FIH-SW-MM-VH-DISPLAY-34*[ */
 	spin_lock_irqsave(&mdp_spin_lock, flag);
 	if (MDP_BLOCK_POWER_ON == state) {
+		if (atomic_read(&mdp_block_power_cnt[block]) < 0)
+		{
+			printk("[DISPLAY] ERROR: mdp_block_power_cnt[%d]=%d\r\n", block, atomic_read(&mdp_block_power_cnt[block]));
+		}
 		atomic_inc(&mdp_block_power_cnt[block]);
 
 		if (MDP_DMA2_BLOCK == block)
@@ -1430,11 +1437,12 @@ void mdp_pipe_ctrl(MDP_BLOCK_TYPE block, MDP_BLOCK_POWER_STATE state,
 			* other blocks
 			*/
 			if (block != MDP_MASTER_BLOCK) {
-				MSM_FB_INFO("mdp_block_power_cnt[block=%d] \
+				printk("[DISPLAY] ERROR: mdp_block_power_cnt[block=%d] \
 				multiple power-off request\n", block);
 			}
 			atomic_set(&mdp_block_power_cnt[block], 0);
 		}
+/* FIH-SW-MM-VH-DISPLAY-34*] */
 
 		if (MDP_DMA2_BLOCK == block)
 			mdp_in_processing = FALSE;
@@ -1502,6 +1510,7 @@ void mdp_pipe_ctrl(MDP_BLOCK_TYPE block, MDP_BLOCK_POWER_STATE state,
 					if (pdata && pdata->clk_func)
 						pdata->clk_func(0);
 				}
+/* FIH-SW-MM-VH-DISPLAY-34.2*[ */
 				if (mdp_clk != NULL) {
 					mdp_clk_rate = clk_get_rate(mdp_clk);
 					clk_disable(mdp_clk);
@@ -1517,6 +1526,7 @@ void mdp_pipe_ctrl(MDP_BLOCK_TYPE block, MDP_BLOCK_POWER_STATE state,
 					clk_disable(mdp_pclk);
 					MSM_FB_DEBUG("MDP PCLK OFF\n");
 				}
+/* FIH-SW-MM-VH-DISPLAY-34.2*] */
 				if (mdp_lut_clk != NULL)
 					clk_disable(mdp_lut_clk);
 			} else {
@@ -1535,6 +1545,7 @@ void mdp_pipe_ctrl(MDP_BLOCK_TYPE block, MDP_BLOCK_POWER_STATE state,
 				if (pdata && pdata->clk_func)
 					pdata->clk_func(1);
 			}
+/* FIH-SW-MM-VH-DISPLAY-34.2*[ */
 			if (mdp_clk != NULL) {
 				if (mdp_hw_revision <=
 					MDP4_REVISION_V2_1 &&
@@ -1549,6 +1560,7 @@ void mdp_pipe_ctrl(MDP_BLOCK_TYPE block, MDP_BLOCK_POWER_STATE state,
 				clk_enable(mdp_pclk);
 				MSM_FB_DEBUG("MDP PCLK ON\n");
 			}
+/* FIH-SW-MM-VH-DISPLAY-34.2*] */
 			if (mdp_lut_clk != NULL)
 				clk_enable(mdp_lut_clk);
 			mdp_vsync_clk_enable();
@@ -2125,10 +2137,11 @@ static int mdp_irq_clk_setup(char cont_splashScreen)
 #endif
 	return 0;
 }
-/* FIH-SW-MM-VH-DISPLAY-27+[ */
+/* FIH-SW-MM-VH-DISPLAY-35*[ */
 void mdp_dump(void)
 {
-	printk("+ %s\r\n", __func__);
+	printk("[DISPLAY]FATAL ERROR: %s\r\n", __func__);
+/* TO BE ADDED IN FUTURE
 	printk("MSM_VIC_BASE(0x%08x) = 0x%08x\r\n", (unsigned int)MSM_VIC_BASE, readl(MSM_VIC_BASE));
 	printk("VIC_INT_TYPE0(0x%08x) = 0x%08x\r\n", (unsigned int)VIC_INT_TYPE0, readl(VIC_INT_TYPE0));
 	printk("VIC_INT_TYPE(0x%08x)1 = 0x%08x\r\n", (unsigned int)VIC_INT_TYPE1, readl(VIC_INT_TYPE1));
@@ -2143,7 +2156,7 @@ void mdp_dump(void)
 	printk("MDP_INTR_STATUS(0x%08x) = 0x%08x\r\n", (unsigned int)MDP_INTR_STATUS, readl(MDP_INTR_STATUS));
 	printk("MDP_INTR_ENABLE(0x%08x) = 0x%08x\r\n", (unsigned int)MDP_INTR_ENABLE, readl(MDP_INTR_ENABLE));
 
-/* TO BE ADDED IN FUTURE
+
 	for(i=0 ; i<=0xF1004 ; i+=4)
 	{
 		addr = (unsigned int *)msm_mdp_base + i;
@@ -2151,7 +2164,7 @@ void mdp_dump(void)
 	}
 */
 }
-/* FIH-SW-MM-VH-DISPLAY-27+] */
+/* FIH-SW-MM-VH-DISPLAY-35*] */
 static int mdp_probe(struct platform_device *pdev)
 {
 	struct platform_device *msm_fb_dev = NULL;
@@ -2548,9 +2561,7 @@ static int mdp_probe(struct platform_device *pdev)
 
 	pdev_list[pdev_list_cnt++] = pdev;
 	mdp4_extn_disp = 0;
-/* FIH-SW-MM-VH-DISPLAY-27+[ */
-	mdp_dump();
-/* FIH-SW-MM-VH-DISPLAY-27+] */
+
 	return 0;
 
       mdp_probe_err:

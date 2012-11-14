@@ -16,35 +16,37 @@
 /* MTD-SW-MM-SL-FinuTuneFrontCamera-00*{ */
 //FIH-SW-MM-MC-OptimizeCameraForLaunchTime-00*{
 //SW2D2-MM-MC-Camera-BringUpMt9v115Sensor-02+{
+//Div2-SW6-MM-MC-PortingMt9v115NewSetting_0701-00*{
 struct fih_i2c_reg_conf mt9v115_init_settings_array[] = {
-//{ Reg_address, Reg_Value, size, DelayTime}
-    { 0x001A, 0x0504, WORD_LEN, 0 },//0xB566
-    { 0x0042, 0xFFF3, WORD_LEN, 0 },
-    { 0x3C00, 0x5004, WORD_LEN, 0 },
-    { 0x001A, 0x0126, WORD_LEN, 50 },
+  //{ Reg_address, Reg_Value, size, DelayTime}
+    /* Porting revision = 0701 */
+    { 0x001A, 0x0106, WORD_LEN, 0 },//0xB566
     { 0x0010, 0x052C, WORD_LEN, 0 },
-    { 0x0012, 0x0600, WORD_LEN, 0 },
-    { 0x0018, 0x4506, WORD_LEN, 50 },
-    { 0x0018, 0x4500, WORD_LEN, 0 },
-    { 0x0042, 0xFFF3, WORD_LEN, 0 },
-    { 0x3C00, 0x5004, WORD_LEN, 0 },
-    { 0x001A, 0x0520, WORD_LEN, 0 },
-    { 0x001A, 0x0564, WORD_LEN, 200 },
-    { 0x0012, 0x0200, WORD_LEN, 0 },
-    { 0x300A, 0x01F9, WORD_LEN, 0 },	// FRAME_LENGTH_LINES
-    { 0x300C, 0x02D6, WORD_LEN, 0 },	// LINE_LENGTH_PCK
-    { 0x3010, 0x0012, WORD_LEN, 0 },	// FINE_CORRECTION
-    { 0x3040, 0x0041, WORD_LEN, 0 },	// READ_MODE
-    { 0x098E, 0x9803, WORD_LEN, 0 },	// LOGICAL_ADDRESS_ACCESS [STAT_FD_ZONE_HEIGHT]
-    { 0x9803, 0x0730, WORD_LEN, 0 },  // STAT_FD_ZONE_HEIGHT
-    { 0xA06E, 0x0098, WORD_LEN, 0 },	// CAM_FD_CONFIG_FDPERIOD_50HZ
-    { 0xA070, 0x007E, WORD_LEN, 0 },	// CAM_FD_CONFIG_FDPERIOD_60HZ
-    { 0xA072, 0x1113, WORD_LEN, 0 },  // CAM_FD_CONFIG_SEARCH_F1_50
-    { 0xA074, 0x1416, WORD_LEN, 0 },  // CAM_FD_CONFIG_SEARCH_F1_60
-    { 0xA076, 0x000D, WORD_LEN, 0 },  // CAM_FD_CONFIG_MAX_FDZONE_50HZ
-    { 0xA078, 0x0010, WORD_LEN, 0 },	// CAM_FD_CONFIG_MAX_FDZONE_60HZ
-    { 0xA01A, 0x000D, WORD_LEN, 0 }	// CAM_AE_CONFIG_TARGET_FDZONE    
+    { 0x0012, 0x0800, WORD_LEN, 0 },//For 400kHz I2C clock.
+    { 0x0014, 0x2047, WORD_LEN, 0 },    
+    { 0x0014, 0x2046, WORD_LEN, 0 },    
+    { 0x0018, 0x4505, WORD_LEN, 0 },    
+    { 0x0018, 0x4504, WORD_LEN, 64 },   
+    { 0x0042, 0xFFF3, WORD_LEN, 0 },// COMMAND_RW
+    { 0x3C00, 0x0004, WORD_LEN, 0 },// TX_CONTROL
+    { 0x001A, 0x0520, WORD_LEN, 0 },// RESET_AND_MISC_CONTROL
+    { 0x001A, 0x0564, WORD_LEN, 32 },// RESET_AND_MISC_CONTROL
+    { 0x0012, 0x0200, WORD_LEN, 0 },// PLL_P_DIVIDERS
+    { 0x300A, 0x01F9, WORD_LEN, 0 },// FRAME_LENGTH_LINES
+    { 0x300C, 0x02D6, WORD_LEN, 0 },// LINE_LENGTH_PCK
+    { 0x3010, 0x0012, WORD_LEN, 0 },// FINE_CORRECTION
+    { 0x3040, 0x0041, WORD_LEN, 0 },// READ_MODE
+    { 0x098E, 0x9803, WORD_LEN, 0 },// LOGICAL_ADDRESS_ACCESS [STAT_FD_ZONE_HEIGHT]
+    { 0x9803, 0x0730, WORD_LEN, 0 },// STAT_FD_ZONE_HEIGHT
+    { 0xA06E, 0x0098, WORD_LEN, 0 },// CAM_FD_CONFIG_FDPERIOD_50HZ
+    { 0xA070, 0x007E, WORD_LEN, 0 },// CAM_FD_CONFIG_FDPERIOD_60HZ
+    { 0xA072, 0x1113, WORD_LEN, 0 },// CAM_FD_CONFIG_SEARCH_F1_50
+    { 0xA074, 0x1416, WORD_LEN, 0 },// CAM_FD_CONFIG_SEARCH_F1_60
+    { 0xA076, 0x000D, WORD_LEN, 0 },// CAM_FD_CONFIG_MAX_FDZONE_50HZ
+    { 0xA078, 0x0010, WORD_LEN, 0 },// CAM_FD_CONFIG_MAX_FDZONE_60HZ
+    { 0xA01A, 0x000D, WORD_LEN, 0 }// CAM_AE_CONFIG_TARGET_FDZONE
 };
+//Div2-SW6-MM-MC-PortingMt9v115NewSetting_0701-00*}
 //FIH-SW-MM-MC-OptimizeCameraForLaunchTime-00*}
 
 //FIH-SW-MM-MC-OptimizeCameraForLaunchTime-00+{
@@ -411,6 +413,7 @@ struct fih_i2c_reg_conf mt9v115_sub_init_settings_array[] = {
 //FIH-SW-MM-MC-OptimizeCameraForLaunchTime-00+}
 /* MTD-SW-MM-SL-FinuTuneFrontCamera-00*} */
 
+/*MM-UW-improve camera performance-00+*/
 struct fih_i2c_reg_conf mt9v115_stream_start_array[] = {
     { 0x8400, 0x02, BYTE_LEN, 0 },
     { 0x8401, 0x02, BYTE_POLL, 0 }//State polling (start streaming)
@@ -420,6 +423,7 @@ struct fih_i2c_reg_conf mt9v115_stream_stop_array[] = {
     { 0x8400, 0x01, BYTE_LEN, 0 },
     { 0x8401, 0x01, BYTE_POLL, 0 }//State polling (1: stop streaming)
 };
+/*MM-UW-improve camera performance-00-*/
 
 /* FIH-SW3-MM-SL-SetFPSForRecordMMS-01+{ */	
 struct fih_i2c_reg_conf mt9v115_fps_30_settings_array [] = {

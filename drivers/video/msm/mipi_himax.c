@@ -121,6 +121,13 @@ static struct dsi_cmd_desc himax_ReadDC = {
 static struct dsi_cmd_desc himax_Read0A = {
 	DTYPE_DCS_READ, 1, 0, 1, 20, sizeof(himax_manufacture_id0A), himax_manufacture_id0A};
 
+/* FIH-SW-MM-VH-DISPLAY-38+[ */
+#ifdef CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK
+static char himax_manufacture_C1[2] = {0xC1, 0x00}; /* DTYPE_DCS_READ */
+static struct dsi_cmd_desc himax_ReadC1 = {
+	DTYPE_DCS_READ, 1, 0, 1, 20, sizeof(himax_manufacture_C1), himax_manufacture_C1};
+#endif
+/* FIH-SW-MM-VH-DISPLAY-38+] */
 /* FIH-SW-MM-VH-DISPLAY-21*[ */
 #ifdef CONFIG_FIH_SW_DISPLAY_CABC
 static char himax_WriteCABCMode[2] = {0x55, 0x00};  /* DTYPE_DCS_WRITE1 */
@@ -138,14 +145,147 @@ static char set_tear_off[2] = {0x34, 0x00};
 static struct dsi_cmd_desc dsi_tear_off_cmd = {	DTYPE_DCS_WRITE, 1, 0, 0, 0, sizeof(set_tear_off), set_tear_off};
 #endif
 /* FIH-SW-MM-VH-DISPLAY-28*[ */
-static char himax_CMD2[3] = {0xED, 0x01, 0xFE}; /* DTYPE_GEN_LWRITE */
-static char himax_CMD1[2] = {0xBF, 0xAA}; /* DTYPE_GEN_WRITE1 */
+/* FIH-SW-MM-VH-DISPLAY-33*[ */
+static char set_tear_on[2] = {0x35, 0x00};
+static char auo_unlock_cmd2[3] = {0xED, 0x01, 0xFE}; /* DTYPE_GEN_LWRITE */
+static char auo_inversion[2] = {0xB4, 0x15};  /* DTYPE_GEN_WRITE1 */
+static char himax_B7[2] = {0xB7, 0x20};  /* DTYPE_GEN_WRITE1 */
+static char auo_pump[4] = {0xC2, 0x24, 0x24, 0x24};  /* DTYPE_GEN_LWRITE */
+static char auo_pump_clamp[5] = {0xC6, 0x00, 0xE4, 0xE4, 0xE4};  /* DTYPE_GEN_LWRITE */
+static char auo_cmd2_p1[2] = {0xBF, 0xAA}; /* DTYPE_GEN_WRITE1 */
 static char AUO_PWM[5] = {0xC1, 0x20, 0x00, 0x01, 0x00}; /* DTYPE_GEN_LWRITE1 */
 static char himax_CMD_RET[2] = {0x00, 0xAA}; /* DTYPE_GEN_WRITE1 */
-static char himax_SWRESET[2] = {0x01, 0x00};  /* DTYPE_DCS_WRITE */
-static char himax_ED[3] = {0xED, 0x01, 0xFE};  /* DTYPE_GEN_LWRITE */
-static char himax_B7[2] = {0xB7, 0x20};  /* DTYPE_GEN_WRITE1 */
-
+/* FIH-SW-MM-VH-DISPLAY-38*[ */
+#ifdef CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK
+static struct dsi_cmd_desc auo_cmd2_p1_cmd = {
+	DTYPE_GEN_WRITE1, 1, 0, 0, 0,
+		sizeof(auo_cmd2_p1), auo_cmd2_p1};
+static struct dsi_cmd_desc auo_cmd_ret_cmd = {
+	DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(himax_CMD_RET), himax_CMD_RET};
+#endif
+/* FIH-SW-MM-VH-DISPLAY-38*] */
+static char auo_red_positive_gamma[37] = {0xE0, 
+	0x07, 0x00,
+	0x13, 0x00, 
+	0x1D, 0x00, 
+	0x2B, 0x00,
+	0x34, 0x00,
+	0x3D, 0x00,
+	0x49, 0x00,
+	0x5A, 0x00,
+	0x68, 0x00,
+	0x72, 0x00,
+	0x7C, 0x00,
+	0x85, 0x00,
+	0x8C, 0x00,
+	0x91, 0x00,
+	0x9A, 0x00,
+	0xA7, 0x00,
+	0xBE, 0x00,
+	0xF3, 0x00
+};  /* DTYPE_GEN_LWRITE */
+static char auo_red_negative_gamma[37] = {0xE1, 
+	0x02, 0x00,
+	0x13, 0x00, 
+	0x1D, 0x00, 
+	0x2B, 0x00,
+	0x34, 0x00,
+	0x3D, 0x00,
+	0x49, 0x00,
+	0x5A, 0x00,
+	0x68, 0x00,
+	0x72, 0x00,
+	0x7C, 0x00,
+	0x85, 0x00,
+	0x8C, 0x00,
+	0x91, 0x00,
+	0x9A, 0x00,
+	0xA7, 0x00,
+	0xBE, 0x00,
+	0xEE, 0x00
+};  /* DTYPE_GEN_LWRITE */
+static char auo_green_positive_gamma[37] = {0xE2, 
+	0x07, 0x00,
+	0x13, 0x00, 
+	0x1D, 0x00, 
+	0x2B, 0x00,
+	0x34, 0x00,
+	0x3D, 0x00,
+	0x49, 0x00,
+	0x5A, 0x00,
+	0x68, 0x00,
+	0x72, 0x00,
+	0x7C, 0x00,
+	0x85, 0x00,
+	0x8C, 0x00,
+	0x91, 0x00,
+	0x9A, 0x00,
+	0xA7, 0x00,
+	0xBE, 0x00,
+	0xF3, 0x00
+};  /* DTYPE_GEN_LWRITE */
+static char auo_green_negative_gamma[37] = {0xE3, 
+	0x02, 0x00,
+	0x13, 0x00, 
+	0x1D, 0x00, 
+	0x2B, 0x00,
+	0x34, 0x00,
+	0x3D, 0x00,
+	0x49, 0x00,
+	0x5A, 0x00,
+	0x68, 0x00,
+	0x72, 0x00,
+	0x7C, 0x00,
+	0x85, 0x00,
+	0x8C, 0x00,
+	0x91, 0x00,
+	0x9A, 0x00,
+	0xA7, 0x00,
+	0xBE, 0x00,
+	0xEE, 0x00
+};  /* DTYPE_GEN_LWRITE */
+static char auo_blue_positive_gamma[37] = {0xE4, 
+	0x07, 0x00,
+	0x13, 0x00, 
+	0x1D, 0x00, 
+	0x2B, 0x00,
+	0x34, 0x00,
+	0x3D, 0x00,
+	0x49, 0x00,
+	0x5A, 0x00,
+	0x68, 0x00,
+	0x72, 0x00,
+	0x7C, 0x00,
+	0x85, 0x00,
+	0x8C, 0x00,
+	0x91, 0x00,
+	0x9A, 0x00,
+	0xA7, 0x00,
+	0xBE, 0x00,
+	0xF3, 0x00
+};  /* DTYPE_GEN_LWRITE */
+static char auo_blue_negative_gamma[37] = {0xE5, 
+	0x02, 0x00,
+	0x13, 0x00, 
+	0x1D, 0x00, 
+	0x2B, 0x00,
+	0x34, 0x00,
+	0x3D, 0x00,
+	0x49, 0x00,
+	0x5A, 0x00,
+	0x68, 0x00,
+	0x72, 0x00,
+	0x7C, 0x00,
+	0x85, 0x00,
+	0x8C, 0x00,
+	0x91, 0x00,
+	0x9A, 0x00,
+	0xA7, 0x00,
+	0xBE, 0x00,
+	0xEE, 0x00
+};  /* DTYPE_GEN_LWRITE */
+/* FIH-SW-MM-VH-DISPLAY-33*] */
 static struct dsi_cmd_desc himax_CMI_on_cmds[] = {
 	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
 		sizeof(himax_EnableExtensionCommand), himax_EnableExtensionCommand},
@@ -194,30 +334,78 @@ static struct dsi_cmd_desc himax_CMI_on_cmds[] = {
 #endif
 };
 /* FIH-SW-MM-VH-DISPLAY-09*] */
-/* FIH-SW-MM-VH-DISPLAY-31*[ */
-static struct dsi_cmd_desc himax_AUO_on_cmds[] = {
-	{DTYPE_DCS_WRITE, 1, 0, 0, 200,
-		sizeof(himax_SWRESET), himax_SWRESET},
+/* FIH-SW-MM-VH-DISPLAY-33*[ */
+static struct dsi_cmd_desc himax_AUO_0B_on_cmds[] = {
 	{DTYPE_DCS_WRITE, 1, 0, 0, 125,
 		sizeof(himax_SleepOut), himax_SleepOut},
-	{DTYPE_GEN_LWRITE, 1, 0, 0, 150,
-		sizeof(himax_ED), himax_ED},
-	{DTYPE_GEN_WRITE1, 1, 0, 0, 150,
-		sizeof(himax_B7), himax_B7},	
+	{DTYPE_DCS_WRITE, 1, 0, 0, 0,
+		sizeof(set_tear_on), set_tear_on},
 	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
-		sizeof(himax_CMD2), himax_CMD2},
+		sizeof(auo_unlock_cmd2), auo_unlock_cmd2},
 	{DTYPE_GEN_WRITE1, 1, 0, 0, 0,
-		sizeof(himax_CMD1), himax_CMD1},
+		sizeof(auo_inversion), auo_inversion},	
+	{DTYPE_GEN_WRITE1, 1, 0, 0, 0,
+		sizeof(himax_B7), himax_B7},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_pump), auo_pump},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_pump_clamp), auo_pump_clamp},
+	{DTYPE_GEN_WRITE1, 1, 0, 0, 0,
+		sizeof(auo_cmd2_p1), auo_cmd2_p1},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_red_positive_gamma), auo_red_positive_gamma},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_red_negative_gamma), auo_red_negative_gamma},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_green_positive_gamma), auo_green_positive_gamma},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_green_negative_gamma), auo_green_negative_gamma},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_blue_positive_gamma), auo_blue_positive_gamma},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_blue_negative_gamma), auo_blue_negative_gamma},
 	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
 		sizeof(AUO_PWM), AUO_PWM},
-	{DTYPE_GEN_WRITE1, 1, 0, 0, 0,
+	{DTYPE_GEN_WRITE1, 1, 0, 0, 120,
 		sizeof(himax_CMD_RET), himax_CMD_RET},
 	{DTYPE_DCS_WRITE, 1, 0, 0, 10,
 		sizeof(himax_DisplayON), himax_DisplayON},
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
 		sizeof(write_ctrl_displayDD0), write_ctrl_displayDD0},
+#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
 		sizeof(write_display_brightness), write_display_brightness},
+#endif
+};
+static struct dsi_cmd_desc himax_AUO_0D_on_cmds[] = {
+	{DTYPE_DCS_WRITE, 1, 0, 0, 125,
+		sizeof(himax_SleepOut), himax_SleepOut},
+	{DTYPE_DCS_WRITE, 1, 0, 0, 0,
+		sizeof(set_tear_on), set_tear_on},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_unlock_cmd2), auo_unlock_cmd2},
+	{DTYPE_GEN_WRITE1, 1, 0, 0, 0,
+		sizeof(auo_inversion), auo_inversion},	
+	{DTYPE_GEN_WRITE1, 1, 0, 0, 0,
+		sizeof(himax_B7), himax_B7},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_pump), auo_pump},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(auo_pump_clamp), auo_pump_clamp},
+	{DTYPE_GEN_WRITE1, 1, 0, 0, 0,
+		sizeof(auo_cmd2_p1), auo_cmd2_p1},
+	{DTYPE_GEN_LWRITE, 1, 0, 0, 0,
+		sizeof(AUO_PWM), AUO_PWM},
+	{DTYPE_GEN_WRITE1, 1, 0, 0, 120,
+		sizeof(himax_CMD_RET), himax_CMD_RET},
+	{DTYPE_DCS_WRITE, 1, 0, 0, 10,
+		sizeof(himax_DisplayON), himax_DisplayON},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(write_ctrl_displayDD0), write_ctrl_displayDD0},
+#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(write_display_brightness), write_display_brightness},
+#endif
 };
 static struct dsi_cmd_desc himax_CMI_off_cmds[] = {
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
@@ -233,7 +421,7 @@ static struct dsi_cmd_desc himax_AUO_off_cmds[] = {
 	{DTYPE_DCS_WRITE, 1, 0, 0, 50,
 		sizeof(himax_SleepIn), himax_SleepIn}
 };
-/* FIH-SW-MM-VH-DISPLAY-31*] */
+/* FIH-SW-MM-VH-DISPLAY-33*] */
 /* FIH-SW-MM-VH-DISPLAY-28*] */
 
 /* FIH-SW-MM-VH-DISPLAY-21+[ */
@@ -287,13 +475,15 @@ static struct dsi_cmd_desc himax_write_cabc_brightness_cmds[] = {
 		sizeof(himax_WriteCABCBrightness), himax_WriteCABCBrightness}
 };
 #endif
-/* FIH-SW-MM-VH-DISPLAY-31*[ */
+/* FIH-SW-MM-VH-DISPLAY-38*[ */
 static int mipi_himax_manufacture_id(struct msm_fb_data_type *mfd)
 {
 	struct dsi_buf *rp, *tp;
 	int retVal = 0;
 	char retDA = 0, retDB = 0, retDC = 0, ret0A = 0;
-
+#ifdef CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK
+	char *pretTMP = NULL;
+#endif
 	tp = &himax_tx_buf;
 	rp = &himax_rx_buf;
 	
@@ -320,17 +510,19 @@ static int mipi_himax_manufacture_id(struct msm_fb_data_type *mfd)
 	retVal |= mipi_dsi_cmds_rx(mfd, tp, rp, &himax_Read0A, 1);
 	ret0A = *((char *) rp->data);
 
+/* FIH-SW-MM-VH-DISPLAY-33*[ */
 	if(retVal >= 0) {
 		switch(retDA)
 		{
 			case LCM_ID_DA_MES_CMI_DP:
-			case LCM_ID_DA_MES_AUO:
+			case LCM_ID_DA_MES_AUO_0B:
+			case LCM_ID_DA_MES_AUO_0D:
 			case LCM_ID_DA_MES_CMI_TP:
 				retVal = (unsigned int) retDA;
 				break;
 			default:
 				if (retDB  == LCM_ID_DB_MES_AUO){
-					retVal = (unsigned int) LCM_ID_DA_MES_AUO;
+					retVal = (unsigned int) LCM_ID_DA_MES_AUO_0B;
 				}else if(((ret0A & 0x03) == 0x00)){
 					retVal = (unsigned int) retDA;
 				}else{
@@ -341,11 +533,32 @@ static int mipi_himax_manufacture_id(struct msm_fb_data_type *mfd)
 	}else{
 		retVal = -1;
 	}
-		
-	printk(KERN_ALERT "[DISPLAY] Panel ID = 0x%02x, 0x%02x, 0x%02x, 0x0A = 0x%02x, retVal = 0x%X\r\n", retDA, retDB, retDC, ret0A, retVal);
+#ifdef CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK
+	if(((retVal==LCM_ID_DA_MES_AUO_0B) || (retVal ==LCM_ID_DA_MES_AUO_0D))&&(display_initialize ==1)){
+		/* Switch to page2*/
+		retVal |= mipi_dsi_cmds_tx(mfd, &himax_tx_buf, &auo_cmd2_p1_cmd, 1);
+
+		mipi_dsi_buf_init(rp);
+		mipi_dsi_buf_init(tp);
+		retVal |= mipi_dsi_cmds_rx(mfd, tp, rp, &himax_ReadC1, 6);
+		pretTMP = ((char *) rp->data);
+
+		if((*(pretTMP+2)) != 0x01){
+			printk("%s: ERROR: LCM failed\r\n", __func__);
+			printk("%s: 0xC1 = 0x%X 0x%X 0x%X 0x%X 0x%X 0x%X\r\n", __func__, *pretTMP, *(pretTMP+1), *(pretTMP+2), *(pretTMP+3), *(pretTMP+4), *(pretTMP+5));
+			retVal = -1;
+		}
+
+		/* Return from page2*/
+		retVal |= mipi_dsi_cmds_tx(mfd, &himax_tx_buf, &auo_cmd_ret_cmd, 1);
+	}
+#endif
+	if(display_initialize==0){
+		printk(KERN_ALERT "[DISPLAY] Panel ID = 0x%02x, 0x%02x, 0x%02x, 0x0A = 0x%02x, retVal = 0x%X\r\n", retDA, retDB, retDC, ret0A, retVal);
+	}
 	return retVal;
 }
-/* FIH-SW-MM-VH-DISPLAY-31*] */
+/* FIH-SW-MM-VH-DISPLAY-38*] */
 static ssize_t himax_read_da(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
@@ -473,16 +686,19 @@ static int mipi_himax_lcd_on(struct platform_device *pdev)
 
 	if(rc >= 0){
 		gPanelModel = rc;
-		
+/* FIH-SW-MM-VH-DISPLAY-33*[ */
 		/*TODO: Is it necessary to enter critical section? */
-		if(gPanelModel == LCM_ID_DA_MES_AUO) {
-			rc = mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_AUO_on_cmds,
-				ARRAY_SIZE(himax_AUO_on_cmds));
-		} else {
+		if(gPanelModel == LCM_ID_DA_MES_AUO_0B) {
+			rc = mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_AUO_0B_on_cmds,
+				ARRAY_SIZE(himax_AUO_0B_on_cmds));
+		}else if(gPanelModel == LCM_ID_DA_MES_AUO_0D){
+			rc = mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_AUO_0D_on_cmds,
+				ARRAY_SIZE(himax_AUO_0D_on_cmds));
+		}else{
 			rc = mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_CMI_on_cmds,
 				ARRAY_SIZE(himax_CMI_on_cmds));
 		}
-	
+/* FIH-SW-MM-VH-DISPLAY-33*] */
 		printk(KERN_ALERT "[DISPLAY] Finish sending dsi commands\n, rc=%d\r\n", rc);
 		
 #ifdef CONFIG_FIH_SW_DISPLAY_MIPI_HEALTHY_CHECK
@@ -519,15 +735,15 @@ static int mipi_himax_lcd_off(struct platform_device *pdev)
 
 	/*TODO: Is it necessary to enter critical section? */
 	mipi_set_tx_power_mode(0);
-/* FIH-SW-MM-VH-DISPLAY-28*[ */
-	if(gPanelModel == LCM_ID_DA_MES_AUO) {
+/* FIH-SW-MM-VH-DISPLAY-33*[ */
+	if((gPanelModel == LCM_ID_DA_MES_AUO_0B) || (gPanelModel == LCM_ID_DA_MES_AUO_0D)) {
 		mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_AUO_off_cmds,
 		ARRAY_SIZE(himax_AUO_off_cmds));
 	} else {
 		mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_CMI_off_cmds,
 		ARRAY_SIZE(himax_CMI_off_cmds));
 	}
-/* FIH-SW-MM-VH-DISPLAY-28*] */
+/* FIH-SW-MM-VH-DISPLAY-33*] */
 	mipi_set_tx_power_mode(1);
 
 	display_initialize = 0;
@@ -1011,6 +1227,11 @@ static struct msm_fb_panel_data himax_panel_data = {
 #ifdef CONFIG_FIH_SW_DISPLAY_LCM_DIMMING
 	.set_dimming = mipi_himax_set_dimming,
 #endif
+/* FIH-SW-MM-VH-DISPLAY-38+[ */
+#ifdef CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK
+	.get_id = mipi_himax_manufacture_id,
+#endif
+/* FIH-SW-MM-VH-DISPLAY-38+] */
 /* FIH-SW-MM-VH-DISPLAY-21+] */
 
 };

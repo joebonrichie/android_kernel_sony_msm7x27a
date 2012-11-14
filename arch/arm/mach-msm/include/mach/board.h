@@ -225,6 +225,10 @@ struct msm_camera_sensor_info {
 	int sensor_reset_enable;
 	int sensor_reset;
 	int sensor_pwd;
+    //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+{
+	int sensor_f_reset;
+	int sensor_f_pwd;
+    //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+}
 	/* FIH-SW3-MM-SL-ModifyGPIODefine-01*{ */
 	int vreg_v1p2;
 	int vreg_v1p8;

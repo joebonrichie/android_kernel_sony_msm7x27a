@@ -1028,7 +1028,7 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
        //MTD-SW3-MM-UW-camframe timeout-01+{
 	qcmd_resp = __msm_control(sync,
 				  &ctrl_pmsm->ctrl_q,
-				  qcmd, msecs_to_jiffies(5000));
+				  qcmd, msecs_to_jiffies(10000));//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00*
        //MTD-SW3-MM-UW-camframe timeout-01-}
 
 	/* ownership of qcmd will be transfered to event queue */

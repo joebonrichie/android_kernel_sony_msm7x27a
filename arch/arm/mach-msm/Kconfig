@@ -33,7 +33,6 @@ config ARCH_MSM7X27
 	select MULTI_IRQ_HANDLER
 	select MSM_PROC_COMM_REGULATOR
 	select CLEANCACHE
-	select QCACHE
 	select MSM_PM2 if PM
 
 config ARCH_MSM7X30

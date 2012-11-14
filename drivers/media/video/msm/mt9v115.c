@@ -88,10 +88,12 @@ struct mt9v115_ctrl_t {
     enum mt9v115_resolution_t curr_res;
 };
 
-static bool CSI_CONFIG;
-static bool STARTUP;//FIH-SW-MM-MC-EnableHWStandby-00*
+static bool CSI_CONFIG = false;
+static bool STARTUP = false;//FIH-SW-MM-MC-EnableHWStandby-00*
 static bool bSubInitDone = false;//FIH-SW-MM-MC-OptimizeCameraForLaunchTime-00+
 static struct mt9v115_ctrl_t *mt9v115_ctrl;
+struct platform_device *pdev_mt9v115 = NULL;//Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00+
+
 
 static DECLARE_WAIT_QUEUE_HEAD(mt9v115_wait_queue);
 static DECLARE_WAIT_QUEUE_HEAD(mt9v115_af_wait_queue);
@@ -111,11 +113,9 @@ int mt9v115_enter_standby(void)
     uint16_t read_value;
     printk ("mt9v115_enter_standby \n");    
 
-    fih_i2c_read(mt9v115_client, 0x0018, &read_value, WORD_LEN);
-    printk ("mt9v115_enter_standby 0x0018 = %x ++0\n", read_value);    
-    read_value = read_value | 0x0001;
-    printk ("mt9v115_enter_standby 0x0018 = %x ++1\n", read_value);  
-    //rc = fih_set_gpio_output_value(mt9v115_info->sensor_pwd, "CAM_VGA_STBY" , HIGH);
+    fih_i2c_read(mt9v115_client, 0x0018, &read_value, WORD_LEN);   
+    read_value = read_value | 0x0001;  
+    //rc = fih_set_gpio_output_value(mt9v115_info->sensor_f_pwd, "CAM_VGA_STBY" , HIGH);
     rc = fih_i2c_write(mt9v115_client, 0x0018, read_value, WORD_LEN);
     if (rc < 0) {
         printk("mt9v115_enter_standby: enter standy failed !\n");
@@ -126,10 +126,11 @@ int mt9v115_enter_standby(void)
         fih_i2c_read(mt9v115_client, 0x0018, &read_value, WORD_LEN);
         read_value = read_value >> 14;
         read_value = read_value & 0x0001;
-        cam_msleep(10);
+        
         printk("mt9v115_enter_standby: polling standy mode i = %d\n", i);
         if(read_value == 0x0001)
             break;
+        cam_msleep(10);
      }
     cam_msleep(10);
 
@@ -142,6 +143,7 @@ int mt9v115_enter_standby(void)
     return 0;
 }
 
+/*MM-UW-improve camera performance-00+*/
 int mt9v115_exit_standby(void)
 {
     int rc = 0;
@@ -154,13 +156,12 @@ int mt9v115_exit_standby(void)
         printk ("mt9v115_exit_standby: enable mclk fail\n");    
         
     }    
-    cam_msleep(5);
+    cam_msleep(10);
 
     fih_i2c_read(mt9v115_client, 0x0018, &read_value, WORD_LEN);
-    printk ("mt9v115_exit_standby 0x0018 = %x ++0\n", read_value);    
     read_value = read_value & 0xFFFE;
-    printk ("mt9v115_exit_standby 0x0018 = %x ++1\n", read_value);  
-    //rc = fih_set_gpio_output_value(mt9v115_info->sensor_pwd, "CAM_VGA_STBY" , HIGH);
+
+    //rc = fih_set_gpio_output_value(mt9v115_info->sensor_f_pwd, "CAM_VGA_STBY" , HIGH);
     rc = fih_i2c_write(mt9v115_client, 0x0018, read_value, WORD_LEN);
     if (rc < 0) {
         printk("mt9v115_exit_standby: enter standy failed !\n");
@@ -171,19 +172,21 @@ int mt9v115_exit_standby(void)
         fih_i2c_read(mt9v115_client, 0x0018, &read_value, WORD_LEN);
         read_value = read_value >> 14;
         read_value = read_value & 0x0001;
-        cam_msleep(10);
+
         printk("mt9v115_exit_standby: polling standy mode i = %d\n", i);
         if(read_value == 0x0000)
             break;
+        cam_msleep(10);
      }
-    
-    cam_msleep(10);
+
     return 0;
 
 }
 //FIH-SW-MM-MC-EnableHWStandby-00+}
 /*MM-UW-EnableHWStandby-00-*/
+/*MM-UW-improve camera performance-00-*/
 
+/*MM-UW-improve camera performance-00+*/
 /* FIH-SW3-MM-UW-performance tune-00+*/
 //FIH-SW-MM-MC-EnableHWStandby-00*{
 /* FIH-SW3-MM-SL-ModifyGPIODefine-01*{ */
@@ -196,7 +199,7 @@ int mt9v115_power_on(const struct msm_camera_sensor_info *data)
     if(STARTUP == 0)
     {    
         printk("mt9v115_power_on: STARTUP == 0. \n");       
-        rc = fih_set_gpio_output_value(mt9v115_info->sensor_pwd, "CAM_VGA_STBY" , LOW);
+        rc = fih_set_gpio_output_value(mt9v115_info->sensor_f_pwd, "CAM_VGA_STBY" , LOW);//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00*
         if (rc < 0) {
             goto error;
         }    
@@ -229,7 +232,7 @@ int mt9v115_power_on(const struct msm_camera_sensor_info *data)
         /*MM-UW-fix unbalance warning-00+*/
         printk("mt9v115_power_on: STARTUP == 1. \n");   
         mt9v115_exit_standby();
-        cam_msleep(5);
+        //cam_msleep(5);
         /*MM-UW-fix unbalance warning-00-*/
     }
 
@@ -241,6 +244,7 @@ error:
     return rc;
 }
 /* FIH-SW3-MM-UW-performance tune-00-*/
+/*MM-UW-improve camera performance-00-*/
 
 int mt9v115_power_off(void)
 {
@@ -250,7 +254,7 @@ int mt9v115_power_off(void)
     if(STARTUP == 0)
     {        
         printk("mt9v115_power_off: STARTUP == 0. \n");   
-        rc = fih_set_gpio_output_value(mt9v115_info->sensor_pwd, "CAM_VGA_STBY" , LOW);/* FIH-SW3-MM-SL-ModifyGPIODefine-02**/
+        rc = fih_set_gpio_output_value(mt9v115_info->sensor_f_pwd, "CAM_VGA_STBY" , LOW);//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00*
         if (rc < 0) {
             goto error;
         }    
@@ -291,6 +295,7 @@ error:
 /* FIH-SW3-MM-SL-ModifyGPIODefine-01*} */
 //FIH-SW-MM-MC-EnableHWStandby-00*}
 
+/*MM-UW-improve camera performance-00+*/
 /*MM-UW-fix unbalance warning-00+*/
 //FIH-SW-MM-MC-EnableHWStandby-00+{
 int mt9v115_suspend(struct platform_device *pdev, pm_message_t state)
@@ -298,12 +303,13 @@ int mt9v115_suspend(struct platform_device *pdev, pm_message_t state)
     int rc;
     printk ("mt9v115_suspend \n");  
 
-    rc = mt9v115_exit_standby();
+    rc = fih_enable_mclk(mt9v115_info->mclk, MT9V115_MASTER_CLK_RATE);
     if (rc < 0) {
-        printk("mt9v115_suspend: exit standby fail \n"); 
-    }    
+        printk("mt9v115_suspend: enable mclk fail \n");
+    }   
     cam_msleep(5);
 
+    bFrontCameraIsReset = false;//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*
     STARTUP  = 0;    
     mt9v115_power_off();    
     if (rc < 0) {
@@ -312,6 +318,7 @@ int mt9v115_suspend(struct platform_device *pdev, pm_message_t state)
     return 0;
 }
 /*MM-UW-fix unbalance warning-00-*/
+/*MM-UW-improve camera performance-00-*/
 
 int mt9v115_resume(struct platform_device *pdev)
 {
@@ -333,13 +340,13 @@ static int32_t mt9v115_i2c_write_table(
 
     for (i = 0; i < num_of_items_in_table; i++) {
 
-        if (reg_conf_tbl->waddr == 0x001A && reg_conf_tbl->wdata == 0x0126)
+        if (reg_conf_tbl->waddr == 0x001A && reg_conf_tbl->wdata == 0x0106)//Div2-SW6-MM-MC-PortingMt9v115NewSetting_0701-00*
         {
             fih_i2c_no_ack_write(mt9v115_client,
             reg_conf_tbl->waddr, reg_conf_tbl->wdata,
             reg_conf_tbl->width);
             rc = 0x1;
-            printk("ByPass: Write Reg_0x001A to 0x0126, no return ACK !\n");
+            printk("ByPass: Write Reg_0x001A to 0x0106, no return ACK !\n");
         }
         else
         {
@@ -487,6 +494,7 @@ static int32_t mt9v115_set_pict_exp_gain(uint16_t gain, uint32_t line)
     return rc;
 }
 
+/*MM-UW-improve camera performance-00+*/
 /*MM-UW-fix unbalance warning-00+*/
 //SW2D2-MM-MC-Camera-BringUpMt9v115Sensor-02*{
 static int32_t mt9v115_sensor_setting(int update_type, int rt)
@@ -510,7 +518,7 @@ static int32_t mt9v115_sensor_setting(int update_type, int rt)
             }
             printk("mt9v115_sensor_setting: mt9v115_i2c_write_table(reg_init_tbl) success. \n");
 
-            CSI_CONFIG = 0;
+            CSI_CONFIG = false;
             STARTUP = MT9V115_ENABLE_HW_STANDBY;//FIH-SW-MM-MC-EnableHWStandby-00+
             //Remove cam_msleep() because we implement polling machine in reg_init_tbl.
             //cam_msleep(10);//Waitting for sensor init done.
@@ -519,48 +527,53 @@ static int32_t mt9v115_sensor_setting(int update_type, int rt)
         break;
 
     case UPDATE_PERIODIC:
-        if ((rt == RES_PREVIEW) && (CSI_CONFIG == 0)) 
+        if ((rt == RES_PREVIEW) && (CSI_CONFIG == false)) 
         {
             printk("mt9v115_sensor_setting: case UPDATE_PERIODIC \n");
 
-            /* stop streaming */
-            rc = mt9v115_i2c_write_table(&mt9v115_regs.reg_stop_tbl[0], mt9v115_regs.reg_stop_tbl_size);
-            if (rc < 0)
+            //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*{
+            if (bFrontCameraIsReset == false)
             {
-                printk("mt9v115_sensor_setting: mt9v115_i2c_write_table(reg_stop_tbl) failed !\n");
-                return rc;
+                /* stop streaming */
+                rc = mt9v115_i2c_write_table(&mt9v115_regs.reg_stop_tbl[0], mt9v115_regs.reg_stop_tbl_size);//Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00*
+                //rc = fih_i2c_write(mt9v115_client, 0x8400, 0x01, BYTE_LEN);
+                if (rc < 0)
+                {
+                    printk("mt9v115_sensor_setting: Stop streaming failed !\n");
+                    return rc;
+                }
             }
-            printk("mt9v115_sensor_setting: mt9v115_i2c_write_table(reg_stop_tbl) success. \n");
+            //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*}
+            printk("mt9v115_sensor_setting: Stop streaming success, bFrontCameraIsReset = %d. \n", bFrontCameraIsReset);
             //Remove cam_msleep() because we implement polling machine in reg_stop_tbl and reg_start_tbl.
             //cam_msleep(50);//Waitting for streaming stop.
 
-            if (CSI_CONFIG == 0) {
+            if (CSI_CONFIG == false) {
                 printk("mt9v115_sensor_setting: CSI_CONFIG  = 0, Pre CSI config. \n");
                 msm_camio_vfe_clk_rate_set(192000000);
                 mt9v115_csi_params.lane_cnt = 1;
                 mt9v115_csi_params.data_format = CSI_8BIT;
                 mt9v115_csi_params.lane_assign = 0xe4;
                 mt9v115_csi_params.dpcm_scheme = 0;
-                mt9v115_csi_params.settle_cnt = 7;
+                mt9v115_csi_params.settle_cnt = 20;
                 rc = msm_camio_csi_config(&mt9v115_csi_params);
+                cam_msleep(20);//cam_msleep(100);//Waitting for csi config done.
                 
-                /*MM-UW-reduce boot time+++*/ 
-                cam_msleep(100);//cam_msleep(200);//Waitting for csi config done.
-                /*MM-UW-reduce boot time---*/                
-                CSI_CONFIG = 1;
+                CSI_CONFIG = true;
             }
 
             //FIH-SW-MM-MC-OptimizeCameraForLaunchTime-00*{
             if (bSubInitDone == true)
             {
                 /* Sensor start streaming */
-                rc = mt9v115_i2c_write_table(&mt9v115_regs.reg_start_tbl[0], mt9v115_regs.reg_start_tbl_size);
+                rc = mt9v115_i2c_write_table(&mt9v115_regs.reg_start_tbl[0], mt9v115_regs.reg_start_tbl_size);//Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00*
+                //rc = fih_i2c_write(mt9v115_client, 0x8400, 0x02, BYTE_LEN);
                 if (rc < 0)
                 {
-                    printk("mt9v115_sensor_setting: mt9v115_i2c_write_table(reg_start_tbl) failed !\n");
+                    printk("mt9v115_sensor_setting: Sensor start streaming failed !\n");
                     return rc;
                 }
-                printk("mt9v115_sensor_setting: mt9v115_i2c_write_table(reg_start_tbl) success, bSubInitDone = %d .\n", bSubInitDone);
+                printk("mt9v115_sensor_setting: Sensor start streaming success, bSubInitDone = %d .\n", bSubInitDone);
             }
             //FIH-SW-MM-MC-OptimizeCameraForLaunchTime-00*}
         }
@@ -574,6 +587,7 @@ static int32_t mt9v115_sensor_setting(int update_type, int rt)
 }
 //SW2D2-MM-MC-Camera-BringUpMt9v115Sensor-02*}
 /*MM-UW-fix unbalance warning-00-*/
+/*MM-UW-improve camera performance-00-*/
 
 static int32_t mt9v115_video_config(int mode)
 {
@@ -658,15 +672,109 @@ static int32_t mt9v115_set_sensor_mode(int mode,
         rc = mt9v115_raw_snapshot_config(mode);
         break;
 
-    /*MTD-SW3-MM-UW-camframe timeout-00+*/
+    //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00*{
     case SENSOR_RESET_MODE:
         printk("mt9v115_set_sensor_mode: SENSOR_RESET_MODE---------------E\n");
-        STARTUP = 0;//FIH-SW-MM-MC-EnableHWStandby-00+
-        return 0;        
+        
+        //01. Re-set flag variables.
+        STARTUP = 0;
+        bFrontCameraIsReset = true;//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*
+
+        //02. Re-config main camera pin.
+        rc = fih_set_gpio_output_value(mt9v115_info->sensor_pwd, "CAM_5M_STBYN", LOW);
+        if (rc < 0) {
+            printk("mt9v115_set_sensor_mode: Re-config main camera CAM_5M_STBYN pin for reset failed !\n");
+            return rc;
+        }   
+
+        rc = fih_set_gpio_output_value(mt9v115_info->sensor_reset, "CAM_5M_RSTN", LOW);
+        if (rc < 0) {
+            printk("mt9v115_set_sensor_mode: Re-config main camera CAM_5M_RSTN pin for reset failed !\n");
+            return rc;
+        }   
+        cam_msleep(5);// >0
+
+        //Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00+{
+        if (pdev_mt9v115 != NULL)
+        {
+            msm_camio_disable(pdev_mt9v115);
+            cam_msleep(20);//Wait camio disable done.
+            printk("mt9v115_set_sensor_mode: msm_camio_disable() \n");
+        }
+        //Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00+}
+
+        //03. Power off.
+        rc = mt9v115_power_off();
+        if (rc < 0) {
+            printk("mt9v115_set_sensor_mode: mt9v115_power_off for reset failed !\n");
+            return rc;
+        }
+        //Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00*{
+        cam_msleep(200);//Wait power off done.
+        //Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00*}
+
+        //04. Power on.
+        rc = mt9v115_power_on(mt9v115_info);
+        if (rc < 0) {
+            printk("mt9v115_set_sensor_mode: mt9v115_power_on for reset failed !\n");
+            return rc;
+        }
+
+        //05. INIT main reg table.
+        rc = mt9v115_sensor_setting(REG_INIT, RES_PREVIEW);
+        if (rc < 0) {
+            printk("mt9v115_set_sensor_mode: INIT main reg table for reset failed !\n");
+            return rc;
+        }
+
+        //Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00+{
+        if (pdev_mt9v115 != NULL)
+        {
+            msm_camio_enable(pdev_mt9v115);
+            cam_msleep(20);//Wait camio enable done.
+            printk("mt9v115_set_sensor_mode: msm_camio_enable() \n");
+        }
+        //Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00+}
+
+        //06. Stop streaming and config CSI .
+        rc = mt9v115_i2c_write_table(&mt9v115_regs.reg_stop_tbl[0], mt9v115_regs.reg_stop_tbl_size);
+        if (rc < 0)
+        {
+            printk("mt9v115_set_sensor_mode: Stop streaming for reset failed !\n");
+            return rc;
+        }
+
+        rc = mt9v115_sensor_setting(UPDATE_PERIODIC, RES_PREVIEW);
+        if (rc < 0) {
+            printk("mt9v115_set_sensor_mode: Config CSI for reset failed !\n");
+            return rc;
+        }
+
+        //07. INIT sub reg table.
+        rc = mt9v115_i2c_write_table(&mt9v115_regs.reg_sub_init_tbl[0], mt9v115_regs.reg_sub_init_tbl_size);
+        if (rc < 0)
+        {
+            printk("mt9v115_set_sensor_mode: INIT sub reg table for reset failed !\n");
+            return rc;
+        }
+        bSubInitDone = true;
+        printk("mt9v115_set_sensor_mode: bSubInitDone = %d .\n", bSubInitDone);
+    
+        //08. Start streaming.
+        rc = mt9v115_i2c_write_table(&mt9v115_regs.reg_start_tbl[0], mt9v115_regs.reg_start_tbl_size);
+        if (rc < 0)
+        {
+            printk("mt9v115_set_sensor_mode: Start streaming for reset failed !\n");
+            return rc;
+        }
+        
+        mt9v115_ctrl->curr_res = mt9v115_ctrl->prev_res;
+        mt9v115_ctrl->sensormode = 0;
 
         printk("mt9v115_set_sensor_mode: SENSOR_RESET_MODE---------------X\n");      
               break;
-    /*MTD-SW3-MM-UW-camframe timeout-00-*/
+    //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00*}
+
     default:
         rc = -EINVAL;
         break;
@@ -776,6 +884,16 @@ int mt9v115_sensor_open_init(const struct msm_camera_sensor_info *data)
     prev_line_length_pck = 480;
     snap_frame_length_lines = 640;
     snap_line_length_pck = 480;
+
+    //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*{
+    // Check main camera state before power on front camera.
+    if (bMainCameraIsReset == true)
+    {
+        printk("mt9v115_sensor_open_init: Re-Set for MAIN_SENSOR_RESET\n");
+        STARTUP = 0;
+        bMainCameraIsReset = false;
+    }
+    //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*}
 
     /* Power on and enable mclk */
     rc = mt9v115_power_on(data);
@@ -894,13 +1012,14 @@ int mt9v115_sensor_config(void __user *argp)
         printk("mt9v115_sensor_config: mt9v115_i2c_write_table(reg_sub_init_tbl) success, bSubInitDone = %d .\n", bSubInitDone);
 
         /* Sensor start streaming */
-        rc = mt9v115_i2c_write_table(&mt9v115_regs.reg_start_tbl[0], mt9v115_regs.reg_start_tbl_size);
+        rc = mt9v115_i2c_write_table(&mt9v115_regs.reg_start_tbl[0], mt9v115_regs.reg_start_tbl_size);//Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00*
+        //rc = fih_i2c_write(mt9v115_client, 0x8400, 0x02, BYTE_LEN);
         if (rc < 0)
         {
-            printk("mt9v115_sensor_config: mt9v115_i2c_write_table(reg_start_tbl) failed !\n");
+            printk("mt9v115_sensor_config: Sensor start streaming failed !\n");
             return rc;
         }
-        printk("mt9v115_sensor_config: mt9v115_i2c_write_table(reg_start_tbl) success. \n");
+        printk("mt9v115_sensor_config: Sensor start streaming success. \n");
     }
     //FIH-SW-MM-MC-OptimizeCameraForLaunchTime-00+}
     
@@ -1012,7 +1131,7 @@ static int mt9v115_sensor_release(void)
 
     kfree(mt9v115_ctrl);
     mt9v115_ctrl = NULL;
-    CSI_CONFIG = 0;
+    CSI_CONFIG = false;
     /*MM-UW-reduce boot time+++*/
     cam_msleep(100);
     /*MM-UW-reduce boot time---*/
@@ -1070,6 +1189,7 @@ probe_fail_1:
 static int __devinit mt9v115_probe(struct platform_device *pdev)
 {
     printk("mt9v115_probe: Register mt9v115 sensor to msm_camera_drv. \n");
+    pdev_mt9v115 = pdev;//Div2-SW6-MM-MC-EnhanceStabilityForFrontCamera-00+
     return msm_camera_drv_start(pdev, mt9v115_sensor_probe);
 }
 

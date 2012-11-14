@@ -3094,7 +3094,11 @@ static struct msm_camera_sensor_info msm_camera_sensor_isx006_data = {
 	.sensor_name    = "isx006",
 	.sensor_reset_enable = 1,
 	.sensor_reset   = 23,
-	.sensor_pwd             = 26,
+	.sensor_pwd     = 26,
+	//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+{
+	.sensor_f_reset = 0xFF,
+	.sensor_f_pwd   = 128,
+	//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+}
 	/* FIH-SW3-MM-SL-ModifyGPIODefine-01+{ */
 	.mclk                   = 15,
 	.vreg_af_power          = "bt", 
@@ -3136,9 +3140,13 @@ static struct msm_camera_sensor_info msm_camera_sensor_mt9v115_data = {
 	.mclk					= 15,
 	.vreg_v1p8				= 116,
 	.vreg_v2p8				= 117,
-	.sensor_pwd 			= 128,
-	.sensor_reset   = 0xFF,
-	/* FIH-SW3-MM-SL-ModifyGPIODefine-01*} */
+	/* FIH-SW3-MM-SL-ModifyGPIODefine-01*} */	
+	//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+{
+	.sensor_reset   = 23,
+	.sensor_pwd     = 26,
+    .sensor_f_reset = 0xFF,
+    .sensor_f_pwd   = 128,
+	//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+}
 	.vcm_pwd                = 1,
 	.vcm_enable             = 0,
 	.pdata                  = &msm_camera_device_data_front,

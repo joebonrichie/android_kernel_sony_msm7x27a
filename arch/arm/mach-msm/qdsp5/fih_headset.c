@@ -75,11 +75,6 @@ enum {
 	NOT_SUPPORT = (1 << 3), /* FIH-SW2-MM-AY-hsed_type-00 */ //using BIT_ANCHEADSET to pretend not supported device.
 	UNKNOWN_DEVICE = (1 << 4), /* FIH-SW2-MM-AY-hsed_type-02 */ //using BIT_ANCHEADSET_NO_MIC to pretend unknown device.
 };
-/*FIH-SW2-MM-SC-NonCTIA_HS_Notification+*/
-#define NO_CTIA_BIT (0x8000)
-#define DEVICE_MASK (0x7FFF)
-/*FIH-SW2-MM-SC-NonCTIA_HS_Notification-*/
-
 
 /********************************************************/
 /*                                                      */
@@ -141,7 +136,7 @@ static ssize_t trout_h2w_print_name(struct switch_dev *sdev, char *buf)
 	char name_c[] = "Not Support\n"; /* FIH-SW2-MM-AY-hsed_type-00 */
 	char name_d[] = "Unknow Device\n"; /* FIH-SW2-MM-AY-hsed_type-02 */ 
 
-    state = (switch_get_state(&hi->sdev)& DEVICE_MASK);/*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/
+    state = switch_get_state(&hi->sdev);
 
 	switch (state) {
 	   case NO_DEVICE:
@@ -183,7 +178,7 @@ void aud_hs_print_gpio(void)
 /* MM-RC-HEADSET-MULTIBUTTON-DETECT[* */
 void button_pressed(int pkey)
 {
-    if ((switch_get_state(&hi->sdev)& DEVICE_MASK) == HEADSET) {/*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/
+    if (switch_get_state(&hi->sdev) == HEADSET) {
         H2W_DBG("key = %d", pkey);
         atomic_set(&hi->btn_state, 1); 
         input_report_key(hi->input, pkey, 1);
@@ -194,7 +189,7 @@ void button_pressed(int pkey)
 
 void button_released(int pkey)
 {
-    if ((switch_get_state(&hi->sdev)& DEVICE_MASK) == HEADSET) {/*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/
+    if (switch_get_state(&hi->sdev) == HEADSET) {
         H2W_DBG("key = %d", pkey);
         atomic_set(&hi->btn_state, 0);
         input_report_key(hi->input, pkey, 0); 
@@ -270,7 +265,7 @@ static void insert_headset(void)
                #endif
                /* MM-RC-HEADSET-MULTIBUTTON-DETECT]* */
 	        switch_set_state(&hi->sdev, UNKNOWN_DEVICE); /* FIH-SW2-MM-AY-hsed_type-02 */
-		} else if (voltage > 1000 || voltage < 400) { /* FIH-SW2-MM-AY-hsed_type-01 ] */
+		} else if (voltage > 700 || voltage < 400) { /* FIH-SW2-MM-AY-hsed_type-01 ] *//* SW-MM-RC-CTIA-TTY* */
 	        if (gpio_get_value(hi->cable_in1) == HS_PLUG_IN) {
        	        if (gpio_get_value(hi->cable_in2) == BTN_STATE_PRESSED) {
                     switch_set_state(&hi->sdev, NOMIC_HEADSET);
@@ -305,7 +300,7 @@ static void insert_headset(void)
 	
        	    if (gpio_get_value(hi->cable_in2) == BTN_STATE_PRESSED) { /* FIH-SW2-MM-AY-TAP_headset_00 */
                         
-                switch_set_state(&hi->sdev, NOMIC_HEADSET|NO_CTIA_BIT);/*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/
+                switch_set_state(&hi->sdev, NOMIC_HEADSET);
 			
                 mHeadphone=true;
                 hi->ignore_btn = 1;  /* FIH-SW2-MM-AY-TAP_Tapioca-00746_00 */
@@ -313,7 +308,7 @@ static void insert_headset(void)
 	
             } else {
         
-                switch_set_state(&hi->sdev, HEADSET|NO_CTIA_BIT);/*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/
+                switch_set_state(&hi->sdev, HEADSET);
 
                 mHeadphone=false;
 			
@@ -368,15 +363,13 @@ static void remove_headset(void)
 static void detection_work(struct work_struct *work)
 {
 	int cable_in;
-    int lDevice = 0;
+
 	H2W_DBG("");
 
 	  H2W_DBG("%d %d", gpio_get_value(hi->cable_in1), HS_PLUG_IN); /* FIH-SW2-MM-AY-TAP_headset_00 */
 	if (gpio_get_value(hi->cable_in1) != HS_PLUG_IN) { /* FIH-SW2-MM-AY-TAP_headset_00 */
 		/* Headset plugged out */
-        lDevice = (switch_get_state(&hi->sdev) & DEVICE_MASK);/*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/
-		//if ( (switch_get_state(&hi->sdev) == HEADSET) || (switch_get_state(&hi->sdev) == NOMIC_HEADSET) || (switch_get_state(&hi->sdev) == NOT_SUPPORT) || (switch_get_state(&hi->sdev) == UNKNOWN_DEVICE)) { /* FIH-SW2-MM-AY-hsed_type-02 */
-		if( (lDevice == HEADSET) || (lDevice == NOMIC_HEADSET) || (lDevice == NOT_SUPPORT) || (lDevice == UNKNOWN_DEVICE)) { /*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/
+		if ( (switch_get_state(&hi->sdev) == HEADSET) || (switch_get_state(&hi->sdev) == NOMIC_HEADSET) || (switch_get_state(&hi->sdev) == NOT_SUPPORT) || (switch_get_state(&hi->sdev) == UNKNOWN_DEVICE)) { /* FIH-SW2-MM-AY-hsed_type-02 */
 			H2W_DBG("Headset is plugged out.\n");
 			remove_headset();
 		}
@@ -387,7 +380,7 @@ static void detection_work(struct work_struct *work)
 	cable_in = gpio_get_value(hi->cable_in1); /* FIH-SW2-MM-AY-TAP_headset_00 */
        
     if (cable_in == HS_PLUG_IN ) {
-       	if ((switch_get_state(&hi->sdev)& DEVICE_MASK)  == NO_DEVICE) {/*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/
+       	if (switch_get_state(&hi->sdev) == NO_DEVICE) {
        		H2W_DBG("Headset is plugged in.\n");
        		insert_headset();
        	}
@@ -402,7 +395,7 @@ static enum hrtimer_restart button_event_timer_func(struct hrtimer *data)
 {
 	H2W_DBG("");
 	
-    if ((switch_get_state(&hi->sdev)& DEVICE_MASK) == HEADSET) { /*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/
+    if (switch_get_state(&hi->sdev) == HEADSET) {
        	if (gpio_get_value(hi->cable_in2) == BTN_STATE_RELEASED) {  /* FIH-SW2-MM-AY-TAP_headset_00 */
        		if (hi->ignore_btn)
                     hi->ignore_btn = 0;
@@ -458,8 +451,9 @@ static irqreturn_t detect_irq_handler(int irq, void *dev_id)
     * If the sdev is NO_DEVICE, and we detect the headset has been plugged,
     * then we can do headset_insertion check.
 	*/
-	if ( ((switch_get_state(&hi->sdev)& DEVICE_MASK) == NO_DEVICE) ^ (value2^HS_PLUG_IN)) {/*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/
-		if ((switch_get_state(&hi->sdev)& DEVICE_MASK) == HEADSET)/*FIH-SW2-MM-SC-NonCTIA_HS_Notification*/      
+	if ( (switch_get_state(&hi->sdev) == NO_DEVICE) ^ (value2^HS_PLUG_IN)) {
+		
+		if (switch_get_state(&hi->sdev) == HEADSET)      
 			hi->ignore_btn = 1;
 		
 		/* Do the rest of the work in timer context */

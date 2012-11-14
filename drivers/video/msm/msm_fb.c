@@ -962,32 +962,45 @@ static DEVICE_ATTR(panel_control, 0644, NULL, panel_power_control);
 static struct msm_fb_platform_data *msm_fb_pdata;
 unsigned char hdmi_prim_display;
 
-/* FIH-SW-MM-VH-DISPLAY-07*[ */
+/* FIH-SW-MM-VH-DISPLAY-39*[ */
 #ifdef CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK
+enum {
+	LCM_ID_DA_MES_CMI_DP = 0x0A,
+	LCM_ID_DA_MES_AUO_0B = 0x0B,
+	LCM_ID_DA_MES_AUO_0D = 0x0D,
+	LCM_ID_DA_MES_CMI_TP = 0x0C,
+	LCM_ID_DA_JLO_AUO = 0x42,
+	LCM_ID_DA_JLO_CMI = 0x43,
+	LCM_ID_DA_TAP_CMI = 0x54,
+};
 int msm_fb_check_panel_id(struct msm_fb_data_type *mfd, struct fb_info *fbi)
 {
-	int retVal = 0;
+	static int retVal = 0;
+	
 	int duration = 0;
 	struct timespec cur_time = {0, 0};
 	static struct timespec pre_time = {0, 0};
 
-	if(gmsm_fb_panel_data->get_id != NULL) {
-		cur_time = current_kernel_time();
-		duration = cur_time.tv_sec - pre_time.tv_sec;
-		
-		if (duration < 2)
-			return 0;
-
-		pre_time = cur_time;
-
-		down(&mfd->sem);
-		retVal = gmsm_fb_panel_data->get_id(mfd);
-		up(&mfd->sem);
+	if((retVal ==0) ||(retVal == LCM_ID_DA_MES_AUO_0B) || (retVal == LCM_ID_DA_MES_AUO_0D))
+	{
+		if(gmsm_fb_panel_data->get_id != NULL) {
+			cur_time = current_kernel_time();
+			duration = cur_time.tv_sec - pre_time.tv_sec;
+			
+			if (duration < 2)
+				return 0;
+	
+			pre_time = cur_time;
+	
+			down(&mfd->sem);
+			retVal = gmsm_fb_panel_data->get_id(mfd);
+			up(&mfd->sem);
+		}
 	}
 	return retVal;
 }
 #endif
-/* FIH-SW-MM-VH-DISPLAY-07*] */
+/* FIH-SW-MM-VH-DISPLAY-39*] */
 
 int msm_fb_detect_client(const char *name)
 {
@@ -3225,6 +3238,26 @@ int mdp_blit(struct fb_info *info, struct mdp_blit_req *req)
 	}
 	if (unlikely(req->dst_rect.h == 0 || req->dst_rect.w == 0))
 		return 0;
+
+/* FIH-SW-MM-VH-DISPLAY-37+[ */
+#if 0
+	if(unlikely((req->dst_rect.w > info->var.xres) || (req->dst_rect.h > info->var.yres)))
+	{
+		printk(KERN_ERR "%s: ERROR: Illegal BLIT size %d x %d!\r\n", __func__, req->dst_rect.w, req->dst_rect.h);
+		
+		pr_err("\n %s():%d: src: w = %u, h= %u, f = %u, offset = 0x%x, mem_id %u", 
+		__func__,__LINE__, req->src.width, req->src.height, req->src.format, req->src.offset, req->src.memory_id); 
+		pr_err("\n %s():%d: dst: w = %u, h= %u, f = %u, offset = 0x%x, mem_id %u", 
+		__func__,__LINE__, req->dst.width, req->dst.height, req->dst.format, req->dst.offset, req->dst.memory_id); 
+		pr_err("\n %s():%d: src_rect: x = %u, y = %u, w = %u, h = %u", 
+		__func__,__LINE__, req->src_rect.x, req->src_rect.y, req->src_rect.w, req->src_rect.h); 
+		pr_err("\n %s():%d: dst_rect: x = %u, y = %u, w = %u, h = %u", 
+		__func__,__LINE__, req->dst_rect.x, req->dst_rect.y, req->dst_rect.w, req->dst_rect.h); 
+		pr_err("\n alpha 0x%x, flags 0x%x, transp_mask 0x%x", req->alpha, req->flags, req->transp_mask); 
+		return -EINVAL;
+	}
+#endif
+/* FIH-SW-MM-VH-DISPLAY-37+] */
 
 #if defined CONFIG_FB_MSM_MDP31
 	/* MDP width split workaround */

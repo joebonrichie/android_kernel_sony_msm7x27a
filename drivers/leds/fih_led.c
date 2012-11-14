@@ -876,6 +876,35 @@ static void	led_set_lut_table_range( struct led_data *data, struct command_param
 	}
 }
 
+static void	led_set_on_off_state( struct led_data *data, struct command_parameter *parameter )
+{
+	mutex_lock( &data->lock );
+	data->on_off_state	= parameter->para1;
+	mutex_unlock( &data->lock );
+
+	switch( data->use_hw )
+	{
+		case	LED_HW_MSM_GPIO :
+		{
+			struct led_gpio_data	*msm_data	= &data->detail.gpio_data;
+
+			printk( "LED : MSM GPIO-%d(%s), the state is %s\n", msm_data->msm_pin, data->name, data->on_off_state ? "On" : "Off" );
+			break;
+		}
+
+		case	LED_HW_PMIC_GPIO :
+		case	LED_HW_PMIC_MPP :
+		{
+			printk( "LED : PMIC %s led(%s), the state is %s\n", *( select_func + data->use_hw ), data->name, data->on_off_state ? "On" : "Off" );
+			break;
+		}
+
+		default :
+			printk( KERN_ERR "LED : Does not support this H/W type(%d)\n", data->use_hw );
+			break;
+	}
+}
+
 static void led_sched_blink( struct work_struct *work )
 {
 	struct led_data		*sw_led		= container_of( work, struct led_data, work_blink );
@@ -979,6 +1008,7 @@ static int	prepare_commands( void )
 		{ LED_COMMAND_SPECIAL_SW_BLINKING, led_sw_blinking_set, COMMAND_1_PARAMENTER },
 		{ LED_COMMAND_SPECIAL_SW_FADE_IN_OUT, led_sw_fade_in_out_set, COMMAND_1_PARAMENTER },
 		{ LED_COMMAND_SET_LUT_TABLE_RANGE, led_set_lut_table_range, COMMAND_2_PARAMENTER },
+		{ LED_COMMAND_SET_ON_OFF_STATE, led_set_on_off_state, COMMAND_1_PARAMENTER },
 	};
 
 	struct BST_data	*sort_buffer;
@@ -1067,6 +1097,7 @@ static ssize_t led_command( void *node_data, struct device_attribute *attr, char
 			 "28 : LED SW blinking in special mode, 1 parameter\n"
 			 "29 : LED SW fade in/out in special mode, 1 parameter\n"
 			 "30 : Set range of LUT table, 2 parameter\n"
+			 "31 : Set on/off state of LED, 1 parameter\n"
 			 );
 }
 
@@ -1193,10 +1224,12 @@ static ssize_t led_info( void *node_data, struct device_attribute *attr, char *b
 				info_size += snprintf( buf + info_size, rem_size,
 					             "\n%s LED(%d), MSM GPIO-%d\n"
 						     "Level[On:Off]=[%d:%d]\n"
-						     "%s mode\n",
+						     "%s mode\n"
+						     "%s state\n",
 						     led_info->name, ( data->index_buffer + loop )->index, msm_data->msm_pin,
 						     msm_data->led_on_level, msm_data->led_off_level,
-						     led_info->special_mode ? "Special" : "Normal"
+						     led_info->special_mode ? "Special" : "Normal",
+						     led_info->on_off_state ? "On" : "Off"
 						     );
 				break;
 			}
@@ -1213,7 +1246,8 @@ static ssize_t led_info( void *node_data, struct device_attribute *attr, char *b
 						     "Ramp Generator[Toggle:Loop:Up]=[%s:%s:%s]\n"
 						     "LUT table[%d-%d]\n"
 						     "%s invert\n"
-						     "%s mode\n",
+						     "%s mode\n"
+						     "%s state\n",
 						     led_info->name, ( data->index_buffer + loop )->index, pmic_data->pmic_pin + 1, pmic_data->lpg_out + 1,
 						     pmic_data->on_off_pwm, pmic_data->blinking_pwm1, pmic_data->blinking_pwm2, pmic_data->fade_in_out_pwm,
 						     pmic_data->blinking_time1, pmic_data->blinking_time2, pmic_data->interval,
@@ -1221,7 +1255,8 @@ static ssize_t led_info( void *node_data, struct device_attribute *attr, char *b
 						     pmic_data->toggle_up_down ? "Yes" : "No", pmic_data->ramp_loop ? "Yes" : "No", pmic_data->ramp_up_down ? "Yes" : "No",
 						     pmic_data->lut_table_start, pmic_data->lut_table_end,
 						     pmic_data->invert ? "Enable" : "Disable",
-						     led_info->special_mode ? "Special" : "Normal"
+						     led_info->special_mode ? "Special" : "Normal",
+						     led_info->on_off_state ? "On" : "Off"
 						     );
 				break;
 			}
@@ -1238,7 +1273,8 @@ static ssize_t led_info( void *node_data, struct device_attribute *attr, char *b
 						     "Ramp Generator[Toggle:Loop:Up]=[%s:%s:%s]\n"
 						     "LUT table[%d-%d]\n"
 						     "Current sink(%s)\n"
-						     "%s mode\n",
+						     "%s mode\n"
+						     "%s state\n",
 						     led_info->name, ( data->index_buffer + loop )->index, pmic_data->pmic_pin + 1, pmic_data->lpg_out + 1,
 						     pmic_data->on_off_pwm, pmic_data->blinking_pwm1, pmic_data->blinking_pwm2, pmic_data->fade_in_out_pwm,
 						     pmic_data->blinking_time1, pmic_data->blinking_time2, pmic_data->interval,
@@ -1246,7 +1282,8 @@ static ssize_t led_info( void *node_data, struct device_attribute *attr, char *b
 						     pmic_data->toggle_up_down ? "Yes" : "No", pmic_data->ramp_loop ? "Yes" : "No", pmic_data->ramp_up_down ? "Yes" : "No",
 						     pmic_data->lut_table_start, pmic_data->lut_table_end,
 						     *( current_sink_table + pmic_data->current_sink ),
-						     led_info->special_mode ? "Special" : "Normal"
+						     led_info->special_mode ? "Special" : "Normal",
+						     led_info->on_off_state ? "On" : "Off"
 						     );
 				break;
 			}
@@ -1265,9 +1302,19 @@ static ssize_t led_info( void *node_data, struct device_attribute *attr, char *b
 
 static void	led_early_suspend_function(struct early_suspend *handler)
 {
-	struct wake_lock	*timeout_wakelock	= &container_of(handler, struct leds_driver_data, led_early_suspend)->timeout_wakelock;
+	struct wake_lock		*timeout_wakelock	= &container_of(handler, struct leds_driver_data, led_early_suspend)->timeout_wakelock;
+	struct BS_data		*led_datas	= container_of(handler, struct leds_driver_data, led_early_suspend)->index_buffer;
+	unsigned int		count		= container_of(handler, struct leds_driver_data, led_early_suspend)->count;
+	struct command_parameter	parameter;
+	unsigned int		loop;
+
 	wake_lock_timeout( timeout_wakelock, WAIT_LOCK_TIME * HZ / 1000 );
 	printk( "LED : Wake lock(%dms)\n", WAIT_LOCK_TIME );
+	parameter.para1	= LED_TURN_OFF;
+
+	for( loop = 0 ; loop < count ; ++loop )
+		if( !( ( struct led_data* )( led_datas + loop )->data )->on_off_state )
+			led_on_off_check_mode( ( struct led_data* )( led_datas + loop )->data, &parameter );
 }
 
 static void	led_late_resume_function(struct early_suspend *handler)

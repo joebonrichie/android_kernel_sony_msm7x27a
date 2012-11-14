@@ -36,7 +36,9 @@ obj-$(CONFIG_MSM_CAMERA_AF_FOXCONN) += mt9p012_fox.o
 obj-$(CONFIG_MSM_CAMERA_AF_BAM) += mt9p012_bam.o
 obj-$(CONFIG_MT9P012_KM) += mt9p012_km.o mt9p012_km_reg.o
 obj-$(CONFIG_S5K3E2FX) += s5k3e2fx.o
-obj-$(CONFIG_S5K5CAG) += s5k5cag.o s5k5cag_reg.o
+#SW2D2-MM-MC-Camera-BringUpS5k5cngSensorFor2nd-00+[
+obj-$(CONFIG_S5K5CAG) += s5k5cag.o s5k5cag_reg.o s5k5cag_2nd.o s5k5cag_2nd_reg.o
+#SW2D2-MM-MC-Camera-BringUpS5k5cngSensorFor2nd-00+]
 #SW2D2-MM-MC-Camera-BringUpMt9v115Sensor-00+[
 obj-$(CONFIG_ISX006) += isx006.o isx006_reg.o
 obj-$(CONFIG_MT9V115) += mt9v115.o mt9v115_reg.o

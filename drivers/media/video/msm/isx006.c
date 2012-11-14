@@ -65,6 +65,15 @@
 static const struct msm_camera_sensor_info *isx006_info;
 //MTD-SW3-MM-UW-camframe timeout-00+}
 
+//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+{
+enum Exit_Standby_Action {
+	ACT_MCLK_ON,
+	ACT_EXIT_STANDBY
+};
+
+struct platform_device *pdev_isx006 = NULL;
+//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+}
+
 /* FIH-SW3-MM-UW-write OTP setting-00+*/
 static uint32_t OTP_0_value = 0xFFFFFFFF; //bit[0:31 ] 
 static uint32_t OTP_1_value = 0xFFFFFFFF; //bit[32:63 ] 
@@ -81,7 +90,17 @@ static uint16_t C_NR = 0xFFFF;
 static uint16_t C_NB = 0xFFFF; 
 static uint16_t C_PR = 0xFFFF; 
 static uint16_t C_PB = 0xFFFF; 
-static uint16_t Shading_index = 0xFFFF;
+/* FIH-SW3-MM-UW-flash tuning-00+*/
+uint16_t AESCL_AUTO = 0xFFFF; //0x0288
+uint16_t ERRSCL_AUTO = 0xFFFF; //0x0284
+uint16_t AESCL_NOW = 0xFFFF; //0x028A
+uint16_t ERRSCL_NOW = 0xFFFF; //0x0286
+/* FIH-SW3-MM-UW-flash tuning-00-*/
+/*MM-UW-fix high AF power-00+*/
+static uint16_t current_af_mode = 0;
+/*MM-UW-fix high AF power-00-*/
+static bool torch_enable = false;
+static bool flash_enable = false;
 
 static uint16_t slave_add;
 /* FIH-SW3-MM-UW-set AF range-00+*/
@@ -131,9 +150,11 @@ struct isx006_ctrl_t {
     enum isx006_resolution_t curr_res;
 };
 
-static bool CSI_CONFIG;
-static bool STARTUP;
+static bool CSI_CONFIG = false;
+static bool STARTUP = false;
 static struct isx006_ctrl_t *isx006_ctrl;
+static bool LowLight = false; /* FIH-SW3-MM-UW-fix night capture fail-00+*/
+
 
 static DECLARE_WAIT_QUEUE_HEAD(isx006_wait_queue);
 static DECLARE_WAIT_QUEUE_HEAD(isx006_af_wait_queue);
@@ -163,8 +184,9 @@ static struct task_struct *reg_init_thread = NULL;
 static bool bRegInitDone = false;
 //FIH-SW-MM-MC-ReduceMainCameraLaunchTime-00+}
 
-static int32_t isx006_set_sensor_mode(int mode, int res);//FIH-SW-MM-MC-ImplementSensorReSetForIsx006-00+
+static long isx006_set_scene(int scene);//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+
 
+//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+{
 static int isx006_i2c_rxdata(unsigned short saddr,
         unsigned char *rxdata, int length)
 {
@@ -187,14 +209,299 @@ static int isx006_i2c_rxdata(unsigned short saddr,
     address = (*rxdata << 8)+ *(rxdata+1);
 
     if (i2c_transfer(isx006_client->adapter, msgs, 2) < 0) {
-        if (address != 0x4685)
-            printk("isx006_i2c_rxdata faild 0x%x\n", saddr);
-        else
-            printk("isx006_i2c_rxdata Bypass 0x%x.\n", saddr);
+        printk("isx006_i2c_rxdata faild 0x%x\n", saddr);
         return -EIO;
     }
     return 0;
 }
+
+static int isx006_i2c_rxdata_nonAck(unsigned short saddr,
+        unsigned char *rxdata, int length)
+{
+    uint16_t address;
+    int i = 0;
+    struct i2c_msg msgs[] = {
+        {
+            .addr   = saddr,
+            .flags = 0,
+            .len   = 2,
+            .buf   = rxdata,
+        },
+        {
+            .addr   = saddr,
+            .flags = I2C_M_RD,
+            .len   = length,
+            .buf   = rxdata,
+        },
+    };
+        printk("isx006_i2c_rxdata_nonAck: enter\n");
+    
+    address = (*rxdata << 8)+ *(rxdata+1);
+
+    for(i = 0; i < 50; i++)
+    {
+        if (i2c_transfer(isx006_client->adapter, msgs, 2) >= 0) {
+                printk("isx006_i2c_rxdata_nonAck pass 0x%x\n", saddr);
+                return 0;
+        }
+        cam_msleep(10);
+    }
+    printk("isx006_i2c_rxdata_nonAck timeout 0x%x\n", saddr);
+    return -EIO;
+}
+
+
+/*MM-UW-improve camera close performance-00+*/
+static int32_t isx006_i2c_read_parallel(unsigned short saddr,
+    unsigned short raddr, unsigned short *rdata, enum fih_i2c_width width)
+{
+    int32_t rc = 0;
+    unsigned char buf[2];
+
+    if (!rdata)
+        return -EIO;
+
+    memset(buf, 0, sizeof(buf));
+
+    switch (width) {
+    case WORD_LEN: //W_Addr : W_Data
+        buf[0] = (raddr & isx006_MSB_MASK) >> 8;
+        buf[1] = (raddr & isx006_LSB_MASK);
+
+
+        rc = isx006_i2c_rxdata(saddr, buf, 2);
+        if (rc < 0) {
+            printk("isx006_i2c_read_parallel(WORD_LEN) 0x%x failed!\n", raddr);
+            return rc;
+        }
+
+        *rdata = buf[1] << 8 | buf[0];
+        break;
+
+    case BYTE_LEN: //W_Addr : B_Data
+        buf[0] = (raddr & isx006_MSB_MASK) >> 8;
+        buf[1] = (raddr & isx006_LSB_MASK);
+
+        rc = isx006_i2c_rxdata(saddr, buf, 2);
+        if (rc < 0) {
+            printk("isx006_i2c_read_parallel(BYTE_LEN) 0x%x failed!\n", raddr);
+            return rc;
+        }
+
+        *rdata = buf[0];
+        break;
+    
+    default:
+        break;
+    }
+
+    return rc;
+}
+/*MM-UW-improve camera close performance-00-*/
+
+static int32_t isx006_i2c_read_parallel_nonAck(unsigned short saddr,
+    unsigned short raddr, unsigned short *rdata, enum fih_i2c_width width)
+{
+    int32_t rc = 0;
+    unsigned char buf[2];
+
+    if (!rdata)
+        return -EIO;
+
+    memset(buf, 0, sizeof(buf));
+
+    switch (width) {
+    case WORD_LEN: //W_Addr : W_Data
+        buf[0] = (raddr & isx006_MSB_MASK) >> 8;
+        buf[1] = (raddr & isx006_LSB_MASK);
+
+
+        rc = isx006_i2c_rxdata_nonAck(saddr, buf, 2);
+        if (rc < 0) {
+            printk("isx006_i2c_read_parallel(WORD_LEN) 0x%x failed!\n", raddr);
+            return rc;
+        }
+
+        *rdata = buf[1] << 8 | buf[0];
+        break;
+
+    case BYTE_LEN: //W_Addr : B_Data
+        buf[0] = (raddr & isx006_MSB_MASK) >> 8;
+        buf[1] = (raddr & isx006_LSB_MASK);
+
+        rc = isx006_i2c_rxdata_nonAck(saddr, buf, 2);
+        if (rc < 0) {
+            printk("isx006_i2c_read_parallel(BYTE_LEN) 0x%x failed!\n", raddr);
+            return rc;
+        }
+
+        *rdata = buf[0];
+        break;
+    
+    default:
+        break;
+    }
+
+    return rc;
+}
+
+
+static int32_t isx006_i2c_txdata(unsigned short saddr,
+                unsigned char *txdata, int length)
+{
+    struct i2c_msg msg[] = {
+        {
+         .addr = saddr ,
+         .flags = 0,
+         .len = length,
+         .buf = txdata,
+         },
+    };
+
+    if (i2c_transfer(isx006_client->adapter, msg, 1) < 0) {
+        printk("isx006_i2c_txdata faild 0x%x\n", isx006_client->addr);
+        return -EIO;
+    }
+
+    return 0;
+}
+
+
+static int32_t isx006_i2c_txdata_nonAck(unsigned short saddr,
+                unsigned char *txdata, int length)
+{
+    int i = 0;
+    struct i2c_msg msg[] = {
+        {
+         .addr = saddr ,
+         .flags = 0,
+         .len = length,
+         .buf = txdata,
+         },
+    };
+    printk("isx006_i2c_txdata_nonAck: enter\n");
+
+    for(i = 0; i < 50; i++)
+    {
+        if (i2c_transfer(isx006_client->adapter, msg, 1) >= 0) {
+            printk("isx006_i2c_txdata_nonAck pass 0x%x\n", isx006_client->addr);
+            return 0;            
+        }
+        cam_msleep(10);
+    }
+    printk("isx006_i2c_txdata_nonAck timeout 0x%x\n", isx006_client->addr);
+    return -EIO;
+}
+
+static int32_t isx006_i2c_write_parallel(unsigned short saddr,
+    unsigned short waddr, unsigned short wdata, enum fih_i2c_width width)
+{
+    int32_t rc = -EIO;
+    unsigned char buf[4];
+
+    memset(buf, 0, sizeof(buf));
+    switch (width) {
+    case WORD_LEN: //W_Addr : W_Data
+        buf[0] = (waddr & 0xFF00)>>8;
+        buf[1] = (waddr & 0x00FF);
+        buf[2] = (wdata & 0x00FF);
+        buf[3] = (wdata & 0xFF00)>>8;
+        rc = isx006_i2c_txdata(saddr, buf, 4);
+        if (rc < 0)
+            printk("isx006_i2c_write_parallel(WORD_LEN) failed, addr = 0x%x, val = 0x%x!\n", waddr, wdata);
+        break;
+
+    case BYTE_LEN: //W_Addr : B_Data
+        buf[0] = (waddr & 0xFF00)>>8;
+        buf[1] = (waddr & 0x00FF);
+        buf[2] = (wdata & 0xFF);
+
+        rc = isx006_i2c_txdata(saddr, buf, 3);
+        if (rc < 0)
+            printk("isx006_i2c_write_parallel(BYTE_LEN) failed, addr = 0x%x, val = 0x%x!\n", waddr, wdata);
+
+    break;
+
+    default:
+        break;
+    }
+
+    return rc;
+}
+
+static int32_t isx006_i2c_write_parallel_nonAck(unsigned short saddr,
+    unsigned short waddr, unsigned short wdata, enum fih_i2c_width width)
+{
+    int32_t rc = -EIO;
+    unsigned char buf[4];
+
+    memset(buf, 0, sizeof(buf));
+    switch (width) {
+    case WORD_LEN: //W_Addr : W_Data
+        buf[0] = (waddr & 0xFF00)>>8;
+        buf[1] = (waddr & 0x00FF);
+        buf[2] = (wdata & 0x00FF);
+        buf[3] = (wdata & 0xFF00)>>8;
+        rc = isx006_i2c_txdata_nonAck(saddr, buf, 4);
+        if (rc < 0)
+            printk("isx006_i2c_write_parallel(WORD_LEN) failed, addr = 0x%x, val = 0x%x!\n", waddr, wdata);
+        break;
+
+    case BYTE_LEN: //W_Addr : B_Data
+        buf[0] = (waddr & 0xFF00)>>8;
+        buf[1] = (waddr & 0x00FF);
+        buf[2] = (wdata & 0xFF);
+
+        rc = isx006_i2c_txdata_nonAck(saddr, buf, 3);
+        if (rc < 0)
+            printk("isx006_i2c_write_parallel(BYTE_LEN) failed, addr = 0x%x, val = 0x%x!\n", waddr, wdata);
+
+    break;
+
+    default:
+        break;
+    }
+
+    return rc;
+}
+
+
+static int32_t isx006_i2c_write(unsigned short saddr,
+    unsigned short waddr, unsigned short wdata, enum fih_i2c_width width)
+{
+    int32_t rc = -EIO;
+    unsigned char buf[4];
+
+    memset(buf, 0, sizeof(buf));
+    switch (width) {
+    case WORD_LEN: //W_Addr : W_Data
+        buf[0] = (waddr & 0xFF00)>>8;
+        buf[1] = (waddr & 0x00FF);
+        buf[2] = (wdata & 0xFF00)>>8;
+        buf[3] = (wdata & 0x00FF);
+
+        rc = isx006_i2c_txdata(saddr, buf, 4);
+        if (rc < 0)
+            printk("isx006_i2c_write(WORD_LEN) failed, addr = 0x%x, val = 0x%x!\n", waddr, wdata);
+        break;
+
+    case BYTE_LEN: //W_Addr : B_Data
+        buf[0] = (waddr & 0xFF00)>>8;
+        buf[1] = (waddr & 0x00FF);
+        buf[2] = (wdata & 0xFF);
+    
+        rc = isx006_i2c_txdata(saddr, buf, 3);
+        if (rc < 0)
+            printk("isx006_i2c_write(BYTE_LEN) failed, addr = 0x%x, val = 0x%x!\n", waddr, wdata);
+        break;
+
+    default:
+        break;
+    }
+
+    return rc;
+}
+//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+}
 
 static int32_t isx006_i2c_read(unsigned short saddr,
     unsigned short raddr, unsigned short *rdata, enum fih_i2c_width width)
@@ -272,148 +579,6 @@ static int32_t isx006_i2c_read_parallel_32bit(unsigned short saddr,
 }
 /* FIH-SW3-MM-UW-write OTP setting-00-*/
 
-/*MM-UW-improve camera close performance-00+*/
-static int32_t isx006_i2c_read_parallel(unsigned short saddr,
-    unsigned short raddr, unsigned short *rdata, enum fih_i2c_width width)
-{
-    int32_t rc = 0;
-    unsigned char buf[2];
-
-    if (!rdata)
-        return -EIO;
-
-    memset(buf, 0, sizeof(buf));
-
-    switch (width) {
-    case WORD_LEN: //W_Addr : W_Data
-        buf[0] = (raddr & isx006_MSB_MASK) >> 8;
-        buf[1] = (raddr & isx006_LSB_MASK);
-
-
-        rc = isx006_i2c_rxdata(saddr, buf, 2);
-        if (rc < 0) {
-            printk("isx006_i2c_read_parallel(WORD_LEN) 0x%x failed!\n", raddr);
-            return rc;
-        }
-
-        *rdata = buf[1] << 8 | buf[0];
-        break;
-
-    case BYTE_LEN: //W_Addr : B_Data
-        buf[0] = (raddr & isx006_MSB_MASK) >> 8;
-        buf[1] = (raddr & isx006_LSB_MASK);
-
-        rc = isx006_i2c_rxdata(saddr, buf, 2);
-        if (rc < 0) {
-            if (raddr != 0x4685)
-                printk("isx006_i2c_read_parallel(BYTE_LEN) 0x%x failed!\n", raddr);
-            else
-                printk("isx006_i2c_read_parallel(BYTE_LEN) Bypass 0x%x.\n", raddr);
-            return rc;
-        }
-
-        *rdata = buf[0];
-        break;
-    
-    default:
-        break;
-    }
-
-    return rc;
-}
-/*MM-UW-improve camera close performance-00-*/
-
-static int32_t isx006_i2c_txdata(unsigned short saddr,
-                unsigned char *txdata, int length)
-{
-    struct i2c_msg msg[] = {
-        {
-         .addr = saddr ,
-         .flags = 0,
-         .len = length,
-         .buf = txdata,
-         },
-    };
-
-    if (i2c_transfer(isx006_client->adapter, msg, 1) < 0) {
-        printk("isx006_i2c_txdata faild 0x%x\n", isx006_client->addr);
-        return -EIO;
-    }
-
-    return 0;
-}
-
-static int32_t isx006_i2c_write(unsigned short saddr,
-    unsigned short waddr, unsigned short wdata, enum fih_i2c_width width)
-{
-    int32_t rc = -EIO;
-    unsigned char buf[4];
-
-    memset(buf, 0, sizeof(buf));
-    switch (width) {
-    case WORD_LEN: //W_Addr : W_Data
-        buf[0] = (waddr & 0xFF00)>>8;
-        buf[1] = (waddr & 0x00FF);
-        buf[2] = (wdata & 0xFF00)>>8;
-        buf[3] = (wdata & 0x00FF);
-
-        rc = isx006_i2c_txdata(saddr, buf, 4);
-        if (rc < 0)
-            printk("isx006_i2c_write(WORD_LEN) failed, addr = 0x%x, val = 0x%x!\n", waddr, wdata);
-        break;
-
-    case BYTE_LEN: //W_Addr : B_Data
-        buf[0] = (waddr & 0xFF00)>>8;
-        buf[1] = (waddr & 0x00FF);
-        buf[2] = (wdata & 0xFF);
-    
-        rc = isx006_i2c_txdata(saddr, buf, 3);
-        if (rc < 0)
-            printk("isx006_i2c_write(BYTE_LEN) failed, addr = 0x%x, val = 0x%x!\n", waddr, wdata);
-        break;
-
-    default:
-        break;
-    }
-
-    return rc;
-}
-
-static int32_t isx006_i2c_write_parallel(unsigned short saddr,
-    unsigned short waddr, unsigned short wdata, enum fih_i2c_width width)
-{
-    int32_t rc = -EIO;
-    unsigned char buf[4];
-
-    memset(buf, 0, sizeof(buf));
-    switch (width) {
-    case WORD_LEN: //W_Addr : W_Data
-        buf[0] = (waddr & 0xFF00)>>8;
-        buf[1] = (waddr & 0x00FF);
-        buf[2] = (wdata & 0x00FF);
-        buf[3] = (wdata & 0xFF00)>>8;
-        rc = isx006_i2c_txdata(saddr, buf, 4);
-        if (rc < 0)
-            printk("isx006_i2c_write_parallel(WORD_LEN) failed, addr = 0x%x, val = 0x%x!\n", waddr, wdata);
-        break;
-
-    case BYTE_LEN: //W_Addr : B_Data
-        buf[0] = (waddr & 0xFF00)>>8;
-        buf[1] = (waddr & 0x00FF);
-        buf[2] = (wdata & 0xFF);
-
-        rc = isx006_i2c_txdata(saddr, buf, 3);
-        if (rc < 0)
-            printk("isx006_i2c_write_parallel(BYTE_LEN) failed, addr = 0x%x, val = 0x%x!\n", waddr, wdata);
-
-    break;
-
-    default:
-        break;
-    }
-
-    return rc;
-}
     
 static int32_t isx006_i2c_write_table_parallel(unsigned short saddr,
     struct isx006_i2c_reg_conf const *reg_conf_tbl,
@@ -529,6 +694,93 @@ error:
     return rc;
 }
 
+//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+{
+static int isx006_check_om_nonAck(unsigned short saddr, const char *tag)
+{
+    int i =0;
+    int rc = 0;
+    uint16_t irq_status = 0x0;
+    uint16_t v_read;
+    uint16_t v_temp; 
+
+    printk("isx006_check_om_nonAck(0x%x): %s \n", saddr, tag);
+
+    /* Make sure operation mode is changed */
+    for (i = 0; i < ISX006_OM_RETRY_COUNT; i++)
+    {
+        rc = isx006_i2c_read_parallel_nonAck(saddr, 0x00F8, &irq_status, BYTE_LEN);
+        if (rc < 0) {
+            pr_err("isx006_check_om_nonAck: isx006_i2c_read_parallel failed, REG(0x%x) !\n", 0x00F8);
+            goto error;
+        }
+        
+        if (irq_status & 0x01)
+            break;
+        cam_msleep(10);
+    }
+
+    if (i >= ISX006_OM_RETRY_COUNT)
+    {
+        rc = -ETIME;
+        pr_err("isx006_check_om_nonAck: Operation mode not change !!!\n");
+        goto error;
+    }
+    printk("isx006_check_om_nonAck: Operation mode change\n");
+
+
+    /* Clear interrupt status */
+    for (i = 0; i < ISX006_OM_RETRY_COUNT; i++)
+    {
+        rc = isx006_i2c_read_parallel_nonAck(saddr, 0x00FC, &v_read, BYTE_LEN);
+        if (rc < 0) {
+            pr_err("isx006_check_om_nonAck: isx006_i2c_read_parallel failed, REG(0x%x) !\n", 0x00FC);
+            goto error;
+        }
+        v_temp = v_read | 0x01;    
+
+        rc = isx006_i2c_write_parallel_nonAck(saddr, 0x00FC, v_temp, BYTE_LEN);
+        if (rc < 0) {
+            pr_err("isx006_check_om_nonAck: isx006_i2c_write_parallel failed, REG(0x%x) !\n", 0x00FC);
+            goto error;
+        }
+        cam_msleep(10);
+
+        //2.Check interrupt status is cleaned
+        rc = isx006_i2c_read_parallel_nonAck(saddr, 0x00F8, &irq_status, BYTE_LEN);
+        if (rc < 0)
+        {
+            pr_err("isx006_check_om_nonAck: saddr: Read REG(0x%x) failed !\n", 0x00F8);
+            goto error;
+        }
+        else
+        {
+            // Check OM_CHANGED STS (bit0)
+            if (!(irq_status & 0x01))
+            {
+                printk("isx006_check_om_nonAck: saddr: OM_CHANGED STS is clear. \n");
+                break;
+            }
+        }
+        cam_msleep(10);    
+        printk("isx006_check_om_nonAck: Retry for clear interrupt status ~ \n");
+    }
+
+    if (i >= ISX006_OM_RETRY_COUNT)
+    {
+        rc = -ETIME;
+        pr_err("isx006_check_om_nonAck: Interrupt status is not cleaned !\n");
+        goto error;
+    }
+
+    printk("isx006_check_om_nonAck: Success \n");
+    return rc;
+
+error:
+    pr_err("isx006_check_om_nonAck: Failed !\n");
+    return rc;
+}
+//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+}
+
 static int isx006_check_cm(unsigned short saddr, const char *tag)
 {
     int i = 0;
@@ -637,6 +889,8 @@ error:
 }
 /*MM-UW-add auto flash 00+*/
 
+/* FIH-SW3-MM-UW-fix night capture fail-00+*/
+/* FIH-SW3-MM-UW-cancel AF-00+*/
 /* FIH-SW3-MM-UW-check AF lock state-00+*/
 static int isx006_check_AF(unsigned short saddr, const char *tag)
 {
@@ -645,68 +899,60 @@ static int isx006_check_AF(unsigned short saddr, const char *tag)
     uint16_t irq_status = 0x0;
     uint16_t v_read = 0x0;    
     uint16_t v_temp = 0x0;        
-    uint16_t AF_result = 0xFF;
 
-    /* Make sure operation mode is changed */
-    for (i = 0; i < ISX006_AF_RETRY_COUNT; i++)
-    {
-        rc = isx006_i2c_read_parallel(saddr, 0x00F8, &irq_status, BYTE_LEN);
-        if (rc < 0) {
-            pr_err("isx006_check_AF: isx006_i2c_read_parallel failed, saddr(0x%x)/REG(0x%x) !\n",saddr, 0x00F8);
-            goto error;
-        }
-        if (irq_status & 0x10)
-            break;
-        cam_msleep(10);    
-    }
-
-    if (i >= ISX006_AF_RETRY_COUNT)
-    {
-        rc = -ETIME;
-        pr_err("isx006_check_AF: Camera mode changed fail !!!\n");
+    /* 01.Polling the interrupt register--------------------------------------------------------*/
+    rc = isx006_i2c_read_parallel(saddr, 0x00F8, &irq_status, BYTE_LEN);//ADDR_INTSTS0 = 0x00F8
+    if (rc < 0) {
+        pr_err("isx006_check_AF: saddr(0x%x): Read REG(0x%x) failed !\n",saddr, 0x00F8);
         goto error;
     }
-    printk("isx006_check_AF: Camera mode changed\n");
 
+    if (!(irq_status & 0x10))//INTSTS0[4](AF_LOCK_STS)
+    {
+        //printk("isx006_check_AF: AF searching..\n");
+        if(isx006_scene == SCENE_NIGHT)
+            cam_msleep(40); 
+        else
+            cam_msleep(10);    
+        return -EIO;
+    }
 
-    /* Clear interrupt status */
-    //1. Clear interrupt status
+    /* 02.Clear the interrupt register-------------------------------------------------------- */
+    printk("isx006_check_AF: Clear interrupt status !\n");
+    //ADDR_INTCLR0  = 0x00FC, INTCLR0[4](AF_LOCK_CLR=0x1)
     rc = isx006_i2c_read_parallel(saddr, 0x00FC, &v_read, BYTE_LEN);
     if (rc < 0) {
         pr_err("isx006_check_AF: saddr(0x%x): Read REG(0x%x) failed !\n",saddr, 0x00FC);
         goto error;
     }
-    v_temp = v_read | 0x10;
-    
+   
+    v_temp = v_read | 0x10;    
     rc = isx006_i2c_write_parallel(saddr, 0x00FC, v_temp, BYTE_LEN);
     if (rc < 0) {
         pr_err("isx006_check_AF: saddr(0x%x): Write REG(0x%x) failed !\n",saddr, 0x00FC);
         goto error;
     }
-    cam_msleep(10);    
 
-    
-    for (i = 0; i < ISX006_AF_RETRY_COUNT; i++)
+    /* 03.Polling the interrupt register until the data is 0 ----------------------------------------*/
+
+    rc = isx006_i2c_read_parallel(saddr, 0x00F8, &irq_status, BYTE_LEN);
+    if (rc < 0)
     {
-        //2.Check interrupt status is cleaned
-        rc = isx006_i2c_read_parallel(saddr, 0x00F8, &irq_status, BYTE_LEN);
-        if (rc < 0)
-        {
-            pr_err("isx006_check_AF: saddr(0x%x): Read REG(0x%x) failed !\n",saddr, 0x00F8);
-            goto error;
-        }
-        else
-        {
-            // Check MO_CHANGED STS (bit5)
-            if (!(irq_status & 0x10))
-            {
-                // [bit5] == 0
-                printk("isx006_check_AF: saddr(0x%x): CM_CHANGED STS is clear. \n",saddr);
-                break;
-            }
-        }
+        pr_err("isx006_check_AF: saddr(0x%x): Read REG(0x%x) failed !\n",saddr, 0x00F8);
+        goto error;
+    }
+
+    printk("isx006_check_AF: Read REG(0x%x) = 0x%x !\n", 0x00F8, irq_status);
+    if (!(irq_status & 0x10))//INTSTS0[4](AF_LOCK_STS)=0x0
+    {
+        printk("isx006_check_AF: saddr(0x%x): INTSTS0[4](AF_LOCK_STS) is clear. \n",saddr);
+        return 0;
+    }
+    else
+    {
+        pr_err("isx006_check_AF: clear interrupt status fail--- retry time = %d !\n", i);
         cam_msleep(10);
-        printk("isx006_check_AF: clear interrupt status --- retry time = %d !\n", i);
+        return -EIO; 
     }
 
     if (i >= ISX006_AF_RETRY_COUNT)
@@ -715,70 +961,223 @@ static int isx006_check_AF(unsigned short saddr, const char *tag)
         pr_err("isx006_check_AF: Interrupt status is not cleaned !\n");
         goto error;
     }
-
-    rc = isx006_i2c_read_parallel(isx006_client->addr, 0x6D77, &AF_result, BYTE_LEN);
-    if (rc < 0) {
-        pr_err("isx006_check_AF: isx006_i2c_read_parallel(0x6D77) failed !\n");
-        return rc;
-    }
-
-    if(AF_result == AF_OK){
-        printk("isx006_check_AF: AF result is AF OK!!!!\n");
-    }
-    else if(AF_result == AF_NG){    
-        printk("isx006_check_AF: AF result is AF NG\n");
-        rc = -EIO;
-    }
-    else if(AF_result == AF_During){    
-        printk("isx006_check_AF: AF result is during AF\n");
-        rc = -EIO;
-    }
-    printk("isx006_check_AF: Success \n");
+    
     return rc;
 
 error:
-    printk("isx006_check_AF: Failed !\n");
     return rc;
 }
 /* FIH-SW3-MM-UW-check AF lock state-00-*/
 /*MM-UW-add auto flash 00-*/
 /* FIH-SW3-MM-UW-performance tuning-00-*/
+/* FIH-SW3-MM-UW-fix night capture fail-00-*/
 
+/* FIH-SW3-MM-UW-flash tuning-00+*/
+/* FIH-SW3-MM-UW-fix capture fail-00+*/
+static int isx006_get_AF_state(unsigned short saddr, const char *tag)
+{
+        int i = 0;
+        int rc = 0;
+        int led_mode = 0;
+        uint16_t v_read = 0x0;    
+        uint16_t v_temp = 0x0;        
+        uint16_t AF_result = 0xFF;
+        uint16_t AF_state = 0xFF;
+        uint16_t Diff = 0xFFFF;
+        int Diff_index = 0;
+        printk("isx006_get_AF_state: enter\n");
+   
+        led_mode = msm_soc_get_led_mode();
+        printk("isx006_get_AF_state: led_mode = %d !\n", led_mode);  
+
+        rc = isx006_i2c_read_parallel(isx006_client->addr, 0x6D76, &AF_result, BYTE_LEN);
+        printk("isx006_get_AF_state: 0x6D76 AF satate = %d\n", AF_result);
+
+        if( led_mode == LED_MODE_RED_EYE || led_mode == LED_MODE_AUTO)
+        {  
+            if(LowLight)
+                 torch_enable = true;
+        }
+
+        if( led_mode == LED_MODE_ON || torch_enable == true)
+        {
+                /* 02.Check HALF_MOVE_STS ------------------------------------------------------*/
+
+                /* Make sure operation mode is changed */
+                for (i = 0; i < ISX006_CM_RETRY_COUNT; i++)
+                {
+                    rc = isx006_i2c_read_parallel(saddr, 0x02AA, &v_read, BYTE_LEN);
+                    if (rc < 0) {
+                        pr_err("isx006_get_AF_state: isx006_i2c_read_parallel failed, REG(0x%x) !\n", 0x02AA);
+                        goto error;
+                    }
+                    if (v_read == 0)
+                        break;
+                    cam_msleep(10);    
+                }
+
+                if (i >= ISX006_CM_RETRY_COUNT)
+                {
+                    rc = -ETIME;
+                    pr_err("isx006_get_AF_state: check HALF_MOVE_STS fail !!!\n");
+                    goto error;
+                }
+                
+                /* 03.Check AF_STATE = Lock Done --------------------------------------------------*/
+
+                for (i = 0; i < ISX006_CM_RETRY_COUNT; i++)
+                {
+                    rc = isx006_i2c_read_parallel(saddr, 0x6D76, &v_read, BYTE_LEN);
+                    if (rc < 0) {
+                        pr_err("isx006_get_AF_state: isx006_i2c_read_parallel failed, REG(0x%x) !\n", 0x02AA);
+                        goto error;
+                    }
+                    if (v_read == 8)
+                        break;
+                    cam_msleep(10);    
+                }
+
+                if (i >= ISX006_CM_RETRY_COUNT)
+                {
+                    rc = -ETIME;
+                    pr_err("isx006_get_AF_state: check AF_STATE = Lock Done fail !!!\n");
+                    goto error;
+                }
+
+                
+                /* 04.Read AE scale ---------------------------------------------------------------*/
+                printk("isx006_get_AF_state: Camera mode changed\n");
+
+                if (slave_add == isx006_client->addr)
+                {
+                    rc = isx006_i2c_read_parallel(isx006_client->addr, 0x028A, &AESCL_NOW, WORD_LEN);   
+                }else{
+                    rc = isx006_i2c_read(isx006_client->addr, 0x028A, &AESCL_NOW, WORD_LEN);
+                }  
+
+                if (slave_add == isx006_client->addr)
+                {
+                    rc = isx006_i2c_read_parallel(isx006_client->addr, 0x0286, &ERRSCL_NOW, WORD_LEN);   
+                }else{
+                    rc = isx006_i2c_read(isx006_client->addr, 0x0286, &ERRSCL_NOW, WORD_LEN);
+                }  
+                if(rc < 0) {
+                    printk("isx006_get_AF_state: read AE scale failed !\n");
+                    goto error;
+                }
+
+                /*printk("isx006_get_AF_state: AESCL_AUTO = %d, ERRSCL_AUTO = %d\n", AESCL_AUTO, ERRSCL_AUTO);
+                printk("isx006_get_AF_state: AESCL_NOW = %d, ERRSCL_NOW = %d\n", AESCL_NOW, ERRSCL_NOW);*/
+
+                Diff = (AESCL_NOW + ERRSCL_NOW) -(AESCL_AUTO + ERRSCL_AUTO);
+                /*printk("isx006_get_AF_state: Diff = %d \n", Diff);
+                printk("isx006_get_AF_state: Diff_0 = %d \n", (Diff/10) * 10);
+                printk("isx006_get_AF_state: Diff_1 = %d \n", (Diff/10 + 1) * 10);*/
+
+                /* -----------------------------------------------------------------------------*/
+                if((Diff - (Diff/10) * 10) < 5)
+                    Diff_index = (Diff/10);
+                else
+                    Diff_index = (Diff/10) + 1;
+                printk("isx006_get_AF_state: Diff_index = %d \n", Diff_index);
+
+                rc = isx006_i2c_write_parallel(isx006_client->addr, 0x0282, x_1_5[Diff_index], WORD_LEN);
+                
+                /* 05.Turn off pre-flash------------------------------------------------------------*/
+                printk("isx006_get_AF_state: flash off!\n");
+                rc = msm_soc_torch_flash_off();
+                if (rc < 0)
+                    printk("isx006_get_AF_state: msm_soc_torch_flash_off() failed !\n");
+                cam_msleep(50);
+                
+        }
+
+        /* 01.Check the AF result register -------------------------------------------------------*/
+        rc = isx006_i2c_read_parallel(isx006_client->addr, 0x6D77, &AF_result, BYTE_LEN);//ADD_AF_RESULT = 0x6D77
+        if (rc < 0) {
+            pr_err("isx006_get_AF_state: isx006_i2c_read_parallel(0x0004) failed !\n");
+            goto error;
+        }
+        
+        if(AF_result == AF_OK){
+            printk("isx006_get_AF_state: AF result is AF OK!!!!\n");
+        }
+        else if(AF_result == AF_NG){    
+            printk("isx006_get_AF_state: AF result is AF NG\n");
+            rc =  -EIO;;
+        }
+        else if(AF_result == AF_During){    
+            rc = isx006_i2c_read_parallel(isx006_client->addr, 0x4885, &v_read, BYTE_LEN);
+            v_temp = v_read | 0x01;    
+            rc = isx006_i2c_write_parallel(isx006_client->addr, 0x4885, v_temp, BYTE_LEN);
+        
+            for (i = 0; i < 30; i++)
+            {
+                rc = isx006_i2c_read_parallel(isx006_client->addr, 0x6D76, &AF_state, BYTE_LEN);
+                if (rc < 0) {
+                    pr_err("isx006_get_AF_state: isx006_i2c_read_parallel failed, REG(0x%x) !\n", 0x6D76);
+                    goto error;
+                }
+                if (AF_state == AF_SAF_Idle || AF_state == AF_Idle) //SAF_IDLE
+                    break;
+                cam_msleep(10);    
+             } 
+            printk("isx006_get_AF_state: AF result is during AF\n");
+            rc = -EIO;
+        }
+
+        return rc;
+    
+    error:
+        return rc;
+}
+/* FIH-SW3-MM-UW-cancel AF-00-*/
+/* FIH-SW3-MM-UW-fix capture fail-00-*/
+/* FIH-SW3-MM-UW-flash tuning-00-*/
+
+/* FIH-SW3-MM-UW-fix AF not work-00+*/
 /*MM-UW-reduce knocking noise-00+*/
 static int isx006_MF_position(unsigned short saddr, int position)
 {
-      int rc = -EBADF;
-      //uint16_t v_read = 0x00;
-      //int i;
-      
-      printk ("isx006_MF_position: Start.\n"); 
+        int rc = -EBADF;
+        uint16_t v_read = 0x00;
+        int i;
 
-      //0. Set MF position to move
-      rc = isx006_i2c_write_parallel(isx006_client->addr, 0x4852, position, WORD_LEN);
-      if (rc < 0)
-          goto error;
+        printk ("isx006_MF_position: Start.\n");
+        rc = isx006_i2c_write_parallel(isx006_client->addr, 0x4876, 0, WORD_LEN);//AF_AREA_LOW_TYPE1
+        if (rc < 0)
+            goto error;
 
-      //1. Trigger MF  
-      rc = isx006_i2c_write_parallel(isx006_client->addr, 0x4850, 0x01, BYTE_LEN);
-      if (rc < 0)
-          goto error;
-     
-      /*for (i = 0; i < ISX006_AF_RETRY_COUNT; i++)
-      {
+        //0. Set MF position to move
+        rc = isx006_i2c_write_parallel(isx006_client->addr, 0x4852, position, WORD_LEN);
+        if (rc < 0)
+            goto error;
+
+        //1. Trigger MF  
+        rc = isx006_i2c_write_parallel(isx006_client->addr, 0x4850, 0x01, BYTE_LEN);
+        if (rc < 0)
+            goto error;
+
+        for (i = 0; i < ISX006_AF_RETRY_COUNT; i++)
+        {
           isx006_i2c_read_parallel(isx006_client->addr, 0x6D7A, &v_read, WORD_LEN);
           if(v_read == position)
-              break;
-          printk ("isx006_check_MF: loop = %d, v_read =%d \n", i, v_read); 
+            break;
           cam_msleep(5);    
-       }*/
-      printk ("isx006_MF_position: End.\n"); 
+        }
+        printk ("isx006_check_MF: loop = %d, v_read =%d \n", i, v_read);
+        rc = isx006_i2c_write_parallel(isx006_client->addr, 0x4876, AF_A_value, WORD_LEN);//AF_AREA_LOW_TYPE1
+        if (rc < 0)
+            goto error;
 
-    return rc;
+        printk ("isx006_MF_position: End.\n");  
+        return rc;
 
 error:
     return rc;
 }
 /*MM-UW-reduce knocking noise-00-*/
+/* FIH-SW3-MM-UW-fix AF not work-00-*/
 
 static void isx006_get_pict_fps(uint16_t fps, uint16_t *pfps)
 {
@@ -832,138 +1231,6 @@ static uint32_t isx006_get_pict_max_exp_lc(void)
     else
         return snap_frame_length_lines;
 }
-
-/*MM-UW-improve camera close performance-00+*/
-//FIH-SW-MM-MC-EnableHWStandby-00*{
-int isx006_enter_standby(void)
-{
-    int rc = 0;
-    int i = 0;
-    uint16_t irq_status = 0x0;    
-
-    /* Set NSTANDBY from L to H */
-    rc = fih_set_gpio_output_value(isx006_info->sensor_pwd, "CAM_5M_STBYN", LOW);
-    if (rc < 0)
-        goto error;
-    
-    //cam_msleep(150);//T1 duration(max)
-    cam_msleep(10);
-    for (i = 0; i < 20; i++)
-    {
-        rc = isx006_i2c_read_parallel(isx006_client->addr, 0x4685, &irq_status, BYTE_LEN);
-        if (rc < 0) {
-            pr_err("isx006_enter_standby: need more time to enter standby mode !\n");
-        }
-        else{
-            break;
-        }
-        cam_msleep(10);
-    }
-
-    /*MM-UW-Standby with MCLK off-00+*/
-    rc = fih_disable_mclk(isx006_info->mclk, ISX006_MASTER_CLK_RATE);
-    if (rc < 0) {
-        goto error;
-    }
-    cam_msleep(5);
-    /*MM-UW-Standby with MCLK off-00-*/
-    
-    printk("isx006_enter_standby: Success !\n");
-    return rc;
-    
-error:
-    printk("isx006_enter_standby: Failed !\n");
-    return rc;
-}
-
-int isx006_exit_standby(void)
-{
-    int rc = 0;
-    int i = 0;
-    uint16_t irq_status = 0x0;    
-
-    /*MM-UW-Standby with MCLK off-00+*/
-    rc = fih_enable_mclk(isx006_info->mclk, ISX006_MASTER_CLK_RATE);
-    if (rc < 0) {
-        goto error;
-    }
-    cam_msleep(5);
-    /*MM-UW-Standby with MCLK off-00-*/
-      
-    /* Set NSTANDBY from L to H */
-    rc = fih_set_gpio_output_value(isx006_info->sensor_pwd, "CAM_5M_STBYN", HIGH);
-    if (rc < 0)
-        goto error;
-
-    cam_msleep(10);
-    for (i = 0; i < 20; i++)
-    {
-        rc = isx006_i2c_read_parallel(isx006_client->addr, 0x4685, &irq_status, BYTE_LEN);
-        if (rc < 0) {
-            pr_err("isx006_exit_standby: need more time to exit standby mode !\n");
-        }
-        else{
-            break;
-        }
-        cam_msleep(10);
-    }
-    
-    printk("isx006_exit_standby: Success.\n");   
-    return rc;
-    
-error:
-    printk("isx006_exit_standby: Failed !\n");
-    return rc;
-}
-//FIH-SW-MM-MC-EnableHWStandby-00*}
-/*MM-UW-improve camera close performance-00-*/
-
-/*MM-UW-EnableHWStandby-00+*/
-int front_cam_enter_standby(void)
-{
-    int rc = 0;
-    int i = 0;
-    uint16_t read_value;
-
-    rc = isx006_i2c_read(0x3D, 0x0018, &read_value, WORD_LEN);
-    if (rc < 0)
-        goto error;
-
-    printk ("mt9v115_enter_standby: 0x0018 = %x ++0\n", read_value);    
-    read_value = read_value | 0x0001;
-    printk ("mt9v115_enter_standby: 0x0018 = %x ++1\n", read_value);  
-
-    
-    rc = isx006_i2c_write(0x3D, 0x0018, read_value, WORD_LEN);
-    if (rc < 0)
-        goto error;
-
-    for (i = 0; i < 100; i++)
-    {
-        rc = isx006_i2c_read(0x3D, 0x0018, &read_value, WORD_LEN);
-        if (rc < 0) {
-            pr_err("mt9v115_enter_standby: Read REG(0x%x) failed !\n", 0x0018);
-            goto error;
-        }
-
-        read_value = read_value >> 14;
-        read_value = read_value & 0x0001;
-        printk("mt9v115_enter_standby: polling standy mode i = %d\n", i);
-        if(read_value == 0x0001)
-            break;
-        
-        cam_msleep(20);
-    }
-    
-    printk("front_cam_enter_standby: Success \n");
-    return 0;
-
-error:
-    printk("front_cam_enter_standby: Failed !\n");
-    return rc;
-
-}
-/*MM-UW-EnableHWStandby-00-*/
 
 int isx006_polling_state_change(unsigned short saddr, enum isx006_device_status polling_status)
 {
@@ -1019,6 +1286,172 @@ int isx006_polling_state_change(unsigned short saddr, enum isx006_device_status 
 error:
     return rc;
 }
+
+//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00*{
+/*MM-UW-improve camera close performance-00+*/
+//FIH-SW-MM-MC-EnableHWStandby-00*{
+int isx006_enter_standby(void)
+{
+    int rc = 0; 
+    uint16_t status = 0xFFFF;
+    
+    rc = isx006_i2c_read_parallel(isx006_client->addr, 0x00FE, &status, BYTE_LEN);
+    printk("isx006_enter_standby: camera om status = %d!\n", status);
+
+    /* Set NSTANDBY from H to L */
+    rc = fih_set_gpio_output_value(isx006_info->sensor_pwd, "CAM_5M_STBYN", LOW);
+    if (rc < 0)
+        goto error;
+    
+    //cam_msleep(136);//T1 duration(max)
+
+    rc = isx006_check_om_nonAck(isx006_client->addr, "For change to PreSleep mode");
+        if (rc < 0) {
+        pr_err("isx006_enter_standby: isx006_check_om(For change to PreSleep mode) failed !\n");
+        goto error;
+    }
+
+    /* Here to check ststus is STS_SLEEP */
+    rc = isx006_polling_state_change(isx006_client->addr, STS_SLEEP);
+    if (rc < 0) {
+        pr_err("isx006_enter_standby: isx006_polling_state_change(STS_SLEEP) failed !\n");
+        goto error;
+    }
+
+    /*MM-UW-Standby with MCLK off-00+*/
+    rc = fih_disable_mclk(isx006_info->mclk, ISX006_MASTER_CLK_RATE);
+    if (rc < 0) {
+        goto error;
+    }
+    cam_msleep(5);
+    /*MM-UW-Standby with MCLK off-00-*/
+    
+    printk("isx006_enter_standby: Success !\n");
+    return rc;
+    
+error:
+    printk("isx006_enter_standby: Failed !\n");
+    return rc;
+}
+
+int isx006_exit_standby(enum Exit_Standby_Action act)
+{
+    int rc = 0;
+    uint16_t status = 0xFFFF;
+    
+    rc = isx006_i2c_read_parallel(isx006_client->addr, 0x00FE, &status, BYTE_LEN);
+    printk("isx006_exit_standby: camera om status = %d!\n", status);
+
+    switch (act) {
+    case ACT_MCLK_ON:
+        {
+            printk("isx006_exit_standby: case ACT_MCLK_ON \n");
+            rc = fih_enable_mclk(isx006_info->mclk, ISX006_MASTER_CLK_RATE);
+            if (rc < 0) {
+                goto error;
+            }
+            cam_msleep(50); /*MTD-MM-SL-EnhanceStandby-00*/ //5
+            printk("isx006_exit_standby: MCLK on success.\n");
+        }
+        break;
+            
+    case ACT_EXIT_STANDBY:
+        {
+            printk("isx006_exit_standby: case ACT_EXIT_STANDBY \n");
+            /* Set NSTANDBY from L to H */
+            rc = fih_set_gpio_output_value(isx006_info->sensor_pwd, "CAM_5M_STBYN", HIGH);
+            if (rc < 0)
+                goto error;
+            
+            //cam_msleep(150); /*MTD-MM-SL-EnhanceStandby-00*/ //20
+
+            rc = isx006_check_om_nonAck(isx006_client->addr, "For change to Active mode");
+                if (rc < 0) {
+                pr_err("isx006_exit_standby: isx006_check_om(For change to Active mode) failed !\n");
+                goto error;
+            }
+
+            /* Here to check ststus is STS_ACTIVE */
+            rc = isx006_polling_state_change(isx006_client->addr, STS_ACTIVE);
+            if (rc < 0) {
+                pr_err("isx006_exit_standby: isx006_polling_state_change(STS_ACTIVE) failed !\n");
+                goto error;
+            }
+            
+            rc = isx006_check_cm(isx006_client->addr, "For CM change to Monitor mode");
+            if (rc < 0) {
+                pr_err("isx006_exit_standby: isx006_check_cm(For CM change to Monitor mode) failed !\n");
+                goto error;
+            }
+            
+            printk("isx006_exit_standby: Exit success.\n");
+        }
+        break;
+            
+    default:
+        {
+            rc = -EINVAL;
+            printk("isx006_exit_standby: ERR: Invalid item !\n");
+            goto error;
+        }
+        break;
+    }    
+     
+    return rc;
+    
+error:
+    printk("isx006_exit_standby: Failed !\n");
+    return rc;
+}
+//FIH-SW-MM-MC-EnableHWStandby-00*}
+/*MM-UW-improve camera close performance-00-*/
+
+/*MM-UW-improve camera performance-00+*/
+/*MM-UW-EnableHWStandby-00+*/
+int front_cam_enter_standby(void)
+{
+    int rc = 0;
+    //int i = 0;
+    uint16_t read_value;
+
+    printk("front_cam_enter_standby: Enter \n");
+    rc = isx006_i2c_read(0x3D, 0x0018, &read_value, WORD_LEN);
+    if (rc < 0)
+        goto error;
+ 
+    read_value = read_value | 0x0001;
+    rc = isx006_i2c_write(0x3D, 0x0018, read_value, WORD_LEN);
+    if (rc < 0)
+        goto error;
+
+    /*for (i = 0; i < 100; i++)
+    {
+        rc = isx006_i2c_read(0x3D, 0x0018, &read_value, WORD_LEN);
+        if (rc < 0) {
+            pr_err("front_cam_enter_standby: Read REG(0x%x) failed !\n", 0x0018);
+            goto error;
+        }
+        read_value = read_value >> 14;
+        read_value = read_value & 0x0001;
+        printk("front_cam_enter_standby: polling standy mode i = %d\n", i);
+        if(read_value == 0x0001)
+            break;
+        
+        cam_msleep(10);
+    }*/
+    cam_msleep(35);
+    
+    printk("front_cam_enter_standby: Success \n");
+    return 0;
+
+error:
+    printk("front_cam_enter_standby: Failed !\n");
+    return rc;
+
+}
+/*MM-UW-EnableHWStandby-00-*/
+/*MM-UW-improve camera performance-00-*/
+//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00*}
 
 int isx006_set_camera_mode(enum isx006_mode new_mode, const char *tag)
 {
@@ -1123,15 +1556,6 @@ int isx006_OTP_setting(void)
     isx006_i2c_write_parallel(slave_add, 0x4A06, NORMB, WORD_LEN);
     isx006_i2c_write_parallel(slave_add, 0x4A08, AWB_PRER, WORD_LEN);
     isx006_i2c_write_parallel(slave_add, 0x4A0A, AWB_PREB, WORD_LEN);
-    
-    /* Lens Shading ----------------------------------------------*/
-    Shading_index = (uint16_t) ((OTP_2_value >> 20 ) & 0x0000000F);        
-    printk("isx006_OTP_setting:Shading_index = %d\n", Shading_index);    
-
-    /*MM-UW-fix unbalance warning-00+*/   /* case SHD_TYP */
-    isx006_i2c_write_table_parallel(slave_add, isx006_regs.reg_SHD_TYP,
-           isx006_regs.reg_SHD_TYP_size);  
-    /*MM-UW-fix unbalance warning-00-*/
 
     return rc;    
 }
@@ -1183,18 +1607,19 @@ int isx006_start_streaming(void)
         goto error;
     }
 
-    rc = isx006_check_cm(isx006_client->addr, "For CM change to Monitor mode");
-    if (rc < 0) {
-        pr_err("isx006_start_streaming: isx006_check_cm(For CM change to Monitor mode) failed !\n");
-        goto error;
-    }
-
     /* Here to check ststus is STS_ACTIVE */
     rc = isx006_polling_state_change(isx006_client->addr, STS_ACTIVE);
     if (rc < 0) {
         pr_err("isx006_start_streaming: isx006_polling_state_change(STS_ACTIVE) failed !\n");
         goto error;
     }
+
+    rc = isx006_check_cm(isx006_client->addr, "For CM change to Monitor mode");
+    if (rc < 0) {
+        pr_err("isx006_start_streaming: isx006_check_cm(For CM change to Monitor mode) failed !\n");
+        goto error;
+    }
+    
     printk("isx006_start_streaming: Start streaming success.\n");   
     return rc;
     
@@ -1282,6 +1707,7 @@ int isx006_AF_power(bool enable){
         rc = fih_regulator_enable(isx006_info->vreg_af_power, 3000000, "isx006_AF");
         if (rc < 0)
             goto error;
+        cam_msleep(15); 
     }
     else
     {
@@ -1292,6 +1718,7 @@ int isx006_AF_power(bool enable){
         rc = pmic_vreg_pull_down_switch(ON_CMD , PM_VREG_PDOWN_BT_ID);
         if (rc < 0)
             goto error;
+        cam_msleep(5); 
     }
     printk("isx006_AF_power(%d): Success.\n", enable);
     return rc;
@@ -1320,9 +1747,6 @@ int isx006_power_on(const struct msm_camera_sensor_info *data)
     {
         printk("isx006_power_on: STARTUP = 0 \n");     
 
-        /* <0>. initial PWPIN, NREST, NSTANDBY pin status */
-        /* Init power enable pins */
-
         /* I/O & Analog power up */    
         rc = fih_set_gpio_output_value(isx006_info->vreg_v1p2, "EN_VREG_CAM_VDD_V1P2", HIGH);
         if (rc < 0)
@@ -1343,13 +1767,13 @@ int isx006_power_on(const struct msm_camera_sensor_info *data)
         if (rc < 0)
             goto error;
 
-        cam_msleep(5);    
+        cam_msleep(10);    
 
         /*front camera enter standby*/
         /*MM-UW-EnableHWStandby-00+*/
         rc = front_cam_enter_standby();  
         if (rc < 0)
-            goto error;
+            printk("isx006_power_on: front_cam_enter_standby() failed !\n");
         /*MM-UW-EnableHWStandby-00-*/
 
         /* Set NREST from L to H */ 
@@ -1363,7 +1787,7 @@ int isx006_power_on(const struct msm_camera_sensor_info *data)
     {  
         printk("isx006_power_on: STARTUP = 1 \n");
 
-        rc = isx006_exit_standby();
+        rc = isx006_exit_standby(ACT_MCLK_ON);//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00*
         if (rc < 0)
             goto error;
     }
@@ -1450,7 +1874,8 @@ int isx006_suspend(struct platform_device *pdev, pm_message_t state)
     }
     cam_msleep(5);
     /*MM-UW-Standby with MCLK off-00-*/
-    
+
+    bMainCameraIsReset = false;//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*
     STARTUP  = 0;
     AF_full_range = 0;
     
@@ -1873,6 +2298,12 @@ error:
 /* FIH-SW3-MM-UW-write OTP setting-00-*/
 /* FIH-SW3-MM-UW-set AF range-00-*/ 
 
+/* FIH-SW3-MM-UW-flash tuning-00+*/
+/* FIH-SW3-MM-UW-fix AF not work-00+*/
+/* FIH-SW3-MM-UW-fix capture fail-00+*/
+/* FIH-SW3-MM-UW-fix night capture fail-00+*/
+/* FIH-SW3-MM-UW-cancel AF-00+*/
+/*MM-UW-fix high AF power-00+*/
 /*MM-UW-fix auto flash fail in DP 00+*/
 //FIH-SW-MM-MC-ImplementTouchFocusAndCAF-00*{
 /*MM-UW-add auto flash 02+*/
@@ -1882,74 +2313,88 @@ static long isx006_set_AF(int af_mode)
 {
     int rc = 0;
     int led_mode = 0;
-    uint16_t read_value = 0;
     int32_t AE_value = 0;
     int32_t AE_target = 0x0000FD52 - 0x0000FFFF - 1;
 
-    printk("isx006_set_AF(%d): ----------E\n", af_mode);
+    if(af_mode != AF_MODE_POLLING)
+        printk("isx006_set_AF(%d): ----------E\n", af_mode);
 
     switch (af_mode) {
     case AF_MODE_NORMAL:
     case AF_MODE_AUTO:
-        /*get current flash mode*/
-        led_mode = msm_soc_get_led_mode();
-        printk("isx006_set_AF: led_mode = %d !\n", led_mode);
-
-        /*get current environment AE value*/
+        torch_enable = false;
+        LowLight = false;
+        /*get current environment AE value----------------------------------------------------*/
         if (slave_add == isx006_client->addr)
         {
-            rc = isx006_i2c_read_parallel(isx006_client->addr, 0x0284, &read_value, WORD_LEN);   
+            rc = isx006_i2c_read_parallel(isx006_client->addr, 0x0288, &AESCL_AUTO, WORD_LEN);   
         }else{
-            rc = isx006_i2c_read(isx006_client->addr, 0x0284, &read_value, WORD_LEN);
+            rc = isx006_i2c_read(isx006_client->addr, 0x0288, &AESCL_AUTO, WORD_LEN);
+        }  
+
+        if (slave_add == isx006_client->addr)
+        {
+            rc = isx006_i2c_read_parallel(isx006_client->addr, 0x0284, &ERRSCL_AUTO, WORD_LEN);   
+        }else{
+            rc = isx006_i2c_read(isx006_client->addr, 0x0284, &ERRSCL_AUTO, WORD_LEN);
         }  
         if(rc < 0) {
             printk("isx006_set_AF: read AE value failed !\n");
             goto error;
         }
 
-        if( read_value >= 0x00008000 )
-            AE_value = (read_value - 0x0000FFFF -1);
+        if( ERRSCL_AUTO >= 0x00008000 )
+            AE_value = (ERRSCL_AUTO - 0x0000FFFF -1);
         else
-            AE_value = (read_value & 0x0000FFFF);
+            AE_value = (ERRSCL_AUTO & 0x0000FFFF);
+
+        if(AE_value <= AE_target)
+        {
+            LowLight = true;
+            printk("isx006_set_AF: low light condition !\n");
+        }
+        /*--------------------------------------------------------------------------------*/
+        
+        /*get current flash mode*/
+        led_mode = msm_soc_get_led_mode();
+        printk("isx006_set_AF: led_mode = %d !\n", led_mode);  
 
         if( led_mode == LED_MODE_RED_EYE || led_mode == LED_MODE_AUTO)
         {  
-            if(AE_value <= AE_target)
-            {
+            if(LowLight)
+                torch_enable = true;
+        } 
+        
+        if( led_mode == LED_MODE_ON || torch_enable)
+        {
                 printk("isx006_set_AF: flash enable!\n");
                 rc = msm_soc_torch_trigger();
-                if (rc < 0) {
+                if (rc < 0) 
                     printk("isx006_set_AF: msm_soc_torch_trigger() failed !\n");
-                    goto error;
+                
+                /* Set LED & AE/AWB Control----------------------------*/
+                rc = isx006_i2c_write_parallel(isx006_client->addr, 0x0069, 0x0D, BYTE_LEN);
+                if (rc < 0) {
+                    pr_err("isx006_set_AF: saddr(0x%x): Write REG(0x%x) failed !\n",isx006_client->addr, 0x0069);
                 }
-            }
-        }    
-        
+
+                rc = isx006_i2c_write_parallel(isx006_client->addr, 0x02C4, 0x0010, WORD_LEN);
+                if (rc < 0) {
+                    pr_err("isx006_set_AF: saddr(0x%x): Write REG(0x%x) failed !\n",isx006_client->addr, 0x02C4);
+                }
+
+                rc = isx006_i2c_write_parallel(isx006_client->addr, 0x027D, 0x05, BYTE_LEN);
+                if (rc < 0) {
+                    pr_err("isx006_set_AF: saddr(0x%x): Write REG(0x%x) failed !\n",isx006_client->addr, 0x027D);
+                }
+        }
+
         rc = isx006_set_monitor_af_mode(MONI_AF_SAF, "MONI_AF_SAF");
         if(rc < 0)
             goto error;
 
-        rc = isx006_check_AF(isx006_client->addr, "check AF status");
-        if (rc < 0) {
-            pr_err("isx006_set_AF: isx006_check_AF(check AF status) failed !\n");
-        }
-        
-        if( led_mode == LED_MODE_RED_EYE || led_mode == LED_MODE_AUTO)
-        {  
-            if(AE_value <= AE_target)
-            {
-                printk("isx006_set_AF: flash off!\n");
-                rc = msm_soc_torch_flash_off();
-                if (rc < 0)
-                {
-                    printk("isx006_set_AF: msm_soc_torch_flash_off() failed !\n");
-                    goto error;
-                }
-                cam_msleep(50); 
-            }
-        }    
         break;
-        
+
     case AF_MODE_INFINITY:
     case AF_MODE_MACRO:
         rc = isx006_set_AF_Range(af_mode);        
@@ -1974,14 +2419,27 @@ static long isx006_set_AF(int af_mode)
 
     case AF_MODE_OFF:
         /*MM-UW-reduce knocking noise-00+*/
-        rc = isx006_set_monitor_af_mode(MONI_AF_MF, "MONI_AF_OFF");
+        rc = isx006_set_monitor_af_mode(MONI_AF_MF, "MONI_AF_MF");
         if(rc < 0)
             goto error;
-        
-        rc = isx006_MF_position(isx006_client->addr, AF_A_value);
+
+        rc = isx006_MF_position(isx006_client->addr, 0);
         if (rc < 0)
-            printk ("isx006_sensor_release: isx006_check_MF fail.\n"); 
+            printk ("isx006_set_AF: isx006_check_MF fail.\n");
         /*MM-UW-reduce knocking noise-00-*/
+        break;
+
+    case AF_MODE_POLLING:
+        rc = isx006_check_AF(isx006_client->addr, "check AF polling status");
+        if(rc < 0)
+            goto error;
+        break;
+
+    case AF_MODE_GET_STATE:
+        rc = isx006_get_AF_state(isx006_client->addr, "check AF result");
+        if(rc < 0)
+            goto error;
+   
         break;
 
     default:
@@ -1989,8 +2447,10 @@ static long isx006_set_AF(int af_mode)
         printk("isx006_set_AF: ERR: Mode = %d, This is invalid !\n", af_mode);
         break;
     }
+    current_af_mode = af_mode;
 
     printk("isx006_set_AF: ----------X \n");
+    
 error:
     return rc;
 }
@@ -1999,9 +2459,15 @@ error:
 /*MM-UW-add auto flash 02-*/
 //FIH-SW-MM-MC-ImplementTouchFocusAndCAF-00*}
 /*MM-UW-fix auto flash fail in DP 00-*/
+/*MM-UW-fix high AF power-00-*/
+/* FIH-SW3-MM-UW-fix capture fail-00-*/
 
 /* FIH-SW3-MM-UW-add reduce_red_eye-00-*/
 /*MM-UW-add auto flash 00-*/
+/* FIH-SW3-MM-UW-cancel AF-00-*/
+/* FIH-SW3-MM-UW-fix night capture fail-00-*/
+/* FIH-SW3-MM-UW-fix AF not work-00-*/
+/* FIH-SW3-MM-UW-flash tuning-00-*/
 
 /* FIH-SW3-MM-SL-SetFPSForRecordMMS-00*{ */
 /* FIH-SW3-MM-URI-Set FPS-00+ */
@@ -2228,21 +2694,22 @@ static long isx006_set_AE_meter(int meter)
 #endif
 /*MM-UW-set metering 00-*/
 
+/* FIH-SW3-MM-UW-fix night capture fail-00+*/
+/* FIH-SW3-MM-UW-fix focus ramge-00+*/
 /* FIH-SW3-MM-UW-set AF range-00+*/ 
 #ifdef CONFIG_FIH_SCENE
 static long isx006_set_scene(int scene) 
 {
     long rc = 0;
-    
+
+    isx006_scene = scene;
+
     switch (scene) {
     case SCENE_AUTO:
         printk ("isx006_set_scene: SCENE_AUTO\n");
-        if(isx006_scene != SCENE_AUTO)
-        {
-            rc = isx006_set_AF_Range(AF_MODE_AUTO);
-            if(rc < 0)
-                goto error;
-        }
+        rc = isx006_set_AF_Range(AF_MODE_AUTO);
+        if(rc < 0)
+            goto error;
 
         rc = isx006_i2c_write_table_parallel(isx006_client->addr, isx006_regs.reg_auto_scene,
                            isx006_regs.reg_auto_scene_size);
@@ -2262,12 +2729,12 @@ static long isx006_set_scene(int scene)
                            isx006_regs.reg_auto_scene_size);
         if(rc < 0)
             goto error;
-        
+
         break;
         
     case SCENE_NIGHT:
         printk ("isx006_set_scene: SCENE_NIGHT\n");
-        rc = isx006_set_AF_Range(AF_MODE_AUTO);
+        rc = isx006_set_AF_Range(AF_MODE_INFINITY);
         if(rc < 0)
             goto error;
 
@@ -2276,6 +2743,7 @@ static long isx006_set_scene(int scene)
         if(rc < 0)
             goto error;
         
+        cam_msleep(333);//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00*
         break;
         
     case SCENE_SPORT:
@@ -2293,10 +2761,10 @@ static long isx006_set_scene(int scene)
         
     //FIH-SW-MM-MC-ImplementTouchFocusAndCAF-00+{
     case SCENE_LANDSCAPE:
+        printk ("isx006_set_scene: SCENE_LANDSCAPE\n");
         rc = isx006_set_AF_Range(AF_MODE_INFINITY);
         if(rc < 0)
             goto error;
-        printk ("isx006_set_scene: SCENE_LANDSCAPE\n");
         rc = isx006_i2c_write_table_parallel(isx006_client->addr, isx006_regs.reg_landscape,
                            isx006_regs.reg_landscape_size);
         if(rc < 0)
@@ -2322,7 +2790,6 @@ static long isx006_set_scene(int scene)
         printk ("isx006_set_scene: wrong value setting\n");
         return -EINVAL;
     }
-    isx006_scene = scene;
     return rc;
 
 error:
@@ -2333,6 +2800,8 @@ error:
 /* FIH-SW3-MM-UW-set AF range-00-*/ 
 /* FIH-SW3-MM-URI-Add WB-00- */
 /* FIH-SW3-MM-SL-PatchForCameraFeature-01*} */
+/* FIH-SW3-MM-UW-fix focus ramge-00-*/
+/* FIH-SW3-MM-UW-fix night capture fail-00-*/
 
 static int32_t isx006_write_exp_gain(uint16_t gain, uint32_t line)
 {
@@ -2429,10 +2898,16 @@ error:
 /* FIH-SW3-MM-UW-set AF range-00-*/ 
 //FIH-SW-MM-MC-ReduceMainCameraLaunchTime-00+}
 
+/* FIH-SW3-MM-UW-flash tuning-02+*/
+/* FIH-SW3-MM-UW-flash tuning-01+*/
+/* FIH-SW3-MM-UW-flash tuning-00+*/
+/* FIH-SW3-MM-UW-fix capture fail-00+*/
+/* FIH-SW3-MM-UW-fix night capture fail-00+*/
 //FIH-SW-MM-MC-ReduceMainCameraLaunchTime-00*{
 static int32_t isx006_sensor_setting(int update_type, int rt)
 {
     int32_t rc = 0;
+    int led_mode = 0;
     
     struct msm_camera_csi_params isx006_csi_params;
 
@@ -2442,7 +2917,7 @@ static int32_t isx006_sensor_setting(int update_type, int rt)
         {
             printk("isx006_sensor_setting: case REG_INIT \n");
             CameraMode = 0;/*MM-UW-support AF 01+*/
-            CSI_CONFIG = 0;
+            CSI_CONFIG = false;
 
             bRegInitDone = false;
             reg_init_thread = kthread_create(isx006_reg_init_task, NULL, "isx006_thread");
@@ -2457,9 +2932,34 @@ static int32_t isx006_sensor_setting(int update_type, int rt)
         
     case UPDATE_PERIODIC:
 
-       if ((rt == RES_PREVIEW) && (CSI_CONFIG == 1)) 
+       if ((rt == RES_PREVIEW) && (CSI_CONFIG == true)) 
         {
             printk("isx006_sensor_setting: case UPDATE_PERIODIC <RES_PREVIEW + CSI(1)>\n");
+
+            /*get current flash mode*/
+            led_mode = msm_soc_get_led_mode();
+            printk("isx006_sensor_setting: led_mode = %d !\n", led_mode);  
+            
+            if( led_mode == LED_MODE_RED_EYE || led_mode == LED_MODE_AUTO)
+            {  
+                if(LowLight)
+                {
+                    rc = isx006_i2c_write_parallel(isx006_client->addr, 0x0069, 0x00, BYTE_LEN);
+                    rc = isx006_i2c_write_parallel(isx006_client->addr, 0x02C4, 0x0000, WORD_LEN);
+                    rc = isx006_i2c_write_parallel(isx006_client->addr, 0x027D, 0x00, BYTE_LEN);
+                    rc = isx006_i2c_write_parallel(isx006_client->addr, 0x4066, 0x0A, BYTE_LEN);
+                    rc = isx006_i2c_write_parallel(isx006_client->addr, 0x402F, 0x0F, BYTE_LEN);
+                    rc = isx006_i2c_write_parallel(isx006_client->addr, 0x404C, 0x20, BYTE_LEN);
+                    rc = isx006_i2c_write_parallel(isx006_client->addr, 0x400B, 0x1A, BYTE_LEN);
+                    if (rc < 0) {
+                        pr_err("isx006_set_AF: Restore normal settings fail !\n");
+                    }
+                        
+                }
+            }
+            flash_enable = false;
+            torch_enable = false;
+            
             /* Change mode from Capture to monitor----------------------------*/
             rc = isx006_set_camera_mode(MONITOR_MODE, "MONITOR_MODE");
             if (rc < 0) {
@@ -2475,7 +2975,7 @@ static int32_t isx006_sensor_setting(int update_type, int rt)
 
         }
         
-        if ((rt == RES_PREVIEW) && (CSI_CONFIG == 0)) 
+        if ((rt == RES_PREVIEW) && (CSI_CONFIG == false)) 
         {
             printk("isx006_sensor_setting: case UPDATE_PERIODIC <RES_PREVIEW + CSI(0)>\n");
 
@@ -2484,7 +2984,7 @@ static int32_t isx006_sensor_setting(int update_type, int rt)
 
             //cam_msleep(50);//Waitting for streaming stop.
 
-            if (CSI_CONFIG == 0) {
+            if (CSI_CONFIG == false) {
                 printk("isx006_sensor_setting: CSI_CONFIG  = 0, Pre CSI config.\n");
                 msm_camio_vfe_clk_rate_set(192000000);
                 isx006_csi_params.lane_cnt = 2;
@@ -2495,7 +2995,7 @@ static int32_t isx006_sensor_setting(int update_type, int rt)
                 rc = msm_camio_csi_config(&isx006_csi_params);
 
                 cam_msleep(50);//cam_msleep(200)//Waitting for csi config done.
-                CSI_CONFIG = 1;
+                CSI_CONFIG = true;
             }
 
             /* Sensor start streaming */
@@ -2504,11 +3004,23 @@ static int32_t isx006_sensor_setting(int update_type, int rt)
                 printk("isx006_sensor_setting: Trigger for reg init and start streaming.\n");
                 wake_up_process(reg_init_thread);//Trigger for reg init and start streaming.
             }
+            else//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+{
+            {
+                rc = isx006_exit_standby(ACT_EXIT_STANDBY);
+                if (rc < 0)
+                    return rc;
+            }//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+}
         }
 
         if (rt == RES_CAPTURE)
         {
             printk("isx006_sensor_setting: case UPDATE_PERIODIC <RES_CAPTURE>\n");
+
+            if(isx006_scene == SCENE_NIGHT)
+                cam_msleep(400);//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00*
+            else
+                cam_msleep(50);  
+            
             /* Change mode from Monitor to capture*/
             rc = isx006_set_camera_mode(CAPTURE_MODE, "CAPTURE_MODE");
             if (rc < 0) {
@@ -2522,7 +3034,13 @@ static int32_t isx006_sensor_setting(int update_type, int rt)
                 return rc;
             }
             //cam_msleep(100);//cam_msleep(50);//Waitting for invalid frames.
-           
+            //Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+{
+            if(isx006_scene == SCENE_NIGHT)
+                //cam_msleep(333);
+                cam_msleep(400);
+            else
+                cam_msleep(50); 
+            //Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+}
         }
         break;
     default:
@@ -2534,6 +3052,11 @@ static int32_t isx006_sensor_setting(int update_type, int rt)
 }
 //FIH-SW-MM-MC-ReduceMainCameraLaunchTime-00*}
 /* FIH-SW3-MM-UW-performance tuning-00-*/
+/* FIH-SW3-MM-UW-fix night capture fail-00-*/
+/* FIH-SW3-MM-UW-fix capture fail-00-*/
+/* FIH-SW3-MM-UW-flash tuning-00-*/
+/* FIH-SW3-MM-UW-flash tuning-01-*/
+/* FIH-SW3-MM-UW-flash tuning-02-*/
 
 static int32_t isx006_video_config(int mode)
 {
@@ -2562,6 +3085,8 @@ error:
     return rc;
 }
 
+/* FIH-SW3-MM-UW-flash tuning-02+*/
+/* FIH-SW3-MM-UW-flash tuning-00+*/
 /*MM-UW-fix auto flash fail in DP 00+*/
 /*MM-UW-add auto flash 03+*/
 /*MM-UW-add auto flash 02+*/
@@ -2577,29 +3102,41 @@ static int32_t isx006_snapshot_config(int mode)
     int32_t AE_target = 0x0000FD52 - 0x0000FFFF - 1;
        
     printk("isx006_snapshot_config---------------E\n");
+    led_mode = msm_soc_get_led_mode();
 
     /*get current flash mode*/
-    led_mode = msm_soc_get_led_mode();
-    printk("isx006_snapshot_config: led_mode = %d !\n", led_mode);
-
-    /*get current environment AE value*/
-    if (slave_add == isx006_client->addr)
+    if(torch_enable)
     {
-        rc = isx006_i2c_read_parallel(isx006_client->addr, 0x0284, &read_value, WORD_LEN);   
-    }else{
-        rc = isx006_i2c_read(isx006_client->addr, 0x0284, &read_value, WORD_LEN);
+        printk("isx006_snapshot_config--torch & flash enable\n");
+        flash_enable = true;
     }
-    if(rc < 0) {
-        printk("isx006_snapshot_config: read AE value failed !\n");
-        goto error;
-    }
-
-    printk("isx006_snapshot_config: AE read_value = 0x%x !\n", read_value);
-    if( read_value >= 0x00008000 )
-          AE_value = (read_value - 0x0000FFFF -1);
     else
-          AE_value = (read_value & 0x0000FFFF);
-    printk("isx006_snapshot_config: AE read = %d , AE_target = %d!\n", AE_value, AE_target);
+    {
+        if(LowLight)
+        {
+            /*get current environment AE value*/
+            if (slave_add == isx006_client->addr)
+            {
+                rc = isx006_i2c_read_parallel(isx006_client->addr, 0x0284, &read_value, WORD_LEN);   
+            }else{
+                rc = isx006_i2c_read(isx006_client->addr, 0x0284, &read_value, WORD_LEN);
+            }
+            if(rc < 0) {
+                printk("isx006_snapshot_config: read AE value failed !\n");
+                goto error;
+            }
+
+            printk("isx006_snapshot_config: AE read_value = 0x%x !\n", read_value);
+            if( read_value >= 0x00008000 )
+                  AE_value = (read_value - 0x0000FFFF -1);
+            else
+                  AE_value = (read_value & 0x0000FFFF);
+            printk("isx006_snapshot_config: AE read = %d , AE_target = %d!\n", AE_value, AE_target);
+
+            if(AE_value <= AE_target)
+                flash_enable = true;
+        }
+    }
     
     /*change sensor resolution if needed */
     if (isx006_ctrl->curr_res != isx006_ctrl->pict_res) {
@@ -2621,7 +3158,7 @@ static int32_t isx006_snapshot_config(int mode)
     if(led_mode == LED_MODE_RED_EYE)
     {
         printk("isx006_snapshot_config: led_mode = LED_MODE_RED_EYE\n");
-        if(AE_value <= AE_target){
+        if(flash_enable){
             rc = msm_soc_flash_trigger();
             if (rc < 0)
                 printk("isx006_snapshot_config: msm_soc_flash_trigger 1 failed !\n");
@@ -2641,7 +3178,7 @@ static int32_t isx006_snapshot_config(int mode)
     else if(led_mode == LED_MODE_AUTO)
     {
         printk("isx006_snapshot_config: led_mode = LED_MODE_AUTO\n");
-        if(AE_value <= AE_target){
+        if(flash_enable){
             rc = msm_soc_flash_trigger();
             if (rc < 0)
                 printk("isx006_snapshot_config: msm_soc_flash_trigger failed !\n");
@@ -2653,13 +3190,13 @@ static int32_t isx006_snapshot_config(int mode)
         rc = msm_soc_flash_trigger();
         if (rc < 0)
             printk("isx006_snapshot_config: msm_soc_flash_trigger failed!\n");
-        
     }
     else
     {
         printk("isx006_snapshot_config: led_mode == LED_MODE_OFF\n");
     }
     //SW2D2-MM-MC-Camera-BringUpLm3561ForFlashLed-00+}
+
     printk("isx006_snapshot_config---------------X\n");
     return rc;
     
@@ -2672,6 +3209,8 @@ error:
 /*MM-UW-add auto flash 02-*/
 /*MM-UW-add auto flash 03-*/
 /*MM-UW-fix auto flash fail in DP 00-*/
+/* FIH-SW3-MM-UW-flash tuning-00-*/
+/* FIH-SW3-MM-UW-flash tuning-02-*/
 
 static int32_t isx006_raw_snapshot_config(int mode)
 {
@@ -2713,39 +3252,87 @@ static int32_t isx006_set_sensor_mode(int mode,
         printk("isx006_set_sensor_mode: SENSOR_RESET_MODE---------------E\n");
         //01. Re-set flag variables.
         STARTUP = 0;
-        CSI_CONFIG = 0;
+        //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+{
+        bMainCameraIsReset = true;//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*
 
-        //02. Power off.
+        //02. Re-config front camera pin.
+        rc = fih_set_gpio_output_value(isx006_info->sensor_f_pwd, "CAM_VGA_STBY" , LOW);//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+
+        if (rc < 0) {
+            printk("isx006_set_sensor_mode: Re-config front camera CAM_VGA_STBY pin for reset failed !\n");
+            return rc;
+        }        
+        //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+}
+        //Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+{
+        if (pdev_isx006 != NULL)
+        {
+            msm_camio_disable(pdev_isx006);
+            cam_msleep(20);//Wait camio disable done.
+            printk("isx006_set_sensor_mode: msm_camio_disable() \n");
+        }
+        //Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+}
+
+        //03. Power off.
         rc = isx006_power_off();
         if (rc < 0) {
             printk("isx006_set_sensor_mode: isx006_power_off for reset failed !\n");
             return rc;
         }
-        cam_msleep(50);//Wait power off done.
+        //Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00*{
+        cam_msleep(200);//Wait power off done.
+        //Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+*}
 
-        //03. Power on.
+        //04. Power on.
         rc = isx006_power_on(isx006_info);
         if (rc < 0) {
             printk("isx006_set_sensor_mode: isx006_power_on for reset failed !\n");
             return rc;
         }
 
-        //04. Create thread for init reg.
+        //05. Create thread for init reg.
         rc = isx006_sensor_setting(REG_INIT, RES_PREVIEW);
         if (rc < 0) {
             printk("isx006_set_sensor_mode: Create task thread for reset failed !\n");
             return rc;
         }
 
-        //05. Config CSI and wake up task thread.
+        //Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+{
+        if (pdev_isx006 != NULL)
+        {
+            msm_camio_enable(pdev_isx006);
+            cam_msleep(20);//Wait camio disable done.
+            printk("isx006_set_sensor_mode: msm_camio_enable() \n");
+        }
+        //Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+}
+
+        //06. Config CSI and wake up task thread.
         rc = isx006_sensor_setting(UPDATE_PERIODIC, RES_PREVIEW);
         if (rc < 0) {
             printk("isx006_set_sensor_mode: Config CSI and wake up task thread for reset failed !\n");
             return rc;
         }
 
+        //FIH-SW-MM-MC-ModifiedSensorResetSquence-00+{
+        /* Waitting REG init thread finish init task */
+        if ((reg_init_thread != NULL) && (bRegInitDone != true))
+        {
+            int i = 0;
+            for (i = 0; i < 100; i++)
+            {
+                if (bRegInitDone == true)
+                    break;
+                cam_msleep(20);
+            }
+            
+            if (bRegInitDone != true)
+                printk("isx006_set_sensor_mode: Waiting for REG init done failed, retry count = %d ! \n", i);
+            else
+                printk("isx006_set_sensor_mode: Waiting for REG init done success, retry count = %d. \n", i);
+        }
+        reg_init_thread = NULL;
+        //FIH-SW-MM-MC-ModifiedSensorResetSquence-00+}    
+
         isx006_ctrl->curr_res = isx006_ctrl->prev_res;
-        isx006_ctrl->sensormode = 0;
+        isx006_ctrl->sensormode = 0;        
         printk("isx006_set_sensor_mode: SENSOR_RESET_MODE---------------X\n");      
         break;
     //FIH-SW-MM-MC-ImplementSensorReSetForIsx006-00*}
@@ -2884,24 +3471,48 @@ int isx006_sensor_open_init(const struct msm_camera_sensor_info *data)
     snap_frame_length_lines = 2592;
     snap_line_length_pck = 1944;
 
+    //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*{
+    // Check front camera state before power on main camera.
+    if (bFrontCameraIsReset == true)
+    {
+        printk("isx006_sensor_open_init: Re-Set for FRONT_SENSOR_RESET\n");
+        STARTUP = 0;
+        bFrontCameraIsReset = false;
+    }
+    //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*}
+
     /* Power on and enable mclk */
     rc = isx006_power_on(data);
     if (rc < 0) {
         printk("isx006_sensor_open_init: isx006_power_on() failed !\n");
         goto init_fail;
     }
-    
+
+    //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+{
     //FIH-SW-MM-MC-ImplementSensorReSetForIsx006-02+{
     //Read chip ID to check that I2C bus is normal.
-    rc = isx006_i2c_read_parallel(slave_add, ISX006_CID_REG, &chipid, WORD_LEN);
+    if (STARTUP == 0)
+        rc = isx006_i2c_read_parallel(slave_add, ISX006_CID_REG, &chipid, WORD_LEN);
+    else
+        rc = isx006_i2c_read_parallel(isx006_client->addr, ISX006_CID_REG, &chipid, WORD_LEN);
+    //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+}
     if (rc < 0)
     {
         printk ("isx006_sensor_open_init: I2C bus is abnormal. SENSOR_RESET_MODE ----> E\n");
         //01. Re-set flag variables.
         STARTUP = 0;
-        CSI_CONFIG = 0;
+        //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+{
+        bMainCameraIsReset = true;//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01*
 
-        //02. Power off.
+        //02 Re-config front camera pin.
+        rc = fih_set_gpio_output_value(isx006_info->sensor_f_pwd, "CAM_VGA_STBY" , LOW);
+        if (rc < 0) {
+            printk("isx006_sensor_open_init: Re-config front camera CAM_VGA_STBY pin for reset failed !\n");
+            return rc;
+        }  
+        //FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+}
+
+        //03. Power off.
         rc = isx006_power_off();
         if (rc < 0) {
             printk("isx006_sensor_open_init: isx006_power_off for reset failed !\n");
@@ -2909,7 +3520,7 @@ int isx006_sensor_open_init(const struct msm_camera_sensor_info *data)
         }
         cam_msleep(50);//Wait power off done.
 
-        //03. Power on.
+        //04. Power on.
         rc = isx006_power_on(isx006_info);
         if (rc < 0) {
             printk("isx006_sensor_open_init: isx006_power_on for reset failed !\n");
@@ -3017,8 +3628,9 @@ int isx006_sensor_config(void __user *argp)
                 sizeof(struct sensor_cfg_data)))
         return -EFAULT;
     mutex_lock(&isx006_mut);
-    
-    printk("isx006_sensor_config: cfgtype = %d\n", cdata.cfgtype);
+
+    if(cdata.cfgtype != CFG_SET_AUTO_FOCUS)
+        printk("isx006_sensor_config: cfgtype = %d\n", cdata.cfgtype);
 
     //FIH-SW-MM-MC-ReduceMainCameraLaunchTime-00+{
     /* Waitting REG init thread finish init task */
@@ -3029,7 +3641,6 @@ int isx006_sensor_config(void __user *argp)
             int i = 0;
             for (i = 0; i < 200; i++)
             {
-                printk("isx006_sensor_config: Waiting for REG init done, retry count = %d. \n", i);
                 cam_msleep(10);
                 
                 if (bRegInitDone == true)
@@ -3037,9 +3648,9 @@ int isx006_sensor_config(void __user *argp)
             }
             
             if (bRegInitDone != true)
-                printk("isx006_sensor_config: Waiting for REG init done failed !\n");
+                printk("isx006_sensor_config: Waiting for REG init done failed, retry count = %d! \n", i);
             else
-                printk("isx006_sensor_config: Waiting for REG init done success.\n");
+                printk("isx006_sensor_config: Waiting for REG init done success, retry count = %d. \n", i);
         }
         reg_init_thread = NULL;
     }
@@ -3192,6 +3803,7 @@ int isx006_sensor_config(void __user *argp)
     return rc;
 }
 
+/* FIH-SW3-MM-UW-fix AF not work-00+*/
 /* FIH-SW3-MM-UW-AF power-00+*/
 /* FIH-SW3-MM-UW-performance tune-00+*/
 static int isx006_sensor_release(void)
@@ -3201,13 +3813,9 @@ static int isx006_sensor_release(void)
     mutex_lock(&isx006_mut);
 
     /*MM-UW-reduce knocking noise-00+*/
-    rc = isx006_set_monitor_af_mode(MONI_AF_MF, "MONI_AF_OFF");
+    rc = isx006_set_monitor_af_mode(MONI_AF_OFF, "MONI_AF_OFF");
     if(rc < 0)
-        printk ("isx006_sensor_release: Set MONI_AF_MF fail.\n"); 
-    
-    rc = isx006_MF_position(isx006_client->addr, AF_A_value);
-    if (rc < 0)
-        printk ("isx006_sensor_release: isx006_check_MF fail.\n"); 
+        printk ("isx006_sensor_release: Set MONI_AF_OFF fail.\n"); 
     /*MM-UW-reduce knocking noise-00-*/
     
     //FIH-SW-MM-MC-ReduceMainCameraLaunchTime-00+{
@@ -3236,7 +3844,7 @@ static int isx006_sensor_release(void)
  
     kfree(isx006_ctrl);
     isx006_ctrl = NULL;
-    CSI_CONFIG = 0;
+    CSI_CONFIG = false;
  
     printk("isx006_sensor_release: Completed.\n");
     mutex_unlock(&isx006_mut);
@@ -3245,6 +3853,7 @@ static int isx006_sensor_release(void)
 }
 /* FIH-SW3-MM-UW-performance tune-00-*/
 /* FIH-SW3-MM-UW-AF power-00-*/
+/* FIH-SW3-MM-UW-fix AF not work-00-*/
 
 static int isx006_sensor_probe(const struct msm_camera_sensor_info *info,
         struct msm_sensor_ctrl *s)
@@ -3287,6 +3896,7 @@ probe_fail_1:
 static int __devinit isx006_probe(struct platform_device *pdev)
 {
     printk("isx006_probe: +++++++++++++++\n");
+    pdev_isx006 = pdev;//Div2-SW6-MM-MC-EnhanceStabilityForMainCamera-00+
     
     return msm_camera_drv_start(pdev, isx006_sensor_probe);
 }

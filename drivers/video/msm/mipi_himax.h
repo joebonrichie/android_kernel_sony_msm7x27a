@@ -38,11 +38,11 @@
 #endif
 /* FIH-SW-VH-DISPLAY-09+*] */
 
-/* FIH-SW-MM-VH-DISPLAY-28+[ */
+/* FIH-SW-MM-VH-DISPLAY-33*[ */
 enum {
-	
 	LCM_ID_DA_MES_CMI_DP = 0x0A,
-	LCM_ID_DA_MES_AUO = 0x0B,
+	LCM_ID_DA_MES_AUO_0B = 0x0B,
+	LCM_ID_DA_MES_AUO_0D = 0x0D,
 	LCM_ID_DA_MES_CMI_TP = 0x0C,
 	LCM_ID_DA_JLO_AUO = 0x42,
 	LCM_ID_DA_JLO_CMI = 0x43,
@@ -51,7 +51,7 @@ enum {
 enum{
 	LCM_ID_DB_MES_AUO = 0x80,
 };
-/* FIH-SW-MM-VH-DISPLAY-28+] */
+/* FIH-SW-MM-VH-DISPLAY-33*] */
 
 int mipi_himax_device_register(struct msm_panel_info *pinfo,
 					u32 channel, u32 panel);

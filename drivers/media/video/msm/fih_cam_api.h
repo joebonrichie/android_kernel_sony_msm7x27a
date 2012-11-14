@@ -41,6 +41,11 @@ struct fih_i2c_reg_conf {
 	unsigned short mdelay_time;
 };
 
+//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01+{
+extern bool bMainCameraIsReset;
+extern bool bFrontCameraIsReset;
+//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-01+}
+
 /*===========================================================================
  * FUNCTION    - fih_enable_mclk -
  *

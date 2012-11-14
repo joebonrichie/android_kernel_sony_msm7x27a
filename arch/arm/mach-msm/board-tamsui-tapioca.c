@@ -1666,7 +1666,7 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 #define MSM_PMEM_MDP_SIZE       0x1500000/*MTD-SW-MM-CL-PMEMusage-00* //0x2300000 */
 #define MSM7x25A_MSM_PMEM_MDP_SIZE       0x1500000
 
-#define MSM_PMEM_ADSP_SIZE      0x1100000//0x1100000  /*MTD-SW-MM-SL-CustmizeAdspSize-01 */
+#define MSM_PMEM_ADSP_SIZE      0xD00000//0x1100000  /*MTD-SW-MM-SL-CustmizeAdspSize-02 */
 #define MSM7x25A_MSM_PMEM_ADSP_SIZE      0xB91000
 
 
@@ -2774,6 +2774,7 @@ static int config_gpio_table(uint32_t *table, int len)
 /* FIH-SW3-MM-SL-CameraPorting-00*{ */
 #ifdef CONFIG_S5K5CAG
 static struct msm_camera_sensor_info msm_camera_sensor_s5k5cag_data;
+static struct msm_camera_sensor_info msm_camera_sensor_s5k5cag_2nd_data;//SW2D2-MM-MC-Camera-BringUpS5k5cngSensorFor2nd-00+
 #endif
 #ifdef CONFIG_S5K4E1
 static struct msm_camera_sensor_info msm_camera_sensor_s5k4e1_data;
@@ -2893,6 +2894,40 @@ static struct platform_device msm_camera_sensor_s5k5cag = {
 		.platform_data = &msm_camera_sensor_s5k5cag_data,
 	},
 };
+
+//SW2D2-MM-MC-Camera-BringUpS5k5cngSensorFor2nd-00+{
+static struct msm_camera_sensor_platform_info s5k5cag_2nd_sensor_7627a_info = {
+	.mount_angle = 90
+};
+
+static struct msm_camera_sensor_flash_data flash_s5k5cag_2nd = {
+	.flash_type             = MSM_CAMERA_FLASH_NONE,
+	.flash_src              = &msm_flash_src
+};
+
+static struct msm_camera_sensor_info msm_camera_sensor_s5k5cag_2nd_data = {
+	.sensor_name    = "s5k5cag_2nd",
+	.vreg_1v8 = "bt",
+	.sensor_reset_enable = 1,
+	.sensor_reset   = 23,
+	.sensor_pwd             = 26,
+	.mclk               = 15,
+	.vreg_v2p8        	= 94,
+	.vcm_pwd                = GPIO_CAM_GP_CAM_PWDN,
+	.vcm_enable             = 1,
+	.pdata                  = &msm_camera_device_data_rear,
+	.flash_data             = &flash_s5k5cag_2nd,
+	.sensor_platform_info   = &s5k5cag_2nd_sensor_7627a_info,
+	.csi_if                 = 1
+};
+
+static struct platform_device msm_camera_sensor_s5k5cag_2nd = {
+	.name   = "msm_camera_s5k5cag_2nd",
+	.dev    = {
+		.platform_data = &msm_camera_sensor_s5k5cag_2nd_data,
+	},
+};
+//SW2D2-MM-MC-Camera-BringUpS5k5cngSensorFor2nd-00+}
 #endif
 /* FIH-SW3-MM-SL-CameraPorting-00+} */
 
@@ -3028,6 +3063,11 @@ static struct i2c_board_info i2c_camera_devices[] = {
 	{
 		I2C_BOARD_INFO("s5k5cag", 0x3C),
 	},
+    //SW2D2-MM-MC-Camera-BringUpS5k5cngSensorFor2nd-00+{
+    {
+        I2C_BOARD_INFO("s5k5cag_2nd", 0x2D),
+    },
+    //SW2D2-MM-MC-Camera-BringUpS5k5cngSensorFor2nd-00+}
 	{
 		I2C_BOARD_INFO("s5k5cag_af", 0x8c >> 1),
 	},
@@ -3156,6 +3196,7 @@ static struct platform_device *surf_ffa_devices[] __initdata = {
 /* FIH-SW3-MM-SL-CameraPorting-00+{ */	
 #ifdef CONFIG_S5K5CAG
 	&msm_camera_sensor_s5k5cag,
+	&msm_camera_sensor_s5k5cag_2nd,//SW2D2-MM-MC-Camera-BringUpS5k5cngSensorFor2nd-00+
 #endif	
 /* FIH-SW3-MM-SL-CameraPorting-00+} */
 #ifdef CONFIG_S5K4E1

@@ -3055,7 +3055,11 @@ static struct msm_camera_sensor_info msm_camera_sensor_isx006_data = {
 	.sensor_name    = "isx006",
 	.sensor_reset_enable = 1,
 	.sensor_reset   = 23,
-	.sensor_pwd             = 26,
+	.sensor_pwd     = 26,
+	//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+{
+	.sensor_f_reset = 0xFF,
+	.sensor_f_pwd   = 128,
+	//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+}
 	/* FIH-SW3-MM-SL-ModifyGPIODefine-01+{ */
 	.mclk                   = 15,
 	.vreg_af_power          = "bt", 
@@ -3097,9 +3101,13 @@ static struct msm_camera_sensor_info msm_camera_sensor_mt9v115_data = {
 	.mclk					= 15,
 	.vreg_v1p8				= 116,
 	.vreg_v2p8				= 117,
-	.sensor_pwd 			= 128,
 	/* FIH-SW3-MM-SL-ModifyGPIODefine-01*} */	
-	.sensor_reset   = 0xFF,
+	//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+{
+	.sensor_reset   = 23,
+	.sensor_pwd     = 26,
+    .sensor_f_reset = 0xFF,
+    .sensor_f_pwd   = 128,
+	//FIH-SW-MM-MC-ImplementSensorReSetForMt9v115-00+}
 	.vcm_pwd                = 1,
 	.vcm_enable             = 0,
 	.pdata                  = &msm_camera_device_data_front,
@@ -3496,8 +3504,7 @@ static int msm_fb_dsi_client_reset(int hold)
 
 	gpio_lcm_reset = GPIO_LCM_RESET;
 
-	if(dsi_reset_initialized == 0)
-	{
+	if (dsi_reset_initialized == 0) {
 /* FIH-SW2-MM-NC-LCM_INIT-01-[+ */
 		/*MTD-MM-CL-DISPLAY_PWR-00+[*/
 		rc = gpio_request(gpio_lcm_reset, "gpio_disp_pwr");
@@ -3512,7 +3519,7 @@ static int msm_fb_dsi_client_reset(int hold)
 /* FIH-SW-MM-VH-DISPLAY-12*[ */
 #ifdef CONFIG_FIH_SW_DISPLAY_DSI_BKL_EN
 /* FIH-SW2-MM-NC-LCM_INIT-00-[+ */
-		if(fih_get_product_phase() < Phase_SP2) {
+		if (unlikely(fih_get_product_phase() < Phase_SP2)) {
 			rc = gpio_request(GPIO_LCM_BKL_EN, "lcm_bkl_en");
 			if (rc < 0) {
 				pr_err("[DISPLAY] %s: Failed to request lcm_bkl_en\n", __func__);
@@ -3532,7 +3539,7 @@ static int msm_fb_dsi_client_reset(int hold)
 /* FIH-SW-MM-VH-DISPLAY-12*] */
 		dsi_reset_initialized = 1;
 	}
-	if(hold) {
+	if (hold) {
 		gpio_direction_output(gpio_lcm_reset, 0);
 	}
 	else {

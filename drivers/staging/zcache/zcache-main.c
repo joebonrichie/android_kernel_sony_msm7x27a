@@ -1560,8 +1560,8 @@ struct frontswap_ops zcache_frontswap_register_ops(void)
  * NOTE FOR NOW zcache MUST BE PROVIDED AS A KERNEL BOOT PARAMETER OR
  * NOTHING HAPPENS!
  */
-
-static int zcache_enabled;
+ 
+static int zcache_enabled = 1;	/* FIH-SW3-KERNEL-TH-EnableZcache-00+[ */
 
 static int __init enable_zcache(char *s)
 {
@@ -1594,8 +1594,11 @@ __setup("nofrontswap", no_frontswap);
 
 static int __init zcache_init(void)
 {
+	
+	int ret = 0;	/* FIH-SW3-KERNEL-TH-EnableZcache-00+[ */
+	
 #ifdef CONFIG_SYSFS
-	int ret = 0;
+	//int ret = 0;	/* FIH-SW3-KERNEL-TH-EnableZcache-00+[ */
 
 	ret = sysfs_create_group(mm_kobj, &zcache_attr_group);
 	if (ret) {

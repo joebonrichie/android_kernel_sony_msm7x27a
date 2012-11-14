@@ -2,6 +2,7 @@
  * Gadget Function Driver for MTP
  *
  * Copyright (C) 2010 Google, Inc.
+ * Copyright (C) 2011-2012 Foxconn International Holdings, Ltd. All rights reserved.
  * Author: Mike Lockwood <lockwood@android.com>
  *
  * This software is licensed under the terms of the GNU General Public

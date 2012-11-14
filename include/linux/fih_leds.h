@@ -105,6 +105,7 @@
 #define	LED_COMMAND_SPECIAL_SW_BLINKING	28
 #define	LED_COMMAND_SPECIAL_SW_FADE_IN_OUT	29
 #define	LED_COMMAND_SET_LUT_TABLE_RANGE	30
+#define	LED_COMMAND_SET_ON_OFF_STATE	31
 
 #define	COMMAND_0_PARAMENTER		0
 #define	COMMAND_1_PARAMENTER		1
@@ -153,6 +154,7 @@ struct	led_data
 	struct mutex		lock;
 	unsigned int		use_hw;
 	unsigned int		special_mode : 1;
+	unsigned int		on_off_state : 1;
 	union led_detail		detail;
 
 	// For SW LED

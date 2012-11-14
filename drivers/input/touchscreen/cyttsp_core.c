@@ -165,11 +165,24 @@ struct cyttsp_xydata {
 	u16 y4 __attribute__ ((packed));
 	u8 z4;
 #ifndef SECOND_MODULE
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++[*/
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+	u8 ESD_byte;
+	u8 tt_undef[2];
+#else
 	u8 tt_undef[3];
+#endif
+#else
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+	u8 ESD_byte;
+	u8 tt_undef;
+	u8 tt_module;
 #else
 	u8 tt_undef[2];
 	u8 tt_module;/*FIH-MTD-PERIPHERAL-CH-Add_command-00++*/
 #endif
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++]*/
 	u8 gest_set;
 	u8 tt_reserved;
 };
@@ -297,6 +310,11 @@ static struct cyttsp_testmode_data test_mode_data;
 
 #endif
 /* FIH-SW1-PERIPHERAL-OH-TAP_TOUCH_TestMode-00+} */	
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++[*/
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+struct cyttsp g_ts;
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++]*/
 
 /*FIH-MTD-PERIPHERAL-CH-2016-00+[*/
 static int cyttsp_wr_reg(struct cyttsp *ts, u8 reg_id, u8 reg_data);
@@ -312,7 +330,14 @@ static const u8 calib_cmd[] = {
 };
 #endif
 /* owenhuang+] */
-
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++[*/
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+static bool ESD=false;
+static bool ESD_USB=false;
+static bool ESD_HS=false;
+static u8 ESD_status=0;
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++]*/
 /* FIH-SW3-PERIPHERAL-AH-Touchkey_Porting-00+{ */
 /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++[*/
 #ifdef CONFIG_FIH_MACH_TAMSUI_TAP
@@ -907,9 +932,15 @@ static void cyttsp_xy_worker(struct work_struct *work)
 	//[Purpose]Check if current touch ic status is vaild or not.
 	if (ts->platform_data->power_state == CY_IDLE_STATE)
 		goto exit_xy_worker;
-	else if (GET_BOOTLOADERMODE(xy_data.tt_mode)) {
+	else if (GET_BOOTLOADERMODE(xy_data.tt_mode) && !ts->fw_loader_mode) {
 		/* TTSP device has reset back to bootloader mode */
 		/* reset driver touch history */
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++[*/
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+		u8 cmd=0x1B;
+		int retry=0;
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++]*/
 /*FIH-MTD-PERIPHERAL-CH-soft_reset-00++[*/
 #ifdef CYTTSP_SOFT_RESET
 		bool timeout;
@@ -923,6 +954,25 @@ static void cyttsp_xy_worker(struct work_struct *work)
 /*FIH-MTD-PERIPHERAL-CH-soft_reset-00++]*/
 		cyttsp_exit_bl_mode(ts);
 		cyttsp_set_operational_mode(ts);
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++[*/
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+		mdelay(100);
+		do{
+			retval=cyttsp_wr_reg(ts, cmd, ESD_status);
+			DBG_MSG("%s: Write ESD_status=%x  times=%d\n", __func__,ESD_status,retry);
+			retry++;}
+		while(retval<0 && retry<3);
+#endif
+		goto exit_xy_worker;
+	}else if((GET_HSTMODE(xy_data.hst_mode) != 0) && ts->op_mode == true ){
+		u8 cmd=0;
+		retval = ttsp_write_block_data(ts, CY_REG_BASE, sizeof(cmd), &cmd);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed writing block data, err:%d\n",
+				__func__, retval);
+		}
+		DBG_INFO("%s: Set to operation mode for unknow situation.\n", __func__);
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++]*/
 		goto exit_xy_worker;
 	} else if (IS_LARGE_AREA(xy_data.tt_stat) == 1) {
 		/* terminate all active tracks */
@@ -938,18 +988,7 @@ static void cyttsp_xy_worker(struct work_struct *work)
 		DBG_INFO("%s: Invalid buffer detected\n", __func__);
 		goto exit_xy_worker;/*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
 	}
-/*FIH-SW-PERIPHERAL-CH-Feature_Change-00++[*/	
-	if((GET_HSTMODE(xy_data.hst_mode) != 0) && ts->op_mode == true )
-	{
-		u8 cmd=0;
-		retval = ttsp_write_block_data(ts, CY_REG_BASE, sizeof(cmd), &cmd);
-		if (retval < 0) {
-			DBG_ERR("%s: Failed writing block data, err:%d\n",
-				__func__, retval);
-		}
-		DBG_INFO("%s: Set to operation mode for unknow situation.\n", __func__);
-	}
-/*FIH-SW-PERIPHERAL-CH-Feature_Change-00++]*/
+
 	/* set tool size */
 	trc.tool_width = CY_SMALL_TOOL_WIDTH;
 
@@ -982,8 +1021,11 @@ static void cyttsp_xy_worker(struct work_struct *work)
 		}
 
 	DBG_MSG("%s: prev=%d  curr=%d\n", __func__, trc.prv_tch, trc.cur_tch);
-
-
+/*FIH-MTD-PERIPHERAL-CH-ESD-01++[*/
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+	DBG_MSG("%s: ESD_BYTE=%x\n", __func__, xy_data.ESD_byte);
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-01++]*/
 
 	/* clear current multi-touch arrays */
 	memset(trc.cur_mt_tch, CY_IGNR_TCH, sizeof(trc.cur_mt_tch));
@@ -1728,6 +1770,12 @@ static int cyttsp_power_on(struct cyttsp *ts)
 #ifdef CYTTSP_SOFT_RESET /*FIH-MTD-PERIPHERAL-CH-soft_reset-00++*/
 	bool timeout;/*FIH-MTD-PERIPHERAL-CH-CODE_DEFECT-03++*/
 #endif /*FIH-MTD-PERIPHERAL-CH-soft_reset-00++*/
+/*FIH-MTD-PERIPHERAL-CH-ESD-01++[*/
+#ifdef CONFIG_FIH_MACH_TAMSUI_MES
+	u8 cmd = 0x1B; /*reserved register used for this project ESD WORKAROUND*/
+	u8 data = 0;
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-01++]*/
 
 	DBG_INFO("%s: Enter\n", __func__);
 
@@ -1775,6 +1823,37 @@ static int cyttsp_power_on(struct cyttsp *ts)
 	/* init gesture setup; required for active distance */
 	//We don't have guesture, just disable.
 	//cyttsp_gesture_setup(ts); //SW1D3-Peripheral-OH-Cypress(TMA340)_TouchDriver_Porting-00- 
+
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++[*/	
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD	
+	DBG_INFO(KERN_INFO"%s: NOTIFY ESD delay is 100..\n", __func__);
+	msleep(100);
+	retval = cyttsp_rd_reg(&g_ts, cmd, &data);
+	if (retval < 0) {
+		DBG_ERR("%s: Failed read block data, err:%d\n",
+			__func__, retval);
+		goto bypass;
+	}
+	DBG_INFO(KERN_INFO"%s: NOTIFY ESD at power_on %x...\n", __func__,data);
+	if((data & 0x8)==0)
+	{
+		data|=0x8;
+		cyttsp_wr_reg(&g_ts, cmd, data);
+		DBG_INFO(KERN_INFO"%s: NOTIFY ESD at power on write data=%x...\n", __func__,data);
+	}
+	else
+		DBG_INFO(KERN_INFO"%s: NOTIFY ESD at power on bit is already set...\n", __func__);
+#else
+/*FIH-MTD-PERIPHERAL-CH-ESD-01++[*/
+#ifdef CONFIG_FIH_MACH_TAMSUI_MES
+	msleep(100);
+	data=0;
+	cyttsp_wr_reg(ts, cmd, data);
+	DBG_INFO(KERN_INFO"%s: DISANLE ESD in touch FW...\n", __func__);
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-01++]*/
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++]*/
 
 bypass:
 	if (!retval)
@@ -2521,6 +2600,346 @@ struct device_attribute CYPRESS_RESET =
 	
 #endif
 /*FIH-MTD-PERIPHERAL-CH-Add_command-00++]*/
+
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++[*/
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+static ssize_t attr_ESD_WORKAROUND(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf, size_t size)
+{
+	struct cyttsp *ts = dev_get_drvdata(dev);
+	int ret=0;
+	char *p=NULL;
+	unsigned val = simple_strtoul(buf, &p, 10);
+	int retval=0;
+	u8 cmd = 0x1B; /*reserved register used for this project ESD WORKAROUND*/
+	u8 data = 0;
+
+	DBG_MSG(KERN_INFO"%s: Enter\n", __func__);
+	
+	ret = p - buf;
+	if (*p && isspace(*p))
+		ret++;
+	
+	if (ts->suspended){
+		DBG_ERR("%s: Failed in suspend, err:%d\n",
+				__func__, retval);
+		goto ESD_suspend_fail;
+	}
+	DBG_INFO(KERN_INFO"%s: val=%d\n", __func__,val);
+	mutex_lock(&ts->mutex);/*FIH-MTD-PERIPHERAL-CH-ESD-02++*/
+	if(val == CY_FACE_DOWN && ESD==false)
+	{
+		ESD=true;
+		retval = cyttsp_rd_reg(ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESDa_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: ENABLE ESD write data=%x...\n", __func__,data);
+		if((data&0x1)==0)
+		{
+			data|=0x01;
+			cyttsp_wr_reg(ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD write data=%x...\n", __func__,data);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: ENABLE ESD bit is already set...\n", __func__);
+	}
+	else if(val == CY_FACE_UP && ESD==true)
+	{
+		ESD=false;
+		retval = cyttsp_rd_reg(ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESDa_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: DISABLE ESD write data=%x...\n", __func__,data);
+		if((data & 0x1)!=0)
+		{
+			data&=0xFE;
+			cyttsp_wr_reg(ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD write data=%x...\n", __func__,data);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: DISABLE ESD bit is already set...\n", __func__);
+	}
+	else if(val == CY_PLUG_USB && ESD_USB==false)
+	{
+		ESD_USB=true;
+		retval = cyttsp_rd_reg(ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESDa_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: ENABLE ESD_USB write data=%x...\n", __func__,data);
+		if((data & 0x2)==0)
+		{
+			data|=0x02;
+			cyttsp_wr_reg(ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD_USB write data=%x...\n", __func__,data);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: ENABLE ESD_USB bit is already set...\n", __func__);
+	}
+	else if(val == CY_UNPLUG_USB && ESD_USB==true)
+	{
+		ESD_USB=false;
+		retval = cyttsp_rd_reg(ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESDa_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: DISABLE ESD_USB write data=%x...\n", __func__,data);
+		if((data & 0x2)!=0)
+		{
+			data&=0xFD;
+			cyttsp_wr_reg(ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD_USB write data=%x...\n", __func__,data);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: DISABLE ESD_USB bit is already set...\n", __func__);
+	}
+	else if(val == CY_PLUG_HS && ESD_HS==false)
+	{
+		ESD_HS=true;
+		retval = cyttsp_rd_reg(ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESDa_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: ENABLE ESD_HS write data=%x...\n", __func__,data);
+		if((data & 0x4)==0)
+		{
+			data|=0x04;
+			cyttsp_wr_reg(ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD_HS write data=%x...\n", __func__,data);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: ENABLE ESD_HS bit is already set...\n", __func__);
+	}
+	else if(val == CY_UNPLUG_HS && ESD_HS==true)
+	{
+		ESD_HS=false;
+		retval = cyttsp_rd_reg(ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESDa_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: DISABLE ESD_HS write data=%x...\n", __func__,data);
+		if((data & 0x4)!=0)
+		{
+			data&=0xFB;
+			cyttsp_wr_reg(ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD_HS write data=%x...\n", __func__,data);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: DISABLE ESD bit is already set...\n", __func__);
+	}
+	else DBG_MSG(KERN_INFO"%s: Error ESD write,status=%d.\n", __func__,val);
+	mutex_unlock(&ts->mutex);/*FIH-MTD-PERIPHERAL-CH-ESD-02++*/
+	return size;
+ESDa_fail:
+	mutex_unlock(&ts->mutex);/*FIH-MTD-PERIPHERAL-CH-ESD-02++*/
+ESD_suspend_fail:
+	return  -EINVAL;
+}
+
+static ssize_t attr_ESD_show(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	struct cyttsp *ts = dev_get_drvdata(dev);
+	u32 count = 0;
+	int retval=0;
+	u8 cmd = 0x1B; /*reserved register used for this project*/
+	u8 data = 0;
+
+	DBG_MSG(KERN_INFO"%s: Enter\n", __func__);
+	if (ts->suspended)
+		goto get_ESD_suspend;/*FIH-MTD-PERIPHERAL-CH-ESD-02++*/
+	
+	mutex_lock(&ts->mutex);/*FIH-MTD-PERIPHERAL-CH-ESD-02++*/
+	retval = cyttsp_rd_reg(ts, cmd, &data);
+	if (retval < 0) {
+		DBG_ERR("%s: Failed resd block data, err:%d\n",
+			__func__, retval);
+		goto get_ESD_fail;
+	}
+	mutex_unlock(&ts->mutex);/*FIH-MTD-PERIPHERAL-CH-ESD-02++*/
+	if(data)
+		count += snprintf(buf,sizeof("ESD status is 12!\n"), "ESD status is %x!\n",data);
+
+	return count;
+
+get_ESD_fail:
+	mutex_unlock(&ts->mutex);/*FIH-MTD-PERIPHERAL-CH-ESD-02++*/
+get_ESD_suspend:
+	DBG_ERR("%s: Failed get ESD, err:%d\n",
+			__func__, retval);
+	return count;
+}
+
+struct device_attribute CYPRESS_ESD =
+	__ATTR(ESD, 0644, attr_ESD_show, attr_ESD_WORKAROUND);
+
+
+int TOUCH_ESD_WORKAROUND(int enable)
+{
+	int ret=0;
+	int retval=0;
+	u8 cmd = 0x1B; /*reserved register used for this project ESD WORKAROUND*/
+	u8 data = 0;
+
+	DBG_MSG(KERN_INFO"%s: Enter\n", __func__);
+	if (g_ts.suspended)
+		return -1;
+
+	
+	mutex_lock(&g_ts.mutex);/*FIH-MTD-PERIPHERAL-CH-ESD-02++*/
+	if(enable == CY_FACE_DOWN && ESD==false /*&& g_ts!=NULL*/)
+	{
+		ESD=true;
+		retval = cyttsp_rd_reg(&g_ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESD_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: ENABLE ESD write data=%x...\n", __func__,data);
+		if((data & 0x1) == 0)
+		{
+			data|=0x01;
+			cyttsp_wr_reg(&g_ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD write data=%x ESD_status=%x...\n", __func__,data,ESD_status);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: ENABLE ESD bit is already set...\n", __func__);
+	}
+	else if(enable == CY_FACE_UP && ESD==true /*&& g_ts!=NULL*/)
+	{
+		ESD=false;
+		retval = cyttsp_rd_reg(&g_ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESD_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: DISABLE ESD write data=%x...\n", __func__,data);
+		if((data & 0x1) != 0)
+		{
+			data&=0xFE;
+			cyttsp_wr_reg(&g_ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD write data=%x ESD_status=%x...\n", __func__,data,ESD_status);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: DISABLE ESD bit is already set...\n", __func__);
+		ret=0;
+	}
+	else if(enable == CY_PLUG_USB && ESD_USB==false)
+	{
+		ESD_USB=true;
+		retval = cyttsp_rd_reg(&g_ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESD_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: ENABLE ESD_USB write data=%x...\n", __func__,data);
+		if((data & 0x2)==0)
+		{
+			data|=0x02;
+			cyttsp_wr_reg(&g_ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD_USB write data=%x...\n", __func__,data);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: ENABLE ESD_USB bit is already set...\n", __func__);
+	}
+	else if(enable == CY_UNPLUG_USB && ESD_USB==true /*&& g_ts!=NULL*/)
+	{
+		ESD_USB=false;
+		retval = cyttsp_rd_reg(&g_ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESD_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: DISABLE ESD_USB write data=%x...\n", __func__,data);
+		if((data&0x2)!=0)
+		{
+			data&=0xFD;
+			cyttsp_wr_reg(&g_ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD_USB write data=%x...\n", __func__,data);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: DISABLE ESD_USB bit is already set...\n", __func__);
+		ret=0;
+	}
+	else if(enable == CY_PLUG_HS && ESD_HS==false)
+	{
+		ESD_HS=true;
+		retval = cyttsp_rd_reg(&g_ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESD_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: ENABLE ESD_HS write data=%x...\n", __func__,data);
+		if((data & 0x4)==0)
+		{
+			data|=0x04;
+			cyttsp_wr_reg(&g_ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD_HS write data=%x...\n", __func__,data);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: ENABLE ESD_HS bit is already set...\n", __func__);
+	}
+	else if(enable == CY_UNPLUG_HS && ESD_HS==true /*&& g_ts!=NULL*/)
+	{
+		ESD_HS=false;
+		retval = cyttsp_rd_reg(&g_ts, cmd, &data);
+		if (retval < 0) {
+			DBG_ERR("%s: Failed read block data, err:%d\n",
+				__func__, retval);
+			goto ESD_fail;
+		}
+		DBG_MSG(KERN_INFO"%s: DISABLE ESD_HS write data=%x...\n", __func__,data);
+		if((data&0x4)!=0)
+		{
+			data&=0xFB;
+			cyttsp_wr_reg(&g_ts, cmd, data);
+			ESD_status=data;
+			DBG_INFO(KERN_INFO"%s: ESD_HS write data=%x...\n", __func__,data);
+		}
+		else
+			DBG_MSG(KERN_INFO"%s: DISABLE ESD bit is already set...\n", __func__);
+		ret=0;
+	}
+	else DBG_MSG(KERN_INFO"%s: Error ESD write,status=%d.\n", __func__,enable);
+ESD_fail:
+	mutex_unlock(&g_ts.mutex);/*FIH-MTD-PERIPHERAL-CH-ESD-02++*/
+	return ret;
+}
+EXPORT_SYMBOL(TOUCH_ESD_WORKAROUND);	
+#endif
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++]*/
+
 /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++[*/
 #ifdef FIH_VIRTUAL_BUTTON
 static ssize_t tma340_virtual_keys_show(struct kobject *kobj,
@@ -2567,12 +2986,15 @@ static struct attribute_group tma340_properties_attr_group = {
 };
 #endif
 /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++]*/
-	
+
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++[*/	
 void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 {
 	struct input_dev *input_device;
     struct input_dev *input_key; /* FIH-SW3-PERIPHERAL-AH-Touchkey_Porting-00+ */
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	struct cyttsp *ts=NULL;/*FIH-MTD-PERIPHERAL-CH-CODE_DEFECT-02++*/
+#endif
 	int retval = 0;
 	int cy_irq=0;/*FIH-MTD-PERIPHERAL-CH-MES-02++[*/
 /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++[*/
@@ -2583,6 +3005,7 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 
 	DBG_INFO("Enter %s\n", __func__);
 
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	ts = kzalloc(sizeof(*ts), GFP_KERNEL);
 	if (ts == NULL) {
 		DBG_ERR("%s: Error, kzalloc\n", __func__);
@@ -2596,21 +3019,42 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 
 	if (ts->platform_data->init)
 		retval = ts->platform_data->init(1);
+#else
+	mutex_init(&g_ts.mutex);
+	g_ts.pdev = pdev;
+	g_ts.platform_data = pdev->platform_data;
+
+	g_ts.bus_ops = bus_ops;
+	memset(g_ts.tch_flow,0,sizeof(g_ts.tch_flow));/*FIH-MTD-PERIPHERAL-CH-AREA_JUDGE-00++*/
+
+	if (g_ts.platform_data->init)
+		retval = g_ts.platform_data->init(1);
+#endif
 	if (retval) {
 		DBG_ERR("%s: platform init failed! \n", __func__);
 		goto error_init;
 	}
 
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	if (ts->platform_data->use_timer)
 		ts->irq = -1;
+#else
+	if (g_ts.platform_data->use_timer)
+		g_ts.irq = -1;
+#endif
 	else
 	{
 		/*FIH-MTD-PERIPHERAL-CH-MES-02++[*/
 		/*cyttsp_irq=ts->platform_data->irq_gpio;*/
 		cy_irq=CY_I2C_IRQ_GPIO;
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 		ts->irq = MSM_GPIO_TO_INT(cy_irq);
 		/*FIH-MTD-PERIPHERAL-CH-MES-02++]*/
 		DBG_INFO("%s: ts->irq=%d \n", __func__, ts->irq);
+#else
+		g_ts.irq = MSM_GPIO_TO_INT(cy_irq);
+		DBG_INFO("%s: ts->irq=%d \n", __func__, g_ts.irq);
+#endif
 	}		
 
 	/* Create the input device and register it. */
@@ -2631,6 +3075,7 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
     }	
 	/* FIH-SW3-PERIPHERAL-AH-Touchkey_Porting-00+} */
 
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	ts->input = input_device;
 	input_device->name = ts->platform_data->name;
 	input_device->phys = ts->phys;
@@ -2642,42 +3087,79 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 
 	/* Prepare our worker structure prior to setting up the timer/ISR */
 	INIT_WORK(&ts->work, cyttsp_xy_worker);
+#else
+	g_ts.input = input_device;
+	input_device->name = g_ts.platform_data->name;
+	input_device->phys = g_ts.phys;
+	input_device->dev.parent = g_ts.pdev;
+	TMA340_ROW=g_ts.platform_data->row_pins_number;
+	TMA340_COL=g_ts.platform_data->col_pins_number;
 
+	/* Prepare our worker structure prior to setting up the timer/ISR */
+	INIT_WORK(&g_ts.work, cyttsp_xy_worker);
+#endif
 /* FIH-SW1-PERIPHERAL-OH-TAP_TOUCH_TestMode-00+{ */	
 #ifdef TEST_MODE
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	INIT_DELAYED_WORK(&ts->test_mode_work, testmode_work_func);
 	ts->current_test_mode = EXIT_TEST_MODE;
 	mutex_init(&ts->test_mode_mutex);
+#else
+	INIT_DELAYED_WORK(&g_ts.test_mode_work, testmode_work_func);
+	g_ts.current_test_mode = EXIT_TEST_MODE;
+	mutex_init(&g_ts.test_mode_mutex);
+#endif
 #endif
 /* FIH-SW1-PERIPHERAL-OH-TAP_TOUCH_TestMode-00+} */	
 
-	//Currently, don't use timer 
+	//Currently, don't use timer
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD 
 	if (ts->platform_data->use_timer) 
+#else
+	if (g_ts.platform_data->use_timer) 
+#endif
 	{
 		DBG_INFO("%s: Setting up Timer\n", __func__);
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 		setup_timer(&ts->timer, cyttsp_timer, (unsigned long) ts);
+#else
+		setup_timer(&g_ts.timer, cyttsp_timer, (unsigned long) &g_ts);
+#endif
 	}
-
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	retval = cyttsp_power_on(ts);
+#else
+	retval = cyttsp_power_on(&g_ts);
+#endif
 	if (retval < 0) 
 	{
 		DBG_ERR("%s: Error, power on failed! \n", __func__);
 		goto error_power_on;
 	}
-
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	cyttsp_init_tch(ts);
+#else
+	cyttsp_init_tch(&g_ts);
+#endif
 
 	set_bit(EV_SYN, input_device->evbit);
 	set_bit(EV_KEY, input_device->evbit);
 	set_bit(EV_ABS, input_device->evbit);
 	/*set_bit(BTN_TOUCH, input_device->keybit);*//*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-01++*/
 	/*set_bit(BTN_2, input_device->keybit);*/ /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
-	
+
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD	
 	if (ts->platform_data->use_gestures)
+#else
+	if (g_ts.platform_data->use_gestures)
+#endif
 		set_bit(BTN_3, input_device->keybit);
 
-
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	if (ts->platform_data->use_mt) {
+#else
+	if (g_ts.platform_data->use_mt) {
+#endif
 		#if 0
 		input_set_abs_params(input_device, ABS_MT_POSITION_X, 0,
 				     ts->platform_data->maxx, 0, 0);
@@ -2711,7 +3193,11 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 		
 		/*input_set_abs_params(input_device, ABS_MT_WIDTH_MAJOR, 0,
 				     CY_LARGE_TOOL_WIDTH, 0, 0);*/
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 		if (ts->platform_data->use_trk_id)
+#else
+		if (g_ts.platform_data->use_trk_id)
+#endif
 			input_set_abs_params(input_device, ABS_MT_TRACKING_ID,
 					0, CY_NUM_TRK_ID, 0, 0);
 	}
@@ -2727,8 +3213,11 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 	/*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++]*/
 
 
-
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	if (ts->platform_data->use_virtual_keys)
+#else
+	if (g_ts.platform_data->use_virtual_keys)
+#endif
 		input_set_capability(input_device, EV_KEY, KEY_PROG1);
 
 	retval = input_register_device(input_device);
@@ -2746,10 +3235,17 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 	/* FIH-SW3-PERIPHERAL-AH-Touchkey_Porting-00+} */
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	ts->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
 	ts->early_suspend.suspend = cyttsp_ts_early_suspend;
 	ts->early_suspend.resume = cyttsp_ts_late_resume;
 	register_early_suspend(&ts->early_suspend);
+#else
+	g_ts.early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
+	g_ts.early_suspend.suspend = cyttsp_ts_early_suspend;
+	g_ts.early_suspend.resume = cyttsp_ts_late_resume;
+	register_early_suspend(&g_ts.early_suspend);
+#endif
 #endif
 	retval = device_create_file(pdev, &fwloader);
 	if (retval) {
@@ -2790,28 +3286,65 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 	}	
 #endif
 /*FIH-MTD-PERIPHERAL-CH-Add_command-00++]*/
+
+#ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
+	DBG_INFO("%s: Register ESD file node.\n",
+			__func__);
+	/*retval = device_create_file(&(g_ts.input->dev), &CYPRESS_ESD);*/
+	retval = device_create_file(pdev, &CYPRESS_ESD);
+	if (retval)
+	{
+		DBG_ERR("%s: Error, could not create testmode attribute\n",
+			__func__);
+		goto device_create_error;
+	}
+#endif
+
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	dev_set_drvdata(pdev, ts);
 	return ts;
+#else
+	dev_set_drvdata(pdev, &g_ts);
+	return &g_ts;
+#endif
 
 device_create_error:
 #ifdef CONFIG_HAS_EARLYSUSPEND
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	unregister_early_suspend(&ts->early_suspend);
+#else
+	unregister_early_suspend(&g_ts.early_suspend);
+#endif
 #endif
 error_input_register_device:
 	input_unregister_device(input_device); 
 error_power_on:
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	if (ts->irq >= 0)
 		free_irq(ts->irq, ts);
 	cyttsp_kill_to_timer(ts);
+#else
+	if (g_ts.irq >= 0)
+		free_irq(g_ts.irq, &g_ts);
+	cyttsp_kill_to_timer(&g_ts);
+#endif
 	input_free_device(input_device);
 error_input_allocate_device:
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	if (ts->platform_data->init)
 		ts->platform_data->init(0);
+#else
+	if (g_ts.platform_data->init)
+		g_ts.platform_data->init(0);
+#endif
 error_init:
+#ifndef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
 	kfree(ts);
 error_alloc_data_failed:
+#endif
 	return NULL;
 }
+/*FIH-MTD-PERIPHERAL-CH-ESD-00++]*/
 
 /* registered in driver struct */
 void cyttsp_core_release(void *handle)

@@ -62,8 +62,8 @@ static int device_model_read_proc(char *page, char **start, off_t off,
 		break;
 	}
 
-	len = snprintf(page, PAGE_SIZE, "%s\n",
-		ver);
+	len = snprintf(page, count, "%s\n",
+		ver);  /* MTD-BSP-VT-PROC-00* */
 		
 	return proc_calc_metrics(page, start, off, count, eof, len);	
 }
@@ -137,8 +137,8 @@ static int baseband_read_proc(char *page, char **start, off_t off,
 		break;
 	}
 
-	len = snprintf(page, PAGE_SIZE, "%s\n",
-		ver);
+	len = snprintf(page, count, "%s\n",
+		ver);  /* MTD-BSP-VT-PROC-00* */
 
 	return proc_calc_metrics(page, start, off, count, eof, len);
 }
@@ -165,7 +165,7 @@ static int band_read_proc(char *page, char **start, off_t off,
 	  ver[18]='\0';
       break;
     }
-    len = snprintf(page, PAGE_SIZE, "%s\n",ver);
+    len = snprintf(page, count, "%s\n",ver);  /* MTD-BSP-VT-PROC-00* */
     
     return proc_calc_metrics(page, start, off, count, eof, len);
 }
@@ -192,7 +192,7 @@ static int siminfo_read_proc(char *page, char **start, off_t off,
 		break;
 	}
 
-	len = snprintf(page, PAGE_SIZE, "%s\n", ver);
+	len = snprintf(page, count, "%s\n", ver);  /* MTD-BSP-VT-PROC-00* */
 		
 	return proc_calc_metrics(page, start, off, count, eof, len);	
 }
@@ -204,7 +204,7 @@ static int amss_version_read_proc(char *page, char **start, off_t off,
 	char ver[30];
 	snprintf(ver, sizeof(ver), fih_get_amss_version());
 
-	len = snprintf(page, PAGE_SIZE, "%s\n",ver);
+	len = snprintf(page, count, "%s\n",ver);  /* MTD-BSP-VT-PROC-00* */
 		
 	return proc_calc_metrics(page, start, off, count, eof, len);
 }
@@ -214,7 +214,8 @@ static int linux_version_read_proc(char *page, char **start, off_t off,
 				 int count, int *eof, void *data)
 {
 	int len;
-	len = snprintf(page, PAGE_SIZE, "%s.%s.%s.%s.%s.%s\n",
+        /* MTD-BSP-VT-PROC-00* */
+	len = snprintf(page, count, "%s.%s.%s.%s.%s.%s\n",
 		VER_LINUX_BSP_Version,
 		VER_LINUX_Platform_Number,
 		VER_LINUX_Image_Type, 
@@ -243,7 +244,7 @@ static int reboot_info_read_proc(char *page, char **start, off_t off,
            strncpy( ver, "normal", 6);
 		   ver[6]='\0';
     	}
-	len = snprintf(page, PAGE_SIZE, "%s\n",ver);
+	len = snprintf(page, count, "%s\n",ver); /* MTD-BSP-VT-PROC-00* */
 		
 	return proc_calc_metrics(page, start, off, count, eof, len);
 }

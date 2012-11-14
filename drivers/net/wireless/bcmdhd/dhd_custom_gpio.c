@@ -268,15 +268,18 @@ dhd_custom_get_mac_address(unsigned char *buf)
 
         if (ret == 0) {
             fih_wifi_mac_swap(cMacaddr);
-            if ((cMacaddr[0] & cMacaddr[1] & cMacaddr[2]) == 0x00 ) {
+            printk(KERN_INFO "%s:[WIFI] read MAC(nv 4678): '%02x:%02x:%02x:%02x:%02x:%02x\n'", __func__,
+                    cMacaddr[0], cMacaddr[1], cMacaddr[2], cMacaddr[3], cMacaddr[4], cMacaddr[5]);
+            if (cMacaddr[0] == 0x0 && cMacaddr[1] == 0x0 && cMacaddr[2] == 0x0
+                 && cMacaddr[3] == 0x0 && cMacaddr[4] == 0x0 && cMacaddr[5] == 0x0) {
                 printk("%s: zero Mac is not acceptable, return error\n", __func__);
-                return -EINVAL;				
+                return -EINVAL;
             }
             else {
                 bcopy(cMacaddr, buf, ETHER_ADDR_LEN);
                 bcopy(cMacaddr, cached_mac, ETHER_ADDR_LEN);
-            }				
-#if 0	/* Do not check SoMC mac */		
+            }
+#if 0	/* Do not check SoMC mac */
             if ( fih_mac_is_se_mac(cMacaddr) ) {
                 bcopy(cMacaddr, buf, ETHER_ADDR_LEN);
                 bcopy(cMacaddr, cached_mac, ETHER_ADDR_LEN);
@@ -284,11 +287,11 @@ dhd_custom_get_mac_address(unsigned char *buf)
                 printk(KERN_INFO "%s:[WIFI]MAC from NV is not of SEMC\n", __func__);
                 fih_generate_mac(cMacaddr, buf);
             }
-#endif			
+#endif
         } else {
             printk("%s: failed to get MAC address from NV \n", __func__);
             /* fih_generate_mac(cMacaddr, buf);
-            * 
+            *
             * MAC is empty in NV, break from Wi-Fi init function
             */
             return -EINVAL;
