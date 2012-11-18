@@ -5,7 +5,7 @@
 #include <linux/module.h>
 #include <linux/fih_hw_info.h>
 #ifndef CONFIG_FIH_FTM
-#include "../../../../Version_LINUX.h"
+#include "Version_LINUX.h"
 #endif
 
 unsigned int get_boot_info(void);  /* MTD-BSP-VT-RECOVERY-00+ */
