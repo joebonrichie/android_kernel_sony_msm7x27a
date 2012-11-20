@@ -126,7 +126,7 @@ static s8 ioctlbuf[WLC_IOCTL_MAXLEN];
 /* Set this to 1 to use a seperate interface (p2p0)
  *  for p2p operations.
  */
-#define ENABLE_P2P_INTERFACE	0
+#define ENABLE_P2P_INTERFACE	1
 
 
 /* This is to override regulatory domains defined in cfg80211 module (reg.c)
