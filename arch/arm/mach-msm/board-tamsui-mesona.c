@@ -2958,7 +2958,7 @@ struct msm_camera_device_platform_data msm_camera_device_data_front = {
 /* FIH-SW3-MM-SL-CameraPorting-00+{ */
 #ifdef CONFIG_S5K5CAG
 static struct msm_camera_sensor_platform_info s5k5cag_sensor_7627a_info = {
-	.mount_angle = 90
+	.mount_angle = 0
 };
 
 static struct msm_camera_sensor_flash_data flash_s5k5cag = {
@@ -2993,7 +2993,7 @@ static struct platform_device msm_camera_sensor_s5k5cag = {
 
 #ifdef CONFIG_S5K4E1
 static struct msm_camera_sensor_platform_info s5k4e1_sensor_7627a_info = {
-	.mount_angle = 90
+	.mount_angle = 0
 };
 
 static struct msm_camera_sensor_flash_data flash_s5k4e1 = {
@@ -3024,7 +3024,7 @@ static struct platform_device msm_camera_sensor_s5k4e1 = {
 
 #ifdef CONFIG_IMX072
 static struct msm_camera_sensor_platform_info imx072_sensor_7627a_info = {
-	.mount_angle = 90
+	.mount_angle = 0
 };
 
 static struct msm_camera_sensor_flash_data flash_imx072 = {
@@ -3055,7 +3055,7 @@ static struct platform_device msm_camera_sensor_imx072 = {
 
 #ifdef CONFIG_WEBCAM_OV9726
 static struct msm_camera_sensor_platform_info ov9726_sensor_7627a_info = {
-	.mount_angle = 90
+	.mount_angle = 180
 };
 
 static struct msm_camera_sensor_flash_data flash_ov9726 = {
@@ -3088,7 +3088,7 @@ static inline void msm_camera_vreg_init(void) { }*/
 //SW2D2-MM-MC-Camera-BringUpMt9v115Sensor-00+{
 #ifdef CONFIG_ISX006
 static struct msm_camera_sensor_platform_info isx006_sensor_7627a_info = {
-	.mount_angle = 90
+	.mount_angle = 0
 };
 
 static struct msm_camera_sensor_flash_data flash_isx006 = {
@@ -3173,7 +3173,7 @@ static struct platform_device msm_camera_sensor_mt9v115 = {
 
 #ifdef CONFIG_MT9E013
 static struct msm_camera_sensor_platform_info mt9e013_sensor_7627a_info = {
-	.mount_angle = 90
+	.mount_angle = 0
 };
 
 static struct msm_camera_sensor_flash_data flash_mt9e013 = {
