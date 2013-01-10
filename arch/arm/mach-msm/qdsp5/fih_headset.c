@@ -576,7 +576,7 @@ static int trout_h2w_probe(struct platform_device *pdev)
 	/* MM-RC-TAP reduce delay time after removing headset  1206 */
 	hi->debounce_time     = ktime_set(0, 200000000);  /* 200 ms */
 	hi->btn_debounce_time = ktime_set(0,  80000000);  /*  80 ms */
-	hi->sdev.name         = "headset_sensor";
+	hi->sdev.name         = "h2w";
 	hi->sdev.print_name   = trout_h2w_print_name;
 	hi->hs_input          = input_allocate_device();
 
@@ -791,7 +791,7 @@ static struct platform_driver trout_h2w_driver = {
 	.probe		= trout_h2w_probe,
 	.remove		= trout_h2w_remove,
 	.driver		= {
-		.name		= "headset_sensor",
+		.name		= "h2w",
 		.owner		= THIS_MODULE,
 	},
 };

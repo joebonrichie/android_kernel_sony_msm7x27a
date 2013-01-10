@@ -4353,7 +4353,7 @@ static struct h2w_platform_data fih_headset_data = {
 };
 
 static struct platform_device fih_device_headset = {
-	.name   = "headset_sensor",
+	.name   = "h2w",
 	.id     = -1,
 	.dev    = {
 		.platform_data = &fih_headset_data,

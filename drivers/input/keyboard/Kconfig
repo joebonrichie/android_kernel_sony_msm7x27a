@@ -198,6 +198,7 @@ config FIH_POWER_KEY
 	depends on MSM_ONCRPCROUTER
 	bool "FIH power key event"
 	select FIH_DEVELOPMENT_TOOL
+	default n
 	help
 	  Support for receiving handset events like headset detect,
 	  headset switch and clamshell state.

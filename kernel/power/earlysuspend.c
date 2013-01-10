@@ -193,7 +193,6 @@ abort:
 
 	atomic_set(&gKeySuspendLock,0); //MTD-kernel-BH-PowerKeySuspendLock-00+
 	check_power_key_skip_count();   //MTD-kernel-BH-PowerKeySuspendLock-01+
- 
 /*FIH-KERNEL-SC-Suspend_Hang_Timer-00+[*/
 #ifdef CONFIG_FIH_SUSPEND_HANG_TIMER
 	pr_info("early_suspend: del suspend_hang_timer\n");

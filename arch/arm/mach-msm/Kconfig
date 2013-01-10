@@ -1292,7 +1292,7 @@ config MSM_RPC_OEM_RAPI
 
 config MSM_RPCSERVER_HANDSET
 	depends on MSM_ONCRPCROUTER
-	default y
+	default n
 	bool "Handset events RPC server"
 	help
 	  Support for receiving handset events like headset detect,
