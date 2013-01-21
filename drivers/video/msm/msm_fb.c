@@ -2405,8 +2405,8 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 				__func__);
 	}
 /* FIH-SW-MM-VH-DISPLAY-16+] */
-#ifdef CONFIG_FB_MSM_LOGO
-	//if (!load_565rle_image(INIT_IMAGE_FILE)) ;	/* Flip buffer *//*MTD-MM-CL-DrawLogo-00- */
+#if defined(CONFIG_FB_MSM_LOGO) && defined(CONFIG_FB_MSM_DEFAULT_DEPTH_RGB565)
+	if (!load_565rle_image(INIT_IMAGE_FILE)) ;	/* Flip buffer *//*MTD-MM-CL-DrawLogo-00- */
 #endif
 	ret = 0;
 
