@@ -197,7 +197,7 @@ struct isx006_reg {
 
     const struct isx006_i2c_reg_conf*reg_preload3_reload;
     const unsigned short  reg_preload3_reload_size;
-
+    
     /* FIH-SW3-MM-UW-read vendor id-00-*/
     const struct isx006_i2c_reg_conf *reg_arm_go;
     const unsigned short reg_arn_go_size;

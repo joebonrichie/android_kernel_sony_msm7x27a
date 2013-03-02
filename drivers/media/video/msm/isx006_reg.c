@@ -1472,9 +1472,9 @@ struct isx006_i2c_reg_conf isx006_preload2_settings[] = {
 	  {0xA251, 0x88,BYTE_LEN, 0 },
 	  {0xA252, 0x04,BYTE_LEN, 0 },
 	  {0xA253, 0x27,BYTE_LEN, 0 },
-
+ 
  // SHD2 CWF TGT575757//
-
+ 
 	  {0xA254, 0x46,BYTE_LEN, 0 },
 	  {0xA255, 0x69,BYTE_LEN, 0 },
 	  {0xA256, 0x8C,BYTE_LEN, 0 },
@@ -1629,9 +1629,9 @@ struct isx006_i2c_reg_conf isx006_preload2_settings[] = {
 	  {0xA2EB, 0x00,BYTE_LEN, 0 },
 	  {0xA2EC, 0x00,BYTE_LEN, 0 },
 	  {0xA2ED, 0x00,BYTE_LEN, 0 },
-
-
-
+ 
+ 
+ 
  //SHD3 A+TLD TGT575757//
 	  {0xA2EE, 0x55,BYTE_LEN, 0 },
 	  {0xA2EF, 0x39,BYTE_LEN, 0 },
@@ -2816,18 +2816,18 @@ struct isx006_i2c_reg_conf isx006_preload2_2nd_settings[] = {
     //version 11, 0x, 0x, 0x, 0x, 0x
     //2012.07.17, 0x, 0x, 0x, 0x, 0x
     //ImagingLSIBD, 0xSemiconductorBG, 0xCPDG, 0xSonyCorp., 0x, 0x
-
+    
     ///////////////////////////////////////
     ///// Cat. : USERCTRL(Gamma copy) /////
     ///////////////////////////////////////
-
+    
     { 0x0105, 0x80, BYTE_LEN, 0 },//
     { 0x0387, 0x01, BYTE_LEN, 0 },// RGB_GAMMA_G2RB_F
-
+    
     ////////////////////////////////////////
     ////////////// Cat. : ADJ //////////////
     ////////////////////////////////////////
-
+    
     { 0x4A04, 0x10FB, WORD_LEN, 0 },// 5800K normalized coefficient RAdjust this using the Pre-white balance function of the adjustment mode.1.0 = 1000h.When 0 is set, 0x it is regarded as 1.
     { 0x4A06, 0x10AB, WORD_LEN, 0 },// 5800K normalized coefficient BAdjust this using the Pre-white balance function of the adjustment mode.1.0 = 1000h.When 0 is set, 0x it is regarded as 1.
     { 0x4A08, 0x013C, WORD_LEN, 0 },// 3200K R gainAdjust this using the Pre-white balance function of the adjustment mode.1.0 = 100h.When 0 is set, 0x it is regarded as 1.When the value larger than FFFh is set, 0x it is regarded as FFFh.
@@ -2835,11 +2835,11 @@ struct isx006_i2c_reg_conf isx006_preload2_2nd_settings[] = {
     { 0x4A24, 0x0013, WORD_LEN, 0 },// SHD, 0x PreR offset, 0x for R2
     { 0x4A28, 0x0000, WORD_LEN, 0 },// SHD, 0x PreR offset, 0x for RB
     { 0x4A2C, 0xFFF8, WORD_LEN, 0 },// SHD, 0x PreB offset, 0x for RB
-
+    
     ///////////////////////////////////////
     ////////////// Cat. : AE //////////////
     ///////////////////////////////////////
-
+    
     { 0x4014, 0x0A5E, WORD_LEN, 0 },// AGCLOWSCL_N
     { 0x4016, 0x28DE, WORD_LEN, 0 },// NORMSHTSCL_L
     { 0x4018, 0x0397, WORD_LEN, 0 },// AGCLOWSCL_L
@@ -2847,7 +2847,7 @@ struct isx006_i2c_reg_conf isx006_preload2_2nd_settings[] = {
     { 0x401C, 0x03FD, WORD_LEN, 0 },// AGCHISCL_L
     { 0x401E, 0x0268, WORD_LEN, 0 },// MAXSHTSCL_L
     { 0x4020, 0x02CB, WORD_LEN, 0 },// AGCMAXSCL_L
-
+    
     { 0x402B, 0x8F, BYTE_LEN, 0 },// FPS_SENSALL
     { 0x402E, 0x0A, BYTE_LEN, 0 },// CAP_GAIN_LIMIT
     { 0x4036, 0x0510, WORD_LEN, 0 },// AEPRIAGC
@@ -2863,21 +2863,21 @@ struct isx006_i2c_reg_conf isx006_preload2_2nd_settings[] = {
     { 0x409E, 0x2D, BYTE_LEN, 0 },// HIGHJUDG_B
     { 0x409F, 0x64, BYTE_LEN, 0 },// HIGHJUDG_C
     { 0x40A0, 0x5E, BYTE_LEN, 0 },// HIGHJUDG_D
-
+        
     ///////////////////////////////////////
     ///////////// Cat. : MODE /////////////
     ///////////////////////////////////////
-
+    
     { 0x4C14, 0x0400, WORD_LEN, 0 },// Detection window vertical size with all 32 windows for FLC full frame pixel
-
+    
     ///////////////////////////////////////
     //////////// Cat. : AE_FRM ////////////
-    ///////////////////////////////////////
-
+    /////////////////////////////////////// 
+    
     { 0x42C0, 0x07, BYTE_LEN, 0 },// Center weight photometry 03 window weight coefficient  Type 4
     { 0x42C1, 0x08, BYTE_LEN, 0 },// Center weight photometry 04 window weight coefficient  Type 4
     { 0x42C2, 0x07, BYTE_LEN, 0 },// Center weight photometry 05 window weight coefficient  Type 4
-
+    
     { 0x42C6, 0x09, BYTE_LEN, 0 },// Center weight photometry 09 window weight coefficient  Type 4
     { 0x42C7, 0x0D, BYTE_LEN, 0 },// Center weight photometry 10 window weight coefficient  Type 4
     { 0x42C8, 0x0E, BYTE_LEN, 0 },// Center weight photometry 11 window weight coefficient  Type 4
@@ -2930,31 +2930,31 @@ struct isx006_i2c_reg_conf isx006_preload2_2nd_settings[] = {
     { 0x42F9, 0x14, BYTE_LEN, 0 },// Center weight photometry 60 window weight coefficient  Type 4
     { 0x42FA, 0x11, BYTE_LEN, 0 },// Center weight photometry 61 window weight coefficient  Type 4
     { 0x42FB, 0x0B, BYTE_LEN, 0 },// Center weight photometry 62 window weight coefficient  Type 4
-
+    
     ////////////////////////////////////////
     ////// Cat. : USERCTRL(AErelated) //////
     ////////////////////////////////////////
-
+    
     { 0x0104, 0x41, BYTE_LEN, 0 },// AE_SUB_SN1
     { 0x01BD, 0x01, BYTE_LEN, 0 },// MAXFRMEXP_TYPE1
     { 0x01BE, 0x02, BYTE_LEN, 0 },// MAXFRMEXP_TYPE2
     { 0x01BF, 0x03, BYTE_LEN, 0 },// MAXFRMEXP_TYPE3
-    { 0x01C0, 0x04, BYTE_LEN, 0 },// MAXFRMEXP_TYPE4
-
+    { 0x01C0, 0x08, BYTE_LEN, 0 },// MAXFRMEXP_TYPE4
+    
     ////////////////////////////////////////
     ////////////// Cat. : AWB //////////////
     ////////////////////////////////////////
-
+    
     { 0x440A, 0x1000, WORD_LEN, 0 },// Initial value of error amount for determining commencement of AWB startup
-
+    
     ////////////////////////////////////////
     //////////// Cat. : AWB_FRM ////////////
     ////////////////////////////////////////
-
+    
     ////////////////////////////////////////
     /////// Cat. : LMT(Linearmatrix) ///////
     ////////////////////////////////////////
-
+    
     { 0x5000, 0xFFA6, WORD_LEN, 0 },// GRG linear matrix coefficient POS1
     { 0x5002, 0xFFF3, WORD_LEN, 0 },// GRB linear matrix coefficient POS1
     { 0x5004, 0xFFDA, WORD_LEN, 0 },// GGR linear matrix coefficient POS1
@@ -3033,11 +3033,11 @@ struct isx006_i2c_reg_conf isx006_preload2_2nd_settings[] = {
     { 0x50C0, 0x7C, BYTE_LEN, 0 },// RYGAIN reference value (4th quadrant), 0x for automatic control, 0x POS2
     { 0x50C1, 0x6E, BYTE_LEN, 0 },// BYGAIN reference value (4th quadrant), 0x for automatic control, 0x POS2
     { 0x50C2, 0x12, BYTE_LEN, 0 },// HueGain pos1 coordinate for automatic control (high color temperature sideÅjx256 is the coordinate.
-
+    
     ///////////////////////////////////////
     //////////// Cat. : GAMMA0 ////////////
     ///////////////////////////////////////
-
+    
     { 0x5238, 0x0004, WORD_LEN, 0 },// RGB-Gamma G-knot1(Table0)
     { 0x523A, 0x0008, WORD_LEN, 0 },// RGB-Gamma G-knot2(Table0)
     { 0x523C, 0x000E, WORD_LEN, 0 },// RGB-Gamma G-knot3(Table0)
@@ -3069,19 +3069,19 @@ struct isx006_i2c_reg_conf isx006_preload2_2nd_settings[] = {
     { 0x52AA, 0x0210, WORD_LEN, 0 },// Low-range setting/offset setting -B (Table0)
     { 0x52AE, 0x2100, WORD_LEN, 0 },// Convergence luminance setting (Table0)
     { 0x0105, 0x40, BYTE_LEN, 0 },//
-
+    
     /////////////////////////////////////////
     //// Cat. : PICT(SHD, 0xY-gamma, 0xY-knee) ////
     /////////////////////////////////////////
-
+    
     { 0x4E40, 0x1964, WORD_LEN, 0 },// High threshold for R2 at the B/G coordinates and high color temperature side for shading color correction.
     { 0x4E42, 0x18CE, WORD_LEN, 0 },// Low threshold for R2 at the B/G coordinates and high color temperature side for shading color correction.
-
+    
     { 0x4E48, 0x1A2C, WORD_LEN, 0 },// R/G coordinates high threshold value for shading color correction for R2.
-
+    
     { 0x4E4C, 0x6679, WORD_LEN, 0 },// High luminance side threshold value for shading gain correction.
     { 0x4E4E, 0x5AC1, WORD_LEN, 0 },// Low luminance side threshold value for shading gain correction.
-
+    
     { 0x4E58, 0x1EDC, WORD_LEN, 0 },// High threshold for RB at the R/G coordinates for shading color correction.
 
     {0x4E60, 0x0C0A, WORD_LEN, 0 },// AREACMP_SET2_TB1
@@ -3100,28 +3100,28 @@ struct isx006_i2c_reg_conf isx006_preload2_2nd_settings[] = {
     {0x4E7A, 0x28C5, WORD_LEN, 0 },// AREACMP_SET8_TB1
     {0x4E7C, 0x0033, WORD_LEN, 0 },// AREACMP_SET9_TB1
     {0x4E7E, 0x0033, WORD_LEN, 0 },// AREACMP_SET9_TB1
-
+    
     { 0x4F52, 0x00, BYTE_LEN, 0 },// PLUS_START_POS
     { 0x4F54, 0x19, BYTE_LEN, 0 },// PLUS_END_POS
     { 0x4F55, 0x19, BYTE_LEN, 0 },// MINUS_START_POS
     { 0x4F56, 0x1D, BYTE_LEN, 0 },// MINUS_POS
-
+    
     { 0x4F59, 0x01, BYTE_LEN, 0 },// YLOW_TH
     { 0x4F5A, 0x14, BYTE_LEN, 0 },// YLOW_RATIO_A
     { 0x4F5B, 0x28, BYTE_LEN, 0 },// YLOW_RATIO_B
     { 0x4F5C, 0x32, BYTE_LEN, 0 },// YLOW_PLUS
     { 0x4F5D, 0x1C, BYTE_LEN, 0 },// YHIGH_TH
-
+    
     { 0x4F60, 0x0A, BYTE_LEN, 0 },// YHIGH_MINUS
-
+    
     { 0x4F6A, 0x00, BYTE_LEN, 0 },// HIST_BLEND
     { 0x4F6C, 0x63DF, WORD_LEN, 0 },// AUTOYGAMMA_DOWN
     { 0x4F6E, 0x63DE, WORD_LEN, 0 },// AUTOYGAMMA_OFF
-
+    
     ////////////////////////////////////////
     ///// Cat. : CXC_DATA(Pre-Shading) /////
     ////////////////////////////////////////
-
+    
     //PreSHD no.83//
     { 0x9000, 0x8282, WORD_LEN, 0 },// CXC_Validation code
     { 0x9002, 0x02, BYTE_LEN, 0 },// CXC R Gb Data Unit0 Byte0
@@ -3610,17 +3610,17 @@ struct isx006_i2c_reg_conf isx006_preload2_2nd_settings[] = {
     { 0x91E5, 0x40, BYTE_LEN, 0 },// CXC Gr B Data Unit26 Byte6
     { 0x91E6, 0x81, BYTE_LEN, 0 },// CXC Gr B Data Unit26 Byte7
     { 0x91E7, 0x00, BYTE_LEN, 0 },// CXC Gr B Data Unit26 Byte8
-
-
-
+    
+    
+    
     ///////////////////////////////////////
     /////////// Cat. : SHD_DATA ///////////
     ///////////////////////////////////////
-
-
+    
+    
     // Mesona TYP No83 //
     // D65 SHD1 CHKSHD_TGT57, 0x57, 0x57 //
-
+    
     { 0xA000, 0x9191, WORD_LEN, 0 },// SHD_Validation code
     { 0xA002, 0x7C, BYTE_LEN, 0 },// SHD R Gb Data Unit0 Byte0
     { 0xA003, 0xE1, BYTE_LEN, 0 },// SHD R Gb Data Unit0 Byte1
@@ -4678,11 +4678,11 @@ struct isx006_i2c_reg_conf isx006_preload2_2nd_settings[] = {
     { 0xA41F, 0x00, BYTE_LEN, 0 },// SHD B2 Data Unit13 Byte8
     { 0xA420, 0x00, BYTE_LEN, 0 },// SHD B2 Data Unit13 Byte9
     { 0xA421, 0x04, BYTE_LEN, 0 },// SHD B2 Data Unit13 Byte10
-
+    
     ////////////////////////////////////////
     //// Cat. : USERCTRL (PICT related) ////
     ////////////////////////////////////////
-
+    
     { 0x0068, 0x5F, BYTE_LEN, 0 },// SHD_EN
     //{ 0x0100, 0x00, BYTE_LEN, 0 },// SCENE_SELECT
     { 0x0105, 0x40, BYTE_LEN, 0 },// PICT1_SN1
@@ -4695,11 +4695,11 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     //version 11, 0x, 0x, 0x, 0x, 0x, 0x
     //2010.07 17 , 0x, 0x, 0x, 0x, 0x, 0x
     //Imaging LSI BD, 0x Semiconductor BG, 0x CPDG, 0x Sony Corp. , 0x, 0x, 0x
-
+    
     ////////////////////////////////////////
     /////////// Cat. : PICT_GAIN ///////////
     ////////////////////////////////////////
-
+    
     { 0x5842, 0x07, BYTE_LEN, 0 },// MAIN_GAINADJ_0
     { 0x5843, 0x07, BYTE_LEN, 0 },// MAIN_GAINADJ_1
     { 0x5844, 0x07, BYTE_LEN, 0 },// MAIN_GAINADJ_2
@@ -4817,19 +4817,19 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x5993, 0x10, BYTE_LEN, 0 },// Slope from middle-range Apcon negative-side 1st contact point and after for threshold value A
     { 0x5994, 0x10, BYTE_LEN, 0 },// Slope from middle-range Apcon negative-side 1st contact point and after for threshold value B
     { 0x5995, 0x10, BYTE_LEN, 0 },// Slope from middle-range Apcon negative-side 1st contact point and after for threshold value C
-
+    
     { 0x5997, 0x0C, BYTE_LEN, 0 },// Slope from high-range Apcon positive-side low to 1st contact point for threshold value B
     { 0x5998, 0x0C, BYTE_LEN, 0 },// Slope from high-range Apcon positive-side low to 1st contact point for threshold value C
     { 0x5999, 0x04, BYTE_LEN, 0 },// Slope from high-range Apcon positive-side 1st contact point and after for threshold value A
     { 0x599A, 0x03, BYTE_LEN, 0 },// Slope from high-range Apcon positive-side 1st contact point and after for threshold value B
     { 0x599B, 0x08, BYTE_LEN, 0 },// Slope from high-range Apcon positive-side 1st contact point and after for threshold value C
-
+    
     { 0x599D, 0x08, BYTE_LEN, 0 },// Slope from high-range Apcon negative-side low to 1st contact point for threshold value B
     { 0x599E, 0x10, BYTE_LEN, 0 },// Slope from high-range Apcon negative-side low to 1st contact point for threshold value C
     { 0x599F, 0x04, BYTE_LEN, 0 },// Slope from high-range Apcon negative-side 1st contact point and after for threshold value A
     { 0x59A0, 0x03, BYTE_LEN, 0 },// Slope from high-range Apcon negative-side 1st contact point and after for threshold value B
     { 0x59A1, 0x08, BYTE_LEN, 0 },// Slope from , 0xhigh-range Apcon negative-side 1st contact point and after for threshold value C
-
+    
     { 0x59A5, 0x20, BYTE_LEN, 0 },// Threshold value A, 0x Slope from low-range Apcon 2nd contact point to 3rd contact point (absolute value, 0x treated as negative coefficient)
     { 0x59A6, 0x20, BYTE_LEN, 0 },// Threshold value B, 0x Slope from low-range Apcon 2nd contact point to 3rd contact point (absolute value, 0x treated as negative coefficient)
     { 0x59A7, 0x20, BYTE_LEN, 0 },// Threshold value C, 0x Slope from low-range Apcon 2nd contact point to 3rd contact point (absolute value, 0x treated as negative coefficient)
@@ -4850,7 +4850,7 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x59BC, 0x20, BYTE_LEN, 0 },// Threshold value C, 0x Slope from high-range Apcon 3rd contact point and after (absolute value, 0x treated as negative coefficient)
     { 0x59BD, 0x30, BYTE_LEN, 0 },// LMT_WEIGHT_A
     { 0x59BE, 0x60, BYTE_LEN, 0 },// LMT_WEIGHT_B
-
+    
     { 0x59C5, 0x08, BYTE_LEN, 0 },// CS_SLP_C_A
     { 0x59C6, 0x08, BYTE_LEN, 0 },// CS_SLP_C_B
     { 0x59C7, 0x08, BYTE_LEN, 0 },// CS_SLP_C_C
@@ -4872,11 +4872,11 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x59F2, 0xF9, BYTE_LEN, 0 },// CS_APSH_L_A
     { 0x59F3, 0xF9, BYTE_LEN, 0 },// CS_APSH_L_B
     { 0x59F4, 0xF9, BYTE_LEN, 0 },// CS_APSH_L_C
-
+    
     ///////////////////////////////////////
     ///////// Cat.::AF Driver KMO /////////
     ///////////////////////////////////////
-
+    
     { 0xC000, 0xB5F7, WORD_LEN, 0 },// .\AF_RAMDRV_I2C_KMO_ES2
     { 0xC002, 0xB081, WORD_LEN, 0 },// .\AF_RAMDRV_I2C_KMO_ES2
     { 0xC004, 0x4D16, WORD_LEN, 0 },// .\AF_RAMDRV_I2C_KMO_ES2
@@ -5230,11 +5230,11 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x485C, 0x02BC, WORD_LEN, 0 },// AF_DRV_SIZE
     { 0x485E, 0x1F8D, WORD_LEN, 0 },// AF_DRV_CHKSUM_CODE
     { 0x000A, 0x01, BYTE_LEN, 0 },// AF_EXT
-
+    
     ///////////////////////////////////////
     /////////////// Cat.:AF ///////////////
     ///////////////////////////////////////
-
+    
     { 0x4808, 0x0019, WORD_LEN, 0 },// Minimum AF-OPD_TH value for IIR
     { 0x480A, 0x00FA, WORD_LEN, 0 },// Maximum AF-OPD_TH value for IIR
     { 0x480C, 0x03EB, WORD_LEN, 0 },// AF scale offset value used for AF_IIR_PEAK_OPD_TH_MIN
@@ -5294,29 +5294,29 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x48F4, 0x03FF, WORD_LEN, 0 },// Value1 setting: Sets the maximum coring amount for HPF IIR coring processing luminance dependence.
     { 0x48F6, 0x03FF, WORD_LEN, 0 },// Value2 setting: Sets the maximum coring amount for HPF IIR coring processing luminance dependence.
     { 0x48F8, 0x03FF, WORD_LEN, 0 },// Value3 setting: Sets the maximum coring amount for HPF IIR coring processing luminance dependence.
-
+    
     { 0x495C, 0x01, BYTE_LEN, 0 },// Lens movement anti-noise limiter control flag
     { 0x4968, 0x00, BYTE_LEN, 0 },// Stop decision setting during Wobble/Climb
     { 0x4969, 0x08, BYTE_LEN, 0 },// Threshold change decision count until restoring Wobble during Judge
     { 0x496C, 0x00, BYTE_LEN, 0 },// Set whether to enable FILTER setting
     { 0x496E, 0x01F4, WORD_LEN, 0 },// Uniform increase evaluation value threshold (for FIR)
     { 0x4970, 0x03E8, WORD_LEN, 0 },// Uniform increase evaluation value threshold (for IIR)
-
+    
     ///////////////////////////////////////
     ///////////// Cat.:AF EXT /////////////
     ///////////////////////////////////////
-
+    
     { 0x6E00, 0x01, BYTE_LEN, 0 },// FIR/IIR/FIR&IIR switch
     { 0x6E08, 0x001E, WORD_LEN, 0 },// The threshold of the AF scale to refer to during a lens edge stop
     { 0x6E12, 0x0020, WORD_LEN, 0 },// The threshold of the AF scale to refer to at the time of stable waiting
     { 0x6E8E, 0x0096, WORD_LEN, 0 },// The threshold of the AF scale to judge as scene change in Wobble.
     { 0x6E90, 0x01F4, WORD_LEN, 0 },// The threshold of the AF scale to judge as scene change in Climb.
     { 0x6E92, 0x0096, WORD_LEN, 0 },// The threshold of the AF scale to judge as scene change in Judge.
-
+    
     ///////////////////////////////////////
     //////// Cat.:MODE(AF related) ////////
     ///////////////////////////////////////
-
+    
     { 0x4C2C, 0x042E, WORD_LEN, 0 },// AF_OPD0_HDELAY
     { 0x4C2E, 0x02C5, WORD_LEN, 0 },// AF_OPD0_VDELAY
     { 0x4C30, 0x0217, WORD_LEN, 0 },// AF_OPD0_HVALID
@@ -5352,11 +5352,11 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x4C83, 0x00, BYTE_LEN, 0 },// AF_OPD4B_WEIGHT
     { 0x4C84, 0x00, BYTE_LEN, 0 },// AF_OPD5A_WEIGHT
     { 0x4C85, 0x00, BYTE_LEN, 0 },// AF_OPD5B_WEIGHT
-
+    
     ///////////////////////////////////////
     //////////// Cat. : GAMMA1 ////////////
     ///////////////////////////////////////
-
+    
     { 0x5438, 0x0001, WORD_LEN, 0 },// RGB-Gamma G-knot1(Table1)
     { 0x543A, 0x0002, WORD_LEN, 0 },// RGB-Gamma G-knot2(Table1)
     { 0x543C, 0x0004, WORD_LEN, 0 },// RGB-Gamma G-knot3(Table1)
@@ -5386,11 +5386,11 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x54A6, 0x0110, WORD_LEN, 0 },// Low-range setting/offset setting -G (Table1)
     { 0x54AA, 0x0110, WORD_LEN, 0 },// Low-range setting/offset setting -B (Table1)
     { 0x54AE, 0x5D01, WORD_LEN, 0 },// Convergence luminance setting (Table1)
-
+    
     ///////////////////////////////////////
     //////////// Cat. : GAMMA2 ////////////
     ///////////////////////////////////////
-
+    
     { 0x5638, 0x0000, WORD_LEN, 0 },// RGB-Gamma G-knot1(Table2)
     { 0x563A, 0x0001, WORD_LEN, 0 },// RGB-Gamma G-knot2(Table2)
     { 0x563C, 0x0006, WORD_LEN, 0 },// RGB-Gamma G-knot3(Table2)
@@ -5418,16 +5418,16 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x5668, 0x0101, WORD_LEN, 0 },// RGB-Gamma G-knot25(Table2)
     { 0x566A, 0x0104, WORD_LEN, 0 },// RGB-Gamma G-knot26(Table2)
     { 0x56AE, 0x2300, WORD_LEN, 0 },// Convergence luminance setting (Table2)
-
+    
     ///////////////////////////////////////
     ///////////// Cat. : PICT /////////////
     ///////////////////////////////////////
-
+    
     { 0x4E0B, 0x01, BYTE_LEN, 0 },// Hue gain mode selection0: AUTO (coloring control)1: Fixed at setting value for POS12: Fixed at setting value for POS2
     { 0x4E0C, 0x01FE, WORD_LEN, 0 },// Chroma start
     { 0x4E0E, 0x0A2A, WORD_LEN, 0 },// Chroma end
     { 0x4E10, 0x0100, WORD_LEN, 0 },// Chroma suppress levelWhen the value larger than 100h is set, 0x it is limited at 100h.
-
+    
     { 0x4F24, 0x3C, BYTE_LEN, 0 },// MAIN_CONFIG1
     { 0x4F25, 0x09, BYTE_LEN, 0 },// MAIN_CONFIG2
     { 0x4F2E, 0x0000, WORD_LEN, 0 },// DS_ADGRADCORE_B
@@ -5443,11 +5443,11 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x4F3E, 0x0A, BYTE_LEN, 0 },// DS_DFCT_TH_A
     { 0x4F3F, 0x1E, BYTE_LEN, 0 },// DS_DFCT_TH_B
     { 0x4F40, 0x1E, BYTE_LEN, 0 },// DS_DFCT_TH_C
-
+    
     ////////////////////////////////////////
     ///// Cat. : LMT (Hue/Gain for HD) /////
     ////////////////////////////////////////
-
+    
     { 0x5062, 0xFFF6, WORD_LEN, 0 },// BYHUE reference value (1st quadrant), 0x for HD, 0x POS1
     { 0x5064, 0xFFE9, WORD_LEN, 0 },// RYHUE reference value (1st quadrant), 0x for HD, 0x POS1
     { 0x5066, 0xFFF6, WORD_LEN, 0 },// BYHUE reference value (2nd quadrant), 0x for HD, 0x POS1
@@ -5472,7 +5472,7 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x508D, 0x56, BYTE_LEN, 0 },// BYGAIN reference value (2nd quadrant), 0x for HD, 0x POS2
     { 0x508F, 0x56, BYTE_LEN, 0 },// BYGAIN reference value (3rd quadrant), 0x for HD, 0x POS2
     { 0x5091, 0x48, BYTE_LEN, 0 },// BYGAIN reference value (4th quadrant), 0x for HD, 0x POS2
-
+    
     ////////////////////////////////////////
     //// Cat. : USERCTRL (PICT related) ////
     ////////////////////////////////////////
@@ -5538,12 +5538,12 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     {0x01F9, 0x65, BYTE_LEN, 0 },// PICT3_GAMMA1
     {0x01FC, 0x65, BYTE_LEN, 0 },// PICT3_GAMMA4
     {0x3208, 0x01, BYTE_LEN, 0 },/* FIH-SW3-MM-UW-performance tuning-00+*/
-    /* FIH-SW3-MM-UW-set AF range-00-*/
-
+    /* FIH-SW3-MM-UW-set AF range-00-*/ 
+    
     //////////////////////////////////////////
     //// Cat. : USERCTRL (System related) ////
     //////////////////////////////////////////
-
+    
     { 0x001D, 0x00, BYTE_LEN, 0 },// OUTFMT_CAP
     { 0x0024, 0x0A20, WORD_LEN, 0 },// HSIZE_CAP
     { 0x002A, 0x0798, WORD_LEN, 0 },// VSIZE_CAP
@@ -5560,15 +5560,15 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
     { 0x02C0, 0x10, BYTE_LEN, 0 },// VIF_CLKCONFIG9
     { 0x02C1, 0x10, BYTE_LEN, 0 },// VIF_CLKCONFIG10
     { 0x033F, 0x00, BYTE_LEN, 0 },// JPGBUF_LINEFIX_F
-
+    
     ///////////////////////////////////////
     ///////////// Cat. : JPEG /////////////
     ///////////////////////////////////////
-
+    
     ////////////////////////////////////////
     ////////// Cat. : QTABLE_DATA //////////
     ////////////////////////////////////////
-
+    
     ///////////////////////////////////////
     ////// Cat. : AE_FRM (for Sence) //////
     ///////////////////////////////////////
@@ -5577,11 +5577,11 @@ struct isx006_i2c_reg_conf isx006_preload3_2nd_settings[] = {
 /* FIH-SW3-MM-UW-read vendor id-00-*/
 
 struct isx006_i2c_reg_conf isx006_preload3_reload_settings[] = {
-
+   
    ///////////////////////////////////////
    ///////// Cat.::AF Driver KMO /////////
    ///////////////////////////////////////
-
+   
    { 0xC000, 0xB5F7, WORD_LEN, 0 },// .\AF_RAMDRV_I2C_KMO_ES2
    { 0xC002, 0xB081, WORD_LEN, 0 },// .\AF_RAMDRV_I2C_KMO_ES2
    { 0xC004, 0x4D16, WORD_LEN, 0 },// .\AF_RAMDRV_I2C_KMO_ES2
@@ -11324,13 +11324,13 @@ struct isx006_i2c_reg_conf isx006_SHD_TYP_settings[] = {
 
 struct isx006_i2c_reg_conf isx006_SHD_MAX_2nd_settings[] = {
         //2009/12/28
-        // ISX006 KMOT ES2 no.12 Module(Index3)
+        // ISX006 KMOT ES2 no.12 Module(Index3) 
         // PreSHD/SHD1/2/3 inifile
         // After Gamma 70%
         // SHD3 A+TLD
         { 0x0068, 0x50, BYTE_LEN, 0 }, //cxc, 0xshd, 0xinp, 0xgain off
-
-        { 0x9000, 0x8282, WORD_LEN, 0 },
+        
+        { 0x9000, 0x8282, WORD_LEN, 0 },    
         { 0x9002, 0x03, BYTE_LEN, 0 },
         { 0x9003, 0x0c, BYTE_LEN, 0 },
         { 0x9004, 0x0c, BYTE_LEN, 0 },
@@ -11817,7 +11817,7 @@ struct isx006_i2c_reg_conf isx006_SHD_MAX_2nd_settings[] = {
         { 0x91E5, 0x00, BYTE_LEN, 0 },
         { 0x91E6, 0x01, BYTE_LEN, 0 },
         { 0x91E7, 0x03, BYTE_LEN, 0 },
-
+        
         { 0xA000, 0x9191, WORD_LEN, 0 },
         { 0xA002, 0x84, BYTE_LEN, 0 },
         { 0xA003, 0xe1, BYTE_LEN, 0 },
@@ -12413,7 +12413,7 @@ struct isx006_i2c_reg_conf isx006_SHD_MAX_2nd_settings[] = {
         { 0xA251, 0xbc, BYTE_LEN, 0 },
         { 0xA252, 0xc5, BYTE_LEN, 0 },
         { 0xA253, 0x31, BYTE_LEN, 0 },
-
+        
         { 0xA254, 0x97, BYTE_LEN, 0 },
         { 0xA255, 0x21, BYTE_LEN, 0 },
         { 0xA256, 0x4d, BYTE_LEN, 0 },
@@ -12568,7 +12568,7 @@ struct isx006_i2c_reg_conf isx006_SHD_MAX_2nd_settings[] = {
         { 0xA2EB, 0x44, BYTE_LEN, 0 },
         { 0xA2EC, 0x14, BYTE_LEN, 0 },
         { 0xA2ED, 0xa6, BYTE_LEN, 0 },
-
+        
         { 0xA2EE, 0xcd, BYTE_LEN, 0 },
         { 0xA2EF, 0xb9, BYTE_LEN, 0 },
         { 0xA2F0, 0x0e, BYTE_LEN, 0 },
@@ -12877,18 +12877,18 @@ struct isx006_i2c_reg_conf isx006_SHD_MAX_2nd_settings[] = {
         { 0xA41F, 0x00, BYTE_LEN, 0 },
         { 0xA420, 0x00, BYTE_LEN, 0 },
         { 0xA421, 0x0a, BYTE_LEN, 0 },
-
+        
         { 0x0068, 0x5F, BYTE_LEN, 0 }, //cxc, 0xshd, 0xinp, 0xgain on
 };
 
 struct isx006_i2c_reg_conf isx006_SHD_MIN_2nd_settings[] = {
         //2009/12/28
-        // ISX006 KMOT ES2 no.2 Module(Index1)
+        // ISX006 KMOT ES2 no.2 Module(Index1) 
         // PreSHD/SHD1/2/3 inifile
         // After Gamma 70%
         // SHD3 A+TLD
         { 0x0068, 0x50, BYTE_LEN, 0 }, //cxc, 0xshd, 0xinp, 0xgain off
-
+        
         { 0x9000, 0x8282, WORD_LEN, 0 },
         { 0x9002, 0x01, BYTE_LEN, 0 },
         { 0x9003, 0x0e, BYTE_LEN, 0 },
@@ -13376,7 +13376,7 @@ struct isx006_i2c_reg_conf isx006_SHD_MIN_2nd_settings[] = {
         { 0x91E5, 0x00, BYTE_LEN, 0 },
         { 0x91E6, 0x01, BYTE_LEN, 0 },
         { 0x91E7, 0x02, BYTE_LEN, 0 },
-
+        
         { 0xA000, 0x9191, WORD_LEN, 0 },
         { 0xA002, 0x76, BYTE_LEN, 0 },
         { 0xA003, 0xf1, BYTE_LEN, 0 },
@@ -13972,7 +13972,7 @@ struct isx006_i2c_reg_conf isx006_SHD_MIN_2nd_settings[] = {
         { 0xA251, 0xc8, BYTE_LEN, 0 },
         { 0xA252, 0x45, BYTE_LEN, 0 },
         { 0xA253, 0x31, BYTE_LEN, 0 },
-
+        
         { 0xA254, 0x95, BYTE_LEN, 0 },
         { 0xA255, 0x41, BYTE_LEN, 0 },
         { 0xA256, 0x8d, BYTE_LEN, 0 },
@@ -14127,7 +14127,7 @@ struct isx006_i2c_reg_conf isx006_SHD_MIN_2nd_settings[] = {
         { 0xA2EB, 0x44, BYTE_LEN, 0 },
         { 0xA2EC, 0x14, BYTE_LEN, 0 },
         { 0xA2ED, 0xa6, BYTE_LEN, 0 },
-
+        
         { 0xA2EE, 0xd2, BYTE_LEN, 0 },
         { 0xA2EF, 0x41, BYTE_LEN, 0 },
         { 0xA2F0, 0x0f, BYTE_LEN, 0 },
@@ -14436,19 +14436,19 @@ struct isx006_i2c_reg_conf isx006_SHD_MIN_2nd_settings[] = {
         { 0xA41F, 0x00, BYTE_LEN, 0 },
         { 0xA420, 0x00, BYTE_LEN, 0 },
         { 0xA421, 0x0a, BYTE_LEN, 0 },
-
+        
         { 0x0068, 0x5F, BYTE_LEN, 0 }, //cxc, 0xshd, 0xinp, 0xgain on
 };
 
 struct isx006_i2c_reg_conf isx006_SHD_TYP_2nd_settings[] = {
         //2009/12/28
-        // ISX006 KMOT ES2 no.15 Module(Index2)
+        // ISX006 KMOT ES2 no.15 Module(Index2) 
         // PreSHD/SHD1/2/3 inifile
         // After Gamma 70%
         // SHD3 A+TLD
         { 0x0068, 0x50, BYTE_LEN, 0 }, //cxc, 0xshd, 0xinp, 0xgain off
-
-        { 0x9000, 0x8282, WORD_LEN, 0 },
+        
+        { 0x9000, 0x8282, WORD_LEN, 0 },    
         { 0x9002, 0x02, BYTE_LEN, 0 },
         { 0x9003, 0x0e, BYTE_LEN, 0 },
         { 0x9004, 0x08, BYTE_LEN, 0 },
@@ -14935,7 +14935,7 @@ struct isx006_i2c_reg_conf isx006_SHD_TYP_2nd_settings[] = {
         { 0x91E5, 0x40, BYTE_LEN, 0 },
         { 0x91E6, 0x81, BYTE_LEN, 0 },
         { 0x91E7, 0x00, BYTE_LEN, 0 },
-
+        
         { 0xA000, 0x16, BYTE_LEN, 0 },
         { 0xA002, 0x7c, BYTE_LEN, 0 },
         { 0xA003, 0xe1, BYTE_LEN, 0 },
@@ -15531,7 +15531,7 @@ struct isx006_i2c_reg_conf isx006_SHD_TYP_2nd_settings[] = {
         { 0xA251, 0xf8, BYTE_LEN, 0 },
         { 0xA252, 0xc5, BYTE_LEN, 0 },
         { 0xA253, 0x32, BYTE_LEN, 0 },
-
+        
         { 0xA254, 0x91, BYTE_LEN, 0 },
         { 0xA255, 0x21, BYTE_LEN, 0 },
         { 0xA256, 0x0d, BYTE_LEN, 0 },
@@ -15686,7 +15686,7 @@ struct isx006_i2c_reg_conf isx006_SHD_TYP_2nd_settings[] = {
         { 0xA2EB, 0x44, BYTE_LEN, 0 },
         { 0xA2EC, 0x14, BYTE_LEN, 0 },
         { 0xA2ED, 0xa6, BYTE_LEN, 0 },
-
+        
         { 0xA2EE, 0xc6, BYTE_LEN, 0 },
         { 0xA2EF, 0xc9, BYTE_LEN, 0 },
         { 0xA2F0, 0x4e, BYTE_LEN, 0 },
@@ -15995,13 +15995,13 @@ struct isx006_i2c_reg_conf isx006_SHD_TYP_2nd_settings[] = {
         { 0xA41F, 0x00, BYTE_LEN, 0 },
         { 0xA420, 0x00, BYTE_LEN, 0 },
         { 0xA421, 0x04, BYTE_LEN, 0 },
-
+        
         { 0x0068, 0x5F, BYTE_LEN, 0 }, //cxc, 0xshd, 0xinp, 0xgain on
 };
 
 
 /* FIH-SW3-MM-UW-flash tuning-04+*/
-int16_t x_8[] = {
+int16_t x_8[] = {   
     0,
     -68,
     -133,
@@ -17021,13 +17021,13 @@ struct isx006_reg isx006_regs = {
 
     //KMOT setting
     .reg_preload2_2nd = &isx006_preload2_2nd_settings[0],
-    .reg_preload2_2nd_size = ARRAY_SIZE(isx006_preload2_2nd_settings),
+    .reg_preload2_2nd_size = ARRAY_SIZE(isx006_preload2_2nd_settings),   
 
     .reg_preload3_2nd = &isx006_preload3_2nd_settings[0],
-    .reg_preload3_2nd_size = ARRAY_SIZE(isx006_preload3_2nd_settings),
+    .reg_preload3_2nd_size = ARRAY_SIZE(isx006_preload3_2nd_settings),   
 
     .reg_preload3_reload = &isx006_preload3_reload_settings[0],
-    .reg_preload3_reload_size = ARRAY_SIZE(isx006_preload3_reload_settings),
+    .reg_preload3_reload_size = ARRAY_SIZE(isx006_preload3_reload_settings),  
 
     //Scene
     .reg_sport = &isx006_sport_settings[0],
@@ -17061,10 +17061,10 @@ struct isx006_reg isx006_regs = {
     /* FIH-SW3-MM-UW-write OTP setting-00-*/
 
     .reg_SHD_MAX_2nd = &isx006_SHD_MAX_2nd_settings[0],
-    .reg_SHD_MAX_2nd_size = ARRAY_SIZE(isx006_SHD_MAX_2nd_settings),
+    .reg_SHD_MAX_2nd_size = ARRAY_SIZE(isx006_SHD_MAX_2nd_settings),	
 
     .reg_SHD_MIN_2nd = &isx006_SHD_MIN_2nd_settings[0],
-    .reg_SHD_MIN_2nd_size = ARRAY_SIZE(isx006_SHD_MIN_2nd_settings),
+    .reg_SHD_MIN_2nd_size = ARRAY_SIZE(isx006_SHD_MIN_2nd_settings),		
 
     .reg_SHD_TYP_2nd = &isx006_SHD_TYP_2nd_settings[0],
     .reg_SHD_TYP_2nd_size = ARRAY_SIZE(isx006_SHD_TYP_2nd_settings),
