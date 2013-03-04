@@ -185,18 +185,20 @@ int fih_load_565rle_image(char *filename)
 
 	max = fb_width(info) * fb_height(info);
 	ptr = (unsigned short *)data;
+
+	if (info->screen_base) {
 #ifdef CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888
-	bits = (unsigned char *)(info->screen_base);
+		bits = (unsigned char *)(info->screen_base);
 #else
-	bits = (unsigned short *)(info->screen_base);
+		bits = (unsigned short *)(info->screen_base);
 #endif
-	while (count > 3) {
-		unsigned n = ptr[0];
+		while (count > 3) {
+			unsigned n = ptr[0];
 #ifdef CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888
-		int bits_count = n;
+			int bits_count = n;
 #endif
-		if (n > max)
-			break;
+			if (n > max)
+				break;
 #ifdef CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888
 		while (bits_count--) {
 			*bits++ = (ptr[1] & 0xF800) >> 8;
@@ -205,12 +207,13 @@ int fih_load_565rle_image(char *filename)
 			*bits++ = 0xFF;
 		}
 #else
-		memset16(bits, ptr[1], n << 1);
-		bits += n;
+			memset16(bits, ptr[1], n << 1);
+			bits += n;
 #endif
-		max -= n;
-		ptr += 2;
-		count -= 4;
+			max -= n;
+			ptr += 2;
+			count -= 4;
+		}
 	}
 
 error1:
