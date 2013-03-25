@@ -160,15 +160,15 @@ static struct lm3533_platform_data lm3533_leds = {
 	.leds_size = LM3533_LEDS_MAX,
 	.leds = {
 		[0] = {
-			.name = "blue",
+			.name = "lm3533-light-sns",
 			.type = LM3533_LED_TYPE_LED
 		},
 		[1] = {
-			.name = "button-backlight",
+			.name = "lm3533-light-button",
 			.type = LM3533_LED_TYPE_LED
 		},
 		[2] = {
-			.name = "lcd-backlight",
+			.name = "lm3533-light-backlight",
 			.type = LM3533_LED_TYPE_LED
 		},
 	}
