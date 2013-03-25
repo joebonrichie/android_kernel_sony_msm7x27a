@@ -1596,7 +1596,6 @@ config MSM_HW3D
 config MSM_ADSP
 	depends on (ARCH_MSM7X01A || ARCH_MSM7X25 || ARCH_MSM7X27)
 	tristate "MSM ADSP driver"
-	depends on ANDROID_PMEM
 	default y
 	help
 	  Provides access to registers needed by the userspace aDSP library.
