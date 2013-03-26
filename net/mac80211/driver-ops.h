@@ -10,27 +10,9 @@ static inline void check_sdata_in_driver(struct ieee80211_sub_if_data *sdata)
 	WARN_ON(!(sdata->flags & IEEE80211_SDATA_IN_DRIVER));
 }
 
-static inline struct ieee80211_sub_if_data *
-get_bss_sdata(struct ieee80211_sub_if_data *sdata)
-{
-	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
-		sdata = container_of(sdata->bss, struct ieee80211_sub_if_data,
-				     u.ap);
-
-	return sdata;
-}
-
 static inline void drv_tx(struct ieee80211_local *local, struct sk_buff *skb)
 {
 	local->ops->tx(&local->hw, skb);
-}
-
-static inline void drv_tx_frags(struct ieee80211_local *local,
-				struct ieee80211_vif *vif,
-				struct ieee80211_sta *sta,
-				struct sk_buff_head *skbs)
-{
-	local->ops->tx_frags(&local->hw, vif, sta, skbs);
 }
 
 static inline int drv_start(struct ieee80211_local *local)
@@ -168,6 +150,41 @@ static inline void drv_bss_info_changed(struct ieee80211_local *local,
 	trace_drv_return_void(local);
 }
 
+static inline int drv_tx_sync(struct ieee80211_local *local,
+			      struct ieee80211_sub_if_data *sdata,
+			      const u8 *bssid,
+			      enum ieee80211_tx_sync_type type)
+{
+	int ret = 0;
+
+	might_sleep();
+
+	check_sdata_in_driver(sdata);
+
+	trace_drv_tx_sync(local, sdata, bssid, type);
+	if (local->ops->tx_sync)
+		ret = local->ops->tx_sync(&local->hw, &sdata->vif,
+					  bssid, type);
+	trace_drv_return_int(local, ret);
+	return ret;
+}
+
+static inline void drv_finish_tx_sync(struct ieee80211_local *local,
+				      struct ieee80211_sub_if_data *sdata,
+				      const u8 *bssid,
+				      enum ieee80211_tx_sync_type type)
+{
+	might_sleep();
+
+	check_sdata_in_driver(sdata);
+
+	trace_drv_finish_tx_sync(local, sdata, bssid, type);
+	if (local->ops->finish_tx_sync)
+		local->ops->finish_tx_sync(&local->hw, &sdata->vif,
+					   bssid, type);
+	trace_drv_return_void(local);
+}
+
 static inline u64 drv_prepare_multicast(struct ieee80211_local *local,
 					struct netdev_hw_addr_list *mc_list)
 {
@@ -218,7 +235,6 @@ static inline int drv_set_key(struct ieee80211_local *local,
 
 	might_sleep();
 
-	sdata = get_bss_sdata(sdata);
 	check_sdata_in_driver(sdata);
 
 	trace_drv_set_key(local, cmd, sdata, sta, key);
@@ -238,7 +254,6 @@ static inline void drv_update_tkip_key(struct ieee80211_local *local,
 	if (sta)
 		ista = &sta->sta;
 
-	sdata = get_bss_sdata(sdata);
 	check_sdata_in_driver(sdata);
 
 	trace_drv_update_tkip_key(local, sdata, conf, ista, iv32);
@@ -398,7 +413,6 @@ static inline void drv_sta_notify(struct ieee80211_local *local,
 				  enum sta_notify_cmd cmd,
 				  struct ieee80211_sta *sta)
 {
-	sdata = get_bss_sdata(sdata);
 	check_sdata_in_driver(sdata);
 
 	trace_drv_sta_notify(local, sdata, cmd, sta);
@@ -415,7 +429,6 @@ static inline int drv_sta_add(struct ieee80211_local *local,
 
 	might_sleep();
 
-	sdata = get_bss_sdata(sdata);
 	check_sdata_in_driver(sdata);
 
 	trace_drv_sta_add(local, sdata, sta);
@@ -433,7 +446,6 @@ static inline void drv_sta_remove(struct ieee80211_local *local,
 {
 	might_sleep();
 
-	sdata = get_bss_sdata(sdata);
 	check_sdata_in_driver(sdata);
 
 	trace_drv_sta_remove(local, sdata, sta);
@@ -441,37 +453,6 @@ static inline void drv_sta_remove(struct ieee80211_local *local,
 		local->ops->sta_remove(&local->hw, &sdata->vif, sta);
 
 	trace_drv_return_void(local);
-}
-
-static inline __must_check
-int drv_sta_state(struct ieee80211_local *local,
-		  struct ieee80211_sub_if_data *sdata,
-		  struct sta_info *sta,
-		  enum ieee80211_sta_state old_state,
-		  enum ieee80211_sta_state new_state)
-{
-	int ret = 0;
-
-	might_sleep();
-
-	sdata = get_bss_sdata(sdata);
-	check_sdata_in_driver(sdata);
-
-	trace_drv_sta_state(local, sdata, &sta->sta, old_state, new_state);
-	if (local->ops->sta_state) {
-		ret = local->ops->sta_state(&local->hw, &sdata->vif, &sta->sta,
-					    old_state, new_state);
-	} else if (old_state == IEEE80211_STA_AUTH &&
-		   new_state == IEEE80211_STA_ASSOC) {
-		ret = drv_sta_add(local, sdata, &sta->sta);
-		if (ret == 0)
-			sta->uploaded = true;
-	} else if (old_state == IEEE80211_STA_ASSOC &&
-		   new_state == IEEE80211_STA_AUTH) {
-		drv_sta_remove(local, sdata, &sta->sta);
-	}
-	trace_drv_return_int(local, ret);
-	return ret;
 }
 
 static inline int drv_conf_tx(struct ieee80211_local *local,
@@ -558,7 +539,6 @@ static inline int drv_ampdu_action(struct ieee80211_local *local,
 
 	might_sleep();
 
-	sdata = get_bss_sdata(sdata);
 	check_sdata_in_driver(sdata);
 
 	trace_drv_ampdu_action(local, sdata, action, sta, tid, ssn, buf_size);

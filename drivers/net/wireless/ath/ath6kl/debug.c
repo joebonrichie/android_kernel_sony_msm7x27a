@@ -23,6 +23,7 @@
 #include <linux/export.h>
 
 #include "debug.h"
+#include "debugfs_pri.h"
 #include "target.h"
 
 struct ath6kl_fwlog_slot {
@@ -54,41 +55,8 @@ int ath6kl_printk(const char *level, const char *fmt, ...)
 
 	return rtn;
 }
-EXPORT_SYMBOL(ath6kl_printk);
 
 #ifdef CONFIG_ATH6KL_DEBUG
-
-void ath6kl_dbg(enum ATH6K_DEBUG_MASK mask, const char *fmt, ...)
-{
-	struct va_format vaf;
-	va_list args;
-
-	if (!(debug_mask & mask))
-		return;
-
-	va_start(args, fmt);
-
-	vaf.fmt = fmt;
-	vaf.va = &args;
-
-	ath6kl_printk(KERN_DEBUG, "%pV", &vaf);
-
-	va_end(args);
-}
-EXPORT_SYMBOL(ath6kl_dbg);
-
-void ath6kl_dbg_dump(enum ATH6K_DEBUG_MASK mask,
-		     const char *msg, const char *prefix,
-		     const void *buf, size_t len)
-{
-	if (debug_mask & mask) {
-		if (msg)
-			ath6kl_dbg(mask, "%s\n", msg);
-
-		print_hex_dump_bytes(prefix, DUMP_PREFIX_OFFSET, buf, len);
-	}
-}
-EXPORT_SYMBOL(ath6kl_dbg_dump);
 
 #define REG_OUTPUT_LEN_PER_LINE	25
 #define REGTYPE_STR_LEN		100
@@ -115,63 +83,63 @@ void ath6kl_dump_registers(struct ath6kl_device *dev,
 			   struct ath6kl_irq_enable_reg *irq_enable_reg)
 {
 
-	ath6kl_dbg(ATH6KL_DBG_IRQ, ("<------- Register Table -------->\n"));
+	ath6kl_dbg(ATH6KL_DBG_ANY, ("<------- Register Table -------->\n"));
 
 	if (irq_proc_reg != NULL) {
-		ath6kl_dbg(ATH6KL_DBG_IRQ,
-			   "Host Int status:           0x%x\n",
-			   irq_proc_reg->host_int_status);
-		ath6kl_dbg(ATH6KL_DBG_IRQ,
+		ath6kl_dbg(ATH6KL_DBG_ANY,
+			"Host Int status:           0x%x\n",
+			irq_proc_reg->host_int_status);
+		ath6kl_dbg(ATH6KL_DBG_ANY,
 			   "CPU Int status:            0x%x\n",
-			   irq_proc_reg->cpu_int_status);
-		ath6kl_dbg(ATH6KL_DBG_IRQ,
+			irq_proc_reg->cpu_int_status);
+		ath6kl_dbg(ATH6KL_DBG_ANY,
 			   "Error Int status:          0x%x\n",
-			   irq_proc_reg->error_int_status);
-		ath6kl_dbg(ATH6KL_DBG_IRQ,
+			irq_proc_reg->error_int_status);
+		ath6kl_dbg(ATH6KL_DBG_ANY,
 			   "Counter Int status:        0x%x\n",
-			   irq_proc_reg->counter_int_status);
-		ath6kl_dbg(ATH6KL_DBG_IRQ,
+			irq_proc_reg->counter_int_status);
+		ath6kl_dbg(ATH6KL_DBG_ANY,
 			   "Mbox Frame:                0x%x\n",
-			   irq_proc_reg->mbox_frame);
-		ath6kl_dbg(ATH6KL_DBG_IRQ,
+			irq_proc_reg->mbox_frame);
+		ath6kl_dbg(ATH6KL_DBG_ANY,
 			   "Rx Lookahead Valid:        0x%x\n",
-			   irq_proc_reg->rx_lkahd_valid);
-		ath6kl_dbg(ATH6KL_DBG_IRQ,
+			irq_proc_reg->rx_lkahd_valid);
+		ath6kl_dbg(ATH6KL_DBG_ANY,
 			   "Rx Lookahead 0:            0x%x\n",
-			   irq_proc_reg->rx_lkahd[0]);
-		ath6kl_dbg(ATH6KL_DBG_IRQ,
+			irq_proc_reg->rx_lkahd[0]);
+		ath6kl_dbg(ATH6KL_DBG_ANY,
 			   "Rx Lookahead 1:            0x%x\n",
-			   irq_proc_reg->rx_lkahd[1]);
+			irq_proc_reg->rx_lkahd[1]);
 
 		if (dev->ar->mbox_info.gmbox_addr != 0) {
 			/*
 			 * If the target supports GMBOX hardware, dump some
 			 * additional state.
 			 */
-			ath6kl_dbg(ATH6KL_DBG_IRQ,
-				   "GMBOX Host Int status 2:   0x%x\n",
-				   irq_proc_reg->host_int_status2);
-			ath6kl_dbg(ATH6KL_DBG_IRQ,
-				   "GMBOX RX Avail:            0x%x\n",
-				   irq_proc_reg->gmbox_rx_avail);
-			ath6kl_dbg(ATH6KL_DBG_IRQ,
-				   "GMBOX lookahead alias 0:   0x%x\n",
-				   irq_proc_reg->rx_gmbox_lkahd_alias[0]);
-			ath6kl_dbg(ATH6KL_DBG_IRQ,
-				   "GMBOX lookahead alias 1:   0x%x\n",
-				   irq_proc_reg->rx_gmbox_lkahd_alias[1]);
+			ath6kl_dbg(ATH6KL_DBG_ANY,
+				"GMBOX Host Int status 2:   0x%x\n",
+				irq_proc_reg->host_int_status2);
+			ath6kl_dbg(ATH6KL_DBG_ANY,
+				"GMBOX RX Avail:            0x%x\n",
+				irq_proc_reg->gmbox_rx_avail);
+			ath6kl_dbg(ATH6KL_DBG_ANY,
+				"GMBOX lookahead alias 0:   0x%x\n",
+				irq_proc_reg->rx_gmbox_lkahd_alias[0]);
+			ath6kl_dbg(ATH6KL_DBG_ANY,
+				"GMBOX lookahead alias 1:   0x%x\n",
+				irq_proc_reg->rx_gmbox_lkahd_alias[1]);
 		}
 
 	}
 
 	if (irq_enable_reg != NULL) {
-		ath6kl_dbg(ATH6KL_DBG_IRQ,
-			   "Int status Enable:         0x%x\n",
-			   irq_enable_reg->int_status_en);
-		ath6kl_dbg(ATH6KL_DBG_IRQ, "Counter Int status Enable: 0x%x\n",
-			   irq_enable_reg->cntr_int_status_en);
+		ath6kl_dbg(ATH6KL_DBG_ANY,
+			"Int status Enable:         0x%x\n",
+			irq_enable_reg->int_status_en);
+		ath6kl_dbg(ATH6KL_DBG_ANY, "Counter Int status Enable: 0x%x\n",
+			irq_enable_reg->cntr_int_status_en);
 	}
-	ath6kl_dbg(ATH6KL_DBG_IRQ, "<------------------------------->\n");
+	ath6kl_dbg(ATH6KL_DBG_ANY, "<------------------------------->\n");
 }
 
 static void dump_cred_dist(struct htc_endpoint_credit_dist *ep_dist)
@@ -208,6 +176,9 @@ void dump_cred_dist_stats(struct htc_target *target)
 {
 	struct htc_endpoint_credit_dist *ep_list;
 
+	if (!AR_DBG_LVL_CHECK(ATH6KL_DBG_CREDIT))
+		return;
+
 	list_for_each_entry(ep_list, &target->cred_dist_list, list)
 		dump_cred_dist(ep_list);
 
@@ -215,6 +186,12 @@ void dump_cred_dist_stats(struct htc_target *target)
 		   "credit distribution total %d free %d\n",
 		   target->credit_info->total_avail_credits,
 		   target->credit_info->cur_free_credits);
+}
+
+static int ath6kl_debugfs_open(struct inode *inode, struct file *file)
+{
+	file->private_data = inode->i_private;
+	return 0;
 }
 
 void ath6kl_debug_war(struct ath6kl *ar, enum ath6kl_war war)
@@ -257,7 +234,7 @@ static ssize_t read_file_war_stats(struct file *file, char __user *user_buf,
 
 static const struct file_operations fops_war_stats = {
 	.read = read_file_war_stats,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -401,8 +378,10 @@ static ssize_t ath6kl_fwlog_block_read(struct file *file,
 
 		ret = wait_for_completion_interruptible(
 			&ar->debug.fwlog_completion);
-		if (ret == -ERESTARTSYS)
+		if (ret == -ERESTARTSYS) {
+			vfree(buf);
 			return ret;
+		}
 
 		spin_lock(&ar->debug.fwlog_queue.lock);
 	}
@@ -482,7 +461,7 @@ static ssize_t ath6kl_fwlog_mask_write(struct file *file,
 }
 
 static const struct file_operations fops_fwlog_mask = {
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.read = ath6kl_fwlog_mask_read,
 	.write = ath6kl_fwlog_mask_write,
 	.owner = THIS_MODULE,
@@ -616,6 +595,12 @@ static ssize_t read_file_tgt_stats(struct file *file, char __user *user_buf,
 			 "Num disconnects", tgt_stats->cs_discon_cnt);
 	len += scnprintf(buf + len, buf_len - len, "%20s %10d\n",
 			 "Beacon avg rssi", tgt_stats->cs_ave_beacon_rssi);
+	len += scnprintf(buf + len, buf_len - len, "%20s %10d\n",
+			 "ARP pkt received", tgt_stats->arp_received);
+	len += scnprintf(buf + len, buf_len - len, "%20s %10d\n",
+			 "ARP pkt matched", tgt_stats->arp_matched);
+	len += scnprintf(buf + len, buf_len - len, "%20s %10d\n",
+			 "ARP pkt replied", tgt_stats->arp_replied);
 
 	if (len > buf_len)
 		len = buf_len;
@@ -628,7 +613,7 @@ static ssize_t read_file_tgt_stats(struct file *file, char __user *user_buf,
 
 static const struct file_operations fops_tgt_stats = {
 	.read = read_file_tgt_stats,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -693,7 +678,7 @@ static ssize_t read_file_credit_dist_stats(struct file *file,
 
 static const struct file_operations fops_credit_dist_stats = {
 	.read = read_file_credit_dist_stats,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -734,13 +719,9 @@ static ssize_t ath6kl_endpoint_stats_read(struct file *file,
 		return -ENOMEM;
 
 #define EPSTAT(name)							\
-	do {								\
-		len = print_endpoint_stat(target, buf, buf_len, len,	\
-					  offsetof(struct htc_endpoint_stats, \
-						   name),		\
-					  #name);			\
-	} while (0)
-
+	len = print_endpoint_stat(target, buf, buf_len, len,		\
+				  offsetof(struct htc_endpoint_stats, name), \
+				  #name)
 	EPSTAT(cred_low_indicate);
 	EPSTAT(tx_issued);
 	EPSTAT(tx_pkt_bundled);
@@ -796,7 +777,7 @@ static ssize_t ath6kl_endpoint_stats_write(struct file *file,
 }
 
 static const struct file_operations fops_endpoint_stats = {
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.read = ath6kl_endpoint_stats_read,
 	.write = ath6kl_endpoint_stats_write,
 	.owner = THIS_MODULE,
@@ -850,9 +831,17 @@ static ssize_t ath6kl_regread_write(struct file *file,
 				    size_t count, loff_t *ppos)
 {
 	struct ath6kl *ar = file->private_data;
+	u8 buf[50];
+	unsigned int len;
 	unsigned long reg_addr;
 
-	if (kstrtoul_from_user(user_buf, count, 0, &reg_addr))
+	len = min(count, sizeof(buf) - 1);
+	if (copy_from_user(buf, user_buf, len))
+		return -EFAULT;
+
+	buf[len] = '\0';
+
+	if (strict_strtoul(buf, 0, &reg_addr))
 		return -EINVAL;
 
 	if ((reg_addr % 4) != 0)
@@ -869,7 +858,7 @@ static ssize_t ath6kl_regread_write(struct file *file,
 static const struct file_operations fops_diag_reg_read = {
 	.read = ath6kl_regread_read,
 	.write = ath6kl_regread_write,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -966,8 +955,15 @@ static ssize_t ath6kl_lrssi_roam_write(struct file *file,
 {
 	struct ath6kl *ar = file->private_data;
 	unsigned long lrssi_roam_threshold;
+	char buf[32];
+	ssize_t len;
 
-	if (kstrtoul_from_user(user_buf, count, 0, &lrssi_roam_threshold))
+	len = min(count, sizeof(buf) - 1);
+	if (copy_from_user(buf, user_buf, len))
+		return -EFAULT;
+
+	buf[len] = '\0';
+	if (strict_strtoul(buf, 0, &lrssi_roam_threshold))
 		return -EINVAL;
 
 	ar->lrssi_roam_threshold = lrssi_roam_threshold;
@@ -993,7 +989,7 @@ static ssize_t ath6kl_lrssi_roam_read(struct file *file,
 static const struct file_operations fops_lrssi_roam_threshold = {
 	.read = ath6kl_lrssi_roam_read,
 	.write = ath6kl_lrssi_roam_write,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -1055,7 +1051,7 @@ static ssize_t ath6kl_regwrite_write(struct file *file,
 static const struct file_operations fops_diag_reg_write = {
 	.read = ath6kl_regwrite_read,
 	.write = ath6kl_regwrite_write,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -1160,7 +1156,7 @@ static ssize_t ath6kl_roam_table_read(struct file *file, char __user *user_buf,
 
 static const struct file_operations fops_roam_table = {
 	.read = ath6kl_roam_table_read,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -1198,7 +1194,7 @@ static ssize_t ath6kl_force_roam_write(struct file *file,
 
 static const struct file_operations fops_force_roam = {
 	.write = ath6kl_force_roam_write,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -1238,7 +1234,7 @@ static ssize_t ath6kl_roam_mode_write(struct file *file,
 
 static const struct file_operations fops_roam_mode = {
 	.write = ath6kl_roam_mode_write,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -1280,9 +1276,115 @@ static ssize_t ath6kl_keepalive_write(struct file *file,
 }
 
 static const struct file_operations fops_keepalive = {
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.read = ath6kl_keepalive_read,
 	.write = ath6kl_keepalive_write,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
+static int _from_hex(char c)
+{
+	int ret = 0;
+
+	if ((c >= '0') && (c <= '9')) {
+		ret = (c - '0');
+	} else if ((c >= 'a') && (c <= 'f')) {
+		ret = (c - 'a' + 0x0a);
+	} else if ((c >= 'A') && (c <= 'F')) {
+		ret = (c - 'A' + 0x0A);
+	}
+	return ret;
+}
+
+static void hexstr_bytearray(char *hexStr, u8 *byteArray, u8 numBytes)
+{
+	u8 i;
+
+	for (i = 0; i < numBytes; i++) {
+		byteArray[i] = 	16 * _from_hex(hexStr[2 * i + 0]) +
+				_from_hex(hexStr[2 * i +1]);
+	}
+}
+
+static ssize_t ath6kl_packet_filter_write(
+			struct file *file,
+			const char __user *user_buf,
+			size_t count, loff_t *ppos)
+{
+	struct ath6kl *ar = file->private_data;
+	char *sptr, *token;
+	char buf[256], filter[64], mask[64];
+	ssize_t len;
+	int ret;
+	u8 op, id, act, size, offset;
+
+	len = min(count, sizeof(buf) - 1);
+	if (copy_from_user(buf, user_buf, len))
+		return -EFAULT;
+	buf[len] = '\0';
+	sptr = buf;
+
+	token = strsep(&sptr, " ");
+	if (!token)
+		return -EINVAL;
+	if (kstrtou8(token, 0, &op))
+		return -EINVAL;
+
+	token = strsep(&sptr, " ");
+	if (!token)
+		return -EINVAL;
+	if (kstrtou8(token, 0, &id))
+		return -EINVAL;
+
+	if (!op) {
+		/* del case */
+		ret = ath6kl_wmi_del_pkt_filter_pattern_cmd(ar->wmi, 0, id);
+		if (ret)
+			return ret;
+		return count;
+	}
+
+	/* add case */
+	token = strsep(&sptr, " ");
+	if (!token)
+		return -EINVAL;
+	if (kstrtou8(token, 0, &act))
+		return -EINVAL;
+
+	token = strsep(&sptr, " ");
+	if (!token)
+		return -EINVAL;
+	if (kstrtou8(token, 0, &size))
+		return -EINVAL;
+
+	token = strsep(&sptr, " ");
+	if (!token)
+		return -EINVAL;
+	if (kstrtou8(token, 0, &offset))
+		return -EINVAL;
+
+	token = strsep(&sptr, " ");
+	if (!token)
+		return -EINVAL;
+	hexstr_bytearray(token, filter, size);
+
+	token = strsep(&sptr, " ");
+	if (!token)
+		return -EINVAL;
+	hexstr_bytearray(token, mask, size);
+
+	ret = ath6kl_wmi_add_pkt_filter_pattern_cmd(
+		ar->wmi, 0, id, act, size, offset, filter, mask);
+
+	if (ret)
+		return ret;
+	return count;
+}
+
+static const struct file_operations fops_packet_filter = {
+	.open = ath6kl_debugfs_open,
+	.write = ath6kl_packet_filter_write,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -1325,7 +1427,7 @@ static ssize_t ath6kl_disconnect_timeout_write(struct file *file,
 }
 
 static const struct file_operations fops_disconnect_timeout = {
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.read = ath6kl_disconnect_timeout_read,
 	.write = ath6kl_disconnect_timeout_write,
 	.owner = THIS_MODULE,
@@ -1497,7 +1599,7 @@ static ssize_t ath6kl_create_qos_write(struct file *file,
 		return -EINVAL;
 	pstream.medium_time = cpu_to_le32(val32);
 
-	pstream.nominal_phy = le32_to_cpu(pstream.min_phy_rate) / 1000000;
+	pstream.nominal_phy = ((le32_to_cpu(pstream.min_phy_rate) / 1000) / 1000);
 
 	ath6kl_wmi_create_pstream_cmd(ar->wmi, vif->fw_vif_idx, &pstream);
 
@@ -1506,7 +1608,7 @@ static ssize_t ath6kl_create_qos_write(struct file *file,
 
 static const struct file_operations fops_create_qos = {
 	.write = ath6kl_create_qos_write,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -1554,7 +1656,7 @@ static ssize_t ath6kl_delete_qos_write(struct file *file,
 
 static const struct file_operations fops_delete_qos = {
 	.write = ath6kl_delete_qos_write,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -1564,9 +1666,14 @@ static ssize_t ath6kl_bgscan_int_write(struct file *file,
 				size_t count, loff_t *ppos)
 {
 	struct ath6kl *ar = file->private_data;
+	struct ath6kl_vif *vif;
 	u16 bgscan_int;
 	char buf[32];
 	ssize_t len;
+
+	vif = ath6kl_vif_first(ar);
+	if (!vif)
+		return -EIO;
 
 	len = min(count, sizeof(buf) - 1);
 	if (copy_from_user(buf, user_buf, len))
@@ -1579,15 +1686,17 @@ static ssize_t ath6kl_bgscan_int_write(struct file *file,
 	if (bgscan_int == 0)
 		bgscan_int = 0xffff;
 
+	vif->bg_scan_period = bgscan_int;
+
 	ath6kl_wmi_scanparams_cmd(ar->wmi, 0, 0, 0, bgscan_int, 0, 0, 0, 3,
-				  0, 0, 0);
+				  vif->scan_ctrl_flag, 0, 0);
 
 	return count;
 }
 
 static const struct file_operations fops_bgscan_int = {
 	.write = ath6kl_bgscan_int_write,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -1645,7 +1754,7 @@ static ssize_t ath6kl_listen_int_read(struct file *file,
 static const struct file_operations fops_listen_int = {
 	.read = ath6kl_listen_int_read,
 	.write = ath6kl_listen_int_write,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
@@ -1705,12 +1814,12 @@ static ssize_t ath6kl_power_params_write(struct file *file,
 
 static const struct file_operations fops_power_params = {
 	.write = ath6kl_power_params_write,
-	.open = simple_open,
+	.open = ath6kl_debugfs_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
 
-void ath6kl_debug_init(struct ath6kl *ar)
+int ath6kl_debug_init(struct ath6kl *ar)
 {
 	skb_queue_head_init(&ar->debug.fwlog_queue);
 	init_completion(&ar->debug.fwlog_completion);
@@ -1720,15 +1829,7 @@ void ath6kl_debug_init(struct ath6kl *ar)
 	 * value from the firmware.
 	 */
 	ar->debug.fwlog_mask = 0;
-}
 
-/*
- * Initialisation needs to happen in two stages as fwlog events can come
- * before cfg80211 is initialised, and debugfs depends on cfg80211
- * initialisation.
- */
-int ath6kl_debug_init_fs(struct ath6kl *ar)
-{
 	ar->debugfs_phy = debugfs_create_dir("ath6kl",
 					     ar->wiphy->debugfsdir);
 	if (!ar->debugfs_phy)
@@ -1783,21 +1884,23 @@ int ath6kl_debug_init_fs(struct ath6kl *ar)
 			    ar->debugfs_phy, ar, &fops_disconnect_timeout);
 
 	debugfs_create_file("create_qos", S_IWUSR, ar->debugfs_phy, ar,
-			    &fops_create_qos);
+				&fops_create_qos);
 
 	debugfs_create_file("delete_qos", S_IWUSR, ar->debugfs_phy, ar,
-			    &fops_delete_qos);
+				&fops_delete_qos);
 
 	debugfs_create_file("bgscan_interval", S_IWUSR,
-			    ar->debugfs_phy, ar, &fops_bgscan_int);
+				ar->debugfs_phy, ar, &fops_bgscan_int);
 
 	debugfs_create_file("listen_interval", S_IRUSR | S_IWUSR,
 			    ar->debugfs_phy, ar, &fops_listen_int);
 
 	debugfs_create_file("power_params", S_IWUSR, ar->debugfs_phy, ar,
-			    &fops_power_params);
-
-	return 0;
+						&fops_power_params);
+				
+	debugfs_create_file("packet_filter", S_IWUSR, ar->debugfs_phy, ar,
+			    &fops_packet_filter);
+	return ath6kl_init_debugfs_pri(ar);
 }
 
 void ath6kl_debug_cleanup(struct ath6kl *ar)

@@ -99,6 +99,7 @@ static void *wireless_dev_seq_start(struct seq_file *seq, loff_t *pos)
 
 	off = 1;
 	for_each_netdev(net, dev)
+
 		if (off++ == *pos)
 			return dev;
 	return NULL;

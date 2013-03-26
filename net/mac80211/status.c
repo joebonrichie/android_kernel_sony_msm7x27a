@@ -10,9 +10,7 @@
  */
 
 #include <linux/export.h>
-#include <linux/etherdevice.h>
 #include <net/mac80211.h>
-#include <asm/unaligned.h>
 #include "ieee80211_i.h"
 #include "rate.h"
 #include "mesh.h"
@@ -262,7 +260,7 @@ static void ieee80211_add_tx_radiotap_header(struct ieee80211_supported_band
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
 	struct ieee80211_radiotap_header *rthdr;
 	unsigned char *pos;
-	u16 txflags;
+	__le16 txflags;
 
 	rthdr = (struct ieee80211_radiotap_header *) skb_push(skb, rtap_len);
 
@@ -292,13 +290,13 @@ static void ieee80211_add_tx_radiotap_header(struct ieee80211_supported_band
 	txflags = 0;
 	if (!(info->flags & IEEE80211_TX_STAT_ACK) &&
 	    !is_multicast_ether_addr(hdr->addr1))
-		txflags |= IEEE80211_RADIOTAP_F_TX_FAIL;
+		txflags |= cpu_to_le16(IEEE80211_RADIOTAP_F_TX_FAIL);
 
 	if ((info->status.rates[0].flags & IEEE80211_TX_RC_USE_RTS_CTS) ||
 	    (info->status.rates[0].flags & IEEE80211_TX_RC_USE_CTS_PROTECT))
-		txflags |= IEEE80211_RADIOTAP_F_TX_CTS;
+		txflags |= cpu_to_le16(IEEE80211_RADIOTAP_F_TX_CTS);
 	else if (info->status.rates[0].flags & IEEE80211_TX_RC_USE_RTS_CTS)
-		txflags |= IEEE80211_RADIOTAP_F_TX_RTS;
+		txflags |= cpu_to_le16(IEEE80211_RADIOTAP_F_TX_RTS);
 
 	put_unaligned_le16(txflags, pos);
 	pos += 2;
@@ -342,6 +340,7 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
 	struct ieee80211_local *local = hw_to_local(hw);
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+	u16 frag, type;
 	__le16 fc;
 	struct ieee80211_supported_band *sband;
 	struct ieee80211_sub_if_data *sdata;
@@ -352,6 +351,7 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 	bool send_to_cooked;
 	bool acked;
 	struct ieee80211_bar *bar;
+	u16 tid;
 	int rtap_len;
 
 	for (i = 0; i < IEEE80211_TX_MAX_RATES; i++) {
@@ -378,7 +378,7 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 
 	for_each_sta_info(local, hdr->addr1, sta, tmp) {
 		/* skip wrong virtual interface */
-		if (compare_ether_addr(hdr->addr2, sta->sdata->vif.addr))
+		if (memcmp(hdr->addr2, sta->sdata->vif.addr, ETH_ALEN))
 			continue;
 
 		if (info->flags & IEEE80211_TX_STATUS_EOSP)
@@ -413,7 +413,7 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 		}
 
 		if (!acked && ieee80211_is_back_req(fc)) {
-			u16 tid, control;
+			u16 control;
 
 			/*
 			 * BAR failed, store the last SSN and retry sending
@@ -476,8 +476,12 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 	 * Fragments are passed to low-level drivers as separate skbs, so these
 	 * are actually fragments, not frames. Update frame counters only for
 	 * the first fragment of the frame. */
+
+	frag = le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_FRAG;
+	type = le16_to_cpu(hdr->frame_control) & IEEE80211_FCTL_FTYPE;
+
 	if (info->flags & IEEE80211_TX_STAT_ACK) {
-		if (ieee80211_is_first_frag(hdr->seq_ctrl)) {
+		if (frag == 0) {
 			local->dot11TransmittedFrameCount++;
 			if (is_multicast_ether_addr(hdr->addr1))
 				local->dot11MulticastTransmittedFrameCount++;
@@ -492,11 +496,11 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 		 * with a multicast address in the address 1 field of type Data
 		 * or Management. */
 		if (!is_multicast_ether_addr(hdr->addr1) ||
-		    ieee80211_is_data(fc) ||
-		    ieee80211_is_mgmt(fc))
+		    type == IEEE80211_FTYPE_DATA ||
+		    type == IEEE80211_FTYPE_MGMT)
 			local->dot11TransmittedFragmentCount++;
 	} else {
-		if (ieee80211_is_first_frag(hdr->seq_ctrl))
+		if (frag == 0)
 			local->dot11FailedCount++;
 	}
 
@@ -517,8 +521,7 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 
 		if (ieee80211_is_nullfunc(hdr->frame_control) ||
 		    ieee80211_is_qos_nullfunc(hdr->frame_control)) {
-			acked = info->flags & IEEE80211_TX_STAT_ACK;
-
+			bool acked = info->flags & IEEE80211_TX_STAT_ACK;
 			cfg80211_probe_status(skb->dev, hdr->addr1,
 					      cookie, acked, GFP_ATOMIC);
 		} else {
@@ -569,7 +572,7 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 
 	/* Need to make a copy before skb->cb gets cleared */
 	send_to_cooked = !!(info->flags & IEEE80211_TX_CTL_INJECTED) ||
-			 !(ieee80211_is_data(fc));
+			(type != IEEE80211_FTYPE_DATA);
 
 	/*
 	 * This is a bit racy but we can avoid a lot of work

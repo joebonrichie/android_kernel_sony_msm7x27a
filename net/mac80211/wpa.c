@@ -106,7 +106,7 @@ ieee80211_rx_h_michael_mic_verify(struct ieee80211_rx_data *rx)
 		if (status->flag & RX_FLAG_MMIC_ERROR)
 			goto mic_fail;
 
-		if (!(status->flag & RX_FLAG_IV_STRIPPED) && rx->key)
+		if (!(status->flag & RX_FLAG_IV_STRIPPED))
 			goto update_iv;
 
 		return RX_CONTINUE;
@@ -137,10 +137,6 @@ ieee80211_rx_h_michael_mic_verify(struct ieee80211_rx_data *rx)
 	hdrlen = ieee80211_hdrlen(hdr->frame_control);
 	if (skb->len < hdrlen + MICHAEL_MIC_LEN)
 		return RX_DROP_UNUSABLE;
-
-	if (skb_linearize(rx->skb))
-		return RX_DROP_UNUSABLE;
-	hdr = (void *)skb->data;
 
 	data = skb->data + hdrlen;
 	data_len = skb->len - hdrlen - MICHAEL_MIC_LEN;
@@ -227,14 +223,14 @@ static int tkip_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb)
 ieee80211_tx_result
 ieee80211_crypto_tkip_encrypt(struct ieee80211_tx_data *tx)
 {
-	struct sk_buff *skb;
+	struct sk_buff *skb = tx->skb;
 
 	ieee80211_tx_set_protected(tx);
 
-	skb_queue_walk(&tx->skbs, skb) {
+	do {
 		if (tkip_encrypt_skb(tx, skb) < 0)
 			return TX_DROP;
-	}
+	} while ((skb = skb->next));
 
 	return TX_CONTINUE;
 }
@@ -256,11 +252,6 @@ ieee80211_crypto_tkip_decrypt(struct ieee80211_rx_data *rx)
 
 	if (!rx->sta || skb->len - hdrlen < 12)
 		return RX_DROP_UNUSABLE;
-
-	/* it may be possible to optimize this a bit more */
-	if (skb_linearize(rx->skb))
-		return RX_DROP_UNUSABLE;
-	hdr = (void *)skb->data;
 
 	/*
 	 * Let TKIP code verify IV, but skip decryption.
@@ -458,14 +449,14 @@ static int ccmp_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb)
 ieee80211_tx_result
 ieee80211_crypto_ccmp_encrypt(struct ieee80211_tx_data *tx)
 {
-	struct sk_buff *skb;
+	struct sk_buff *skb = tx->skb;
 
 	ieee80211_tx_set_protected(tx);
 
-	skb_queue_walk(&tx->skbs, skb) {
+	do {
 		if (ccmp_encrypt_skb(tx, skb) < 0)
 			return TX_DROP;
-	}
+	} while ((skb = skb->next));
 
 	return TX_CONTINUE;
 }
@@ -493,14 +484,6 @@ ieee80211_crypto_ccmp_decrypt(struct ieee80211_rx_data *rx)
 	if (!rx->sta || data_len < 0)
 		return RX_DROP_UNUSABLE;
 
-	if (status->flag & RX_FLAG_DECRYPTED) {
-		if (!pskb_may_pull(rx->skb, hdrlen + CCMP_HDR_LEN))
-			return RX_DROP_UNUSABLE;
-	} else {
-		if (skb_linearize(rx->skb))
-			return RX_DROP_UNUSABLE;
-	}
-
 	ccmp_hdr2pn(pn, skb->data + hdrlen);
 
 	queue = rx->security_idx;
@@ -526,8 +509,7 @@ ieee80211_crypto_ccmp_decrypt(struct ieee80211_rx_data *rx)
 	memcpy(key->u.ccmp.rx_pn[queue], pn, CCMP_PN_LEN);
 
 	/* Remove CCMP header and MIC */
-	if (pskb_trim(skb, skb->len - CCMP_MIC_LEN))
-		return RX_DROP_UNUSABLE;
+	skb_trim(skb, skb->len - CCMP_MIC_LEN);
 	memmove(skb->data + CCMP_HDR_LEN, skb->data, hdrlen);
 	skb_pull(skb, CCMP_HDR_LEN);
 
@@ -572,22 +554,15 @@ static inline void bip_ipn_swap(u8 *d, const u8 *s)
 ieee80211_tx_result
 ieee80211_crypto_aes_cmac_encrypt(struct ieee80211_tx_data *tx)
 {
-	struct sk_buff *skb;
-	struct ieee80211_tx_info *info;
+	struct sk_buff *skb = tx->skb;
+	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	struct ieee80211_key *key = tx->key;
 	struct ieee80211_mmie *mmie;
 	u8 aad[20];
 	u64 pn64;
 
-	if (WARN_ON(skb_queue_len(&tx->skbs) != 1))
-		return TX_DROP;
-
-	skb = skb_peek(&tx->skbs);
-
-	info = IEEE80211_SKB_CB(skb);
-
 	if (info->control.hw_key)
-		return TX_CONTINUE;
+		return 0;
 
 	if (WARN_ON(skb_tailroom(skb) < sizeof(*mmie)))
 		return TX_DROP;
@@ -627,8 +602,6 @@ ieee80211_crypto_aes_cmac_decrypt(struct ieee80211_rx_data *rx)
 	if (!ieee80211_is_mgmt(hdr->frame_control))
 		return RX_CONTINUE;
 
-	/* management frames are already linear */
-
 	if (skb->len < 24 + sizeof(*mmie))
 		return RX_DROP_UNUSABLE;
 
@@ -662,23 +635,4 @@ ieee80211_crypto_aes_cmac_decrypt(struct ieee80211_rx_data *rx)
 	skb_trim(skb, skb->len - sizeof(*mmie));
 
 	return RX_CONTINUE;
-}
-
-ieee80211_tx_result
-ieee80211_crypto_hw_encrypt(struct ieee80211_tx_data *tx)
-{
-	struct sk_buff *skb;
-	struct ieee80211_tx_info *info = NULL;
-
-	skb_queue_walk(&tx->skbs, skb) {
-		info  = IEEE80211_SKB_CB(skb);
-
-		/* handle hw-only algorithm */
-		if (!info->control.hw_key)
-			return TX_DROP;
-	}
-
-	ieee80211_tx_set_protected(tx);
-
-	return TX_CONTINUE;
 }

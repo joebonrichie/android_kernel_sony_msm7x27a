@@ -18,7 +18,7 @@
 #include "nl80211.h"
 #include "wext-compat.h"
 
-#define IEEE80211_SCAN_RESULT_EXPIRE	(3 * HZ)
+#define IEEE80211_SCAN_RESULT_EXPIRE	(15 * HZ)
 
 void ___cfg80211_scan_done(struct cfg80211_registered_device *rdev, bool leak)
 {
@@ -360,8 +360,8 @@ static int cmp_bss_core(struct cfg80211_bss *a,
 {
 	int r;
 
-	if (a->channel != b->channel)
-		return b->channel->center_freq - a->channel->center_freq;
+	//if (a->channel != b->channel)
+		//return b->channel->center_freq - a->channel->center_freq;
 
 	if (is_mesh_bss(a) && is_mesh_bss(b)) {
 		r = cmp_ies(WLAN_EID_MESH_ID,
@@ -387,14 +387,15 @@ static int cmp_bss(struct cfg80211_bss *a,
 	int r;
 
 	r = cmp_bss_core(a, b);
-	if (r)
+	//if (r)
 		return r;
-
+/*
 	return cmp_ies(WLAN_EID_SSID,
 		       a->information_elements,
 		       a->len_information_elements,
 		       b->information_elements,
 		       b->len_information_elements);
+*/
 }
 
 static int cmp_hidden_bss(struct cfg80211_bss *a,
@@ -627,6 +628,9 @@ cfg80211_bss_update(struct cfg80211_registered_device *dev,
 		found->pub.signal = res->pub.signal;
 		found->pub.capability = res->pub.capability;
 		found->ts = res->ts;
+		
+		/* Update channel */
+		found->pub.channel = res->pub.channel;
 
 		/* Update IEs */
 		if (res->pub.proberesp_ies) {
@@ -734,8 +738,9 @@ cfg80211_bss_update(struct cfg80211_registered_device *dev,
 struct cfg80211_bss*
 cfg80211_inform_bss(struct wiphy *wiphy,
 		    struct ieee80211_channel *channel,
-		    const u8 *bssid, u64 tsf, u16 capability,
-		    u16 beacon_interval, const u8 *ie, size_t ielen,
+		    const u8 *bssid,
+		    u64 timestamp, u16 capability, u16 beacon_interval,
+		    const u8 *ie, size_t ielen,
 		    s32 signal, gfp_t gfp)
 {
 	struct cfg80211_internal_bss *res;
@@ -757,7 +762,7 @@ cfg80211_inform_bss(struct wiphy *wiphy,
 	memcpy(res->pub.bssid, bssid, ETH_ALEN);
 	res->pub.channel = channel;
 	res->pub.signal = signal;
-	res->pub.tsf = tsf;
+	res->pub.tsf = timestamp;
 	res->pub.beacon_interval = beacon_interval;
 	res->pub.capability = capability;
 	/*
@@ -859,18 +864,6 @@ cfg80211_inform_bss_frame(struct wiphy *wiphy,
 	return &res->pub;
 }
 EXPORT_SYMBOL(cfg80211_inform_bss_frame);
-
-void cfg80211_ref_bss(struct cfg80211_bss *pub)
-{
-	struct cfg80211_internal_bss *bss;
-
-	if (!pub)
-		return;
-
-	bss = container_of(pub, struct cfg80211_internal_bss, pub);
-	kref_get(&bss->ref);
-}
-EXPORT_SYMBOL(cfg80211_ref_bss);
 
 void cfg80211_put_bss(struct cfg80211_bss *pub)
 {
@@ -1014,8 +1007,6 @@ int cfg80211_wext_siwscan(struct net_device *dev,
 		if (wreq->scan_type == IW_SCAN_TYPE_PASSIVE)
 			creq->n_ssids = 0;
 	}
-	for (i = 0; i < IEEE80211_NUM_BANDS; i++)
-		creq->rates[i] = (1 << wiphy->bands[i]->n_bitrates) - 1;
 
 	for (i = 0; i < IEEE80211_NUM_BANDS; i++)
 		if (wiphy->bands[i])
