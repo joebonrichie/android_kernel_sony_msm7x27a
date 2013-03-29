@@ -54,3 +54,5 @@ obj-$(CONFIG_KEYBOARD_XTKBD)		+= xtkbd.o
 obj-$(CONFIG_KEYBOARD_QCIKBD)       += qci_kbd.o
 obj-$(CONFIG_KEYBOARD_W90P910)		+= w90p910_keypad.o
 obj-$(CONFIG_KEYBOARD_PMIC8058)		+= pmic8058-keypad.o
+obj-$(CONFIG_FIH_KEYBOARD_GPIO)		+= fih_gpio_keys.o
+obj-$(CONFIG_FIH_POWER_KEY)		+= fih_power_key.o

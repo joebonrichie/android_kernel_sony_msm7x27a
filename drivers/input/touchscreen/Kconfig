@@ -985,4 +985,12 @@ config TOUCHSCREEN_CYPRESS_CY8CTMA340
           To compile this driver as a module, choose M here: the
           module will be called cy8c_ts.
 
+config FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
+        tristate "FIH Cypress TMA340 touchscreen"
+        depends on I2C
+
+        help
+	  Say Y here if you have a FIH CY8CTMA340 capacitive touchscreen
+
+
 endif

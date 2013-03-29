@@ -434,4 +434,19 @@ config AB8500_BATTERY_THERM_ON_BATCTRL
 	help
 	  Say Y to enable battery temperature measurements using
 	  thermistor connected on BATCTRL ADC.
+
+config FIH_SW3_BATTERY
+   bool "FIH battery driver"
+   default n
+   help
+      Enable FIH battery driver
+
+config FIH_SW3_BQ275X0_ROMMODE
+   bool "Enable BQ275x0 programming driver"
+   depends on FIH_SW3_BATTERY
+   default n
+   help
+     Enable bq275x0 programming driver.
+
+
 endif # POWER_SUPPLY

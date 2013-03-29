@@ -692,4 +692,25 @@ config BOSCH_BMA150
           If you say yes here you get support for Bosch Sensortec's
           acceleration sensors SMB380/BMA150.
 
+config FIH_MSENSOR_AKM8975
+       tristate "FIH_MSENSOR_AKM8975"
+       default n
+       help
+         This option enables device driver support for sensor
+         on AKM8975 chip.
+
+config FIH_ASENSOR_BMA250
+       tristate "FIH_ASENSOR_BMA250"
+       default n
+       help
+         This option enables device driver support for the acclerometer sensor
+         on BOACH BMA250 chip.
+
+config FIH_PSENSOR_QPDSS702
+       tristate "FIH_PSENSOR_QPDSS702"
+       default n
+       help
+         This option enables device driver support for the proximity sensor
+         on QPDSS702 chip.
+
 endif

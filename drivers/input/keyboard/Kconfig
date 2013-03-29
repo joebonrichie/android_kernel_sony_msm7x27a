@@ -611,6 +611,22 @@ config KEYBOARD_W90P910
 	  To compile this driver as a module, choose M here: the
 	  module will be called w90p910_keypad.
 
+
+config FIH_KEYBOARD_GPIO
+	tristate "FIH GPIO Buttons"
+	depends on GENERIC_GPIO
+	select FIH_DEVELOPMENT_TOOL
+	help
+	  FIH GPIO button driver.
+
+config FIH_POWER_KEY
+	depends on MSM_ONCRPCROUTER
+	bool "FIH power key event"
+	select FIH_DEVELOPMENT_TOOL
+	help
+	  Support for receiving handset events like headset detect,
+	  headset switch and clamshell state.
+
 endif
 
 

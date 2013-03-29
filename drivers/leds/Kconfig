@@ -576,6 +576,17 @@ config LEDS_OT200
 	  This option enables support for the LEDs on the Bachmann OT200.
 	  Say Y to enable LEDs on the Bachmann OT200.
 
+config FIH_LEDS_MSM_PMIC
+        tristate "FIH LED"
+        default n
+        depends on ARCH_MSM
+        select FIH_DEVELOPMENT_TOOL
+        help
+          This option enables support for LEDs connected over PMIC
+          (Power Management IC) chip on Qualcomm reference boards,
+          for example SURF and FFAs.
+
+
 config LEDS_TRIGGERS
 	bool "LED Trigger support"
 	depends on LEDS_CLASS
