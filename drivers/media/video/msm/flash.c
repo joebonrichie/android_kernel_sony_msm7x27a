@@ -23,7 +23,10 @@
 #include <mach/camera.h>
 #include <mach/gpio.h>
 
+#if defined(CONFIG_GPIO_SX150X) || defined(CONFIG_GPIO_SX150X_MODULE)
 struct i2c_client *sx150x_client;
+#endif
+
 struct timer_list timer_flash;
 static struct msm_camera_sensor_info *sensor_data;
 enum msm_cam_flash_stat{
@@ -31,8 +34,27 @@ enum msm_cam_flash_stat{
 	MSM_CAM_FLASH_ON,
 };
 
-static struct i2c_client *sc628a_client;
+/*MTD-MM-SL-SupportFlash-00+{ */
+#define CONFIGURATION1_REG 0xE0
+#define TORCH_BRIGHTNESS_REG 0xA0
+#define FLASH_BRIGHTNESS_REG 0xB0
+#define FLASH_DURATION_REG 0xC0
 
+#define LED_MODE_OFF   0
+#define LED_MODE_AUTO  1
+#define LED_MODE_ON    2
+#define LED_MODE_TORCH 3
+#define LED_MODE_RED_EYE 4
+
+int soc_led_mode = LED_MODE_OFF;
+int soc_led_en_pin = 0;
+int soc_led_flash_en_pin = 0;
+/*MTD-MM-SL-SupportFlash-00+} */
+
+#if defined (CONFIG_MSM_CAMERA_FLASH_SC628A)
+static struct i2c_client *sc628a_client;
+#endif
+#ifndef CONFIG_CAMERA_FLASH_LM3561
 static int32_t flash_i2c_txdata(struct i2c_client *client,
 		unsigned char *txdata, int length)
 {
@@ -73,7 +95,9 @@ static int32_t flash_i2c_write_b(struct i2c_client *client,
 
 	return rc;
 }
+#endif
 
+#if defined (CONFIG_MSM_CAMERA_FLASH_SC628A)
 static const struct i2c_device_id sc628a_i2c_id[] = {
 	{"sc628a", 0},
 	{ }
@@ -108,7 +132,9 @@ static struct i2c_driver sc628a_i2c_driver = {
 		.name = "sc628a",
 	},
 };
+#endif
 
+#if defined (CONFIG_MSM_CAMERA_FLASH_TPS61310)
 static struct i2c_client *tps61310_client;
 
 static const struct i2c_device_id tps61310_i2c_id[] = {
@@ -151,6 +177,63 @@ static struct i2c_driver tps61310_i2c_driver = {
 		.name = "tps61310",
 	},
 };
+#endif
+
+/*MTD-MM-SL-SupportFlash-00+{ */
+static int lm3561_mask_set(struct i2c_client *client,
+			   u8  reg, u8  mask, u8  set)
+{
+	s32 val = i2c_smbus_read_byte_data(client, reg);
+	if (val < 0)
+		return val;
+    printk("lm3561_mask_set: before: addr_0x%02x, 0x%02x \n", reg, val);
+    
+	val &= ~mask;
+	val |= set & mask;
+
+	printk("lm3561_mask_set: after: addr_0x%02x, 0x%02x \n", reg, val);
+
+	return i2c_smbus_write_byte_data(client, reg, val);
+}
+
+static struct i2c_client *lm3561_client;
+
+static const struct i2c_device_id lm3561_i2c_id[] = {
+	{"lm3561", 0},
+	{ }
+};
+
+static int lm3561_i2c_probe(struct i2c_client *client,
+		const struct i2c_device_id *id)
+{
+	int rc = 0;
+	printk("lm3561_probe: Called ~\n");
+
+	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
+		pr_err("i2c_check_functionality failed\n");
+		goto probe_failure;
+	}
+
+	lm3561_client = client;
+
+	printk("lm3561_probe successed! rc = %d\n", rc);
+	return 0;
+
+probe_failure:
+	pr_err("lm3561_probe failed! rc = %d\n", rc);
+	return rc;
+}
+
+static struct i2c_driver lm3561_i2c_driver = {
+	.id_table = lm3561_i2c_id,
+	.probe  = lm3561_i2c_probe,
+	.remove = __exit_p(lm3561_i2c_remove),
+	.driver = {
+		.name = "lm3561",
+	},
+};
+
+/*MTD-MM-SL-SupportFlash-00+} */
 
 static int config_flash_gpio_table(enum msm_cam_flash_stat stat,
 			struct msm_camera_sensor_strobe_flash_data *sfdata)
@@ -193,7 +276,7 @@ int msm_camera_flash_current_driver(
 	unsigned led_state)
 {
 	int rc = 0;
-#if defined CONFIG_LEDS_PMIC8058
+#if defined (CONFIG_LEDS_PMIC8058)
 	int idx;
 	const struct pmic8058_leds_platform_data *driver_channel =
 		current_driver->driver_channel;
@@ -315,12 +398,15 @@ int msm_camera_flash_led(
 	return rc;
 }
 
+/*MTD-MM-SL-GpioRequesFail-00*{ */
 int msm_camera_flash_external(
 	struct msm_camera_sensor_flash_external *external,
 	unsigned led_state)
 {
 	int rc = 0;
 
+	/*MTD-MM-SL-SupportFlash-00*{ */
+	#ifndef CONFIG_CAMERA_FLASH_LM3561
 	switch (led_state) {
 
 	case MSM_CAMERA_LED_INIT:
@@ -463,8 +549,221 @@ error:
 		rc = -EFAULT;
 		break;
 	}
+	#else  //CONFIG_CAMERA_FLASH_LM3561
+	printk("msm_camera_flash_external: led_state = %d\n",led_state);
+	switch (led_state) {
+
+	case MSM_CAMERA_LED_INIT:
+		if (external->flash_id == MAM_CAMERA_EXT_LED_FLASH_LM3561) {
+			printk("msm_camera_flash_external: LED_IC = LM3561\n");
+			printk("msm_camera_flash_external: external->led_en = %d\n", external->led_en);
+			printk("msm_camera_flash_external: external->led_flash_en = %d\n", external->led_flash_en);
+			printk("msm_camera_flash_external: case MSM_CAMERA_LED_INIT \n");
+			if (!lm3561_client) {
+				rc = i2c_add_driver(&lm3561_i2c_driver);
+				if (rc < 0 || lm3561_client == NULL) {
+					pr_err("I2C add driver failed\n");
+					rc = -ENOTSUPP;
+					return rc;
+				}
+			}
+		} else {
+			pr_err("Flash id not supported\n");
+			rc = -ENOTSUPP;
+			return rc;
+		}
+
+		soc_led_en_pin = external->led_en;
+		soc_led_flash_en_pin = external->led_flash_en;
+
+		//config external->led_en
+		rc = gpio_request(external->led_en, "lm3561_torch");
+		if (rc <0){			
+			pr_err("fih_set_gpio_output_value: gpio_request (%d) failed!.\n", external->led_en);
+			//goto request_fail;		
+		}
+		rc = gpio_tlmm_config(GPIO_CFG(external->led_en, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+        if (rc < 0) {
+            pr_err("msm_camera_flash_external: gpio_tlmm_config(GPIO_%d) failed !\n", external->led_en);
+        }
+
+		//config external->led_flash_en
+		rc = gpio_request(external->led_flash_en, "lm3561_strobe");
+		if (rc <0){			
+			pr_err("fih_set_gpio_output_value: gpio_request (%d) failed!.\n", external->led_flash_en);
+			//goto request_fail;		
+		}
+		
+		rc = gpio_tlmm_config(GPIO_CFG(external->led_flash_en, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+        if (rc < 0) {
+            pr_err("msm_camera_flash_external: gpio_tlmm_config(GPIO_%d) failed !\n", external->led_flash_en);
+        }
+				
+		//set gpio: external->led_en to LOW
+		rc = gpio_direction_output(external->led_en, 0);
+		if (rc <0){            
+			pr_err("msm_camera_flash_external: gpio_tlmm_config(GPIO_%d) failed !\n", external->led_en);            
+			goto error1;        
+		}
+	
+		//set gpio: external->led_flash_en to LOW
+		rc = gpio_direction_output(external->led_flash_en, 0);
+		if (rc <0){            
+			pr_err("msm_camera_flash_external: gpio_tlmm_config(GPIO_%d) failed !\n", external->led_flash_en);            
+			goto error1;        
+		}
+	
+		gpio_free(external->led_en);
+		gpio_free(external->led_flash_en);
+		printk("msm_camera_flash_external: case MSM_CAMERA_LED_INIT, Success!! \n");
+		
+		break;
+		
+error1:
+		pr_err("%s gpio request failed\n", __func__);
+		gpio_free(external->led_en);
+		gpio_free(external->led_flash_en);
+		i2c_del_driver(&lm3561_i2c_driver);
+		lm3561_client = NULL;
+		
+		break;
+
+	case MSM_CAMERA_LED_RELEASE:
+		printk("msm_camera_flash_external: case MSM_CAMERA_LED_RELEASE \n");
+		if (lm3561_client) {
+			//set gpio: external->led_en to LOW
+			rc = gpio_request(external->led_en, "lm3561_torch");
+			if (rc <0){			
+				pr_err("msm_camera_flash_external: gpio_request (%d) failed!.\n", external->led_en);
+				
+			}			
+			rc = gpio_direction_output(external->led_en, 0);
+			if (rc <0){            
+				pr_err("msm_camera_flash_external: gpio_tlmm_config(GPIO_%d) failed !\n", external->led_en);            
+				break;      
+			}
+
+			//set gpio: external->led_flash_en to LOW
+			rc = gpio_request(external->led_flash_en, "lm3561_strobe");
+			if (rc <0){			
+				pr_err("msm_camera_flash_external: gpio_request (%d) failed!.\n", external->led_flash_en);
+				
+			}			
+			rc = gpio_direction_output(external->led_flash_en, 0);
+			if (rc <0){            
+				pr_err("msm_camera_flash_external: gpio_tlmm_config(GPIO_%d) failed !\n", external->led_flash_en);            
+				break;      
+			}
+			
+			gpio_free(external->led_en);
+			gpio_free(external->led_flash_en);
+		}
+		break;
+
+	case MSM_CAMERA_LED_OFF:
+		printk("msm_camera_flash_external: case MSM_CAMERA_LED_OFF ~\n");
+		// Disable HW Torch Mode and STROBE Input Enable
+		if (lm3561_client){
+			rc = lm3561_mask_set(lm3561_client, CONFIGURATION1_REG, 0xFF, 0x6A);
+            if (rc<0){
+				printk("msm_camera_flash_external: case MSM_CAMERA_LED_OFF, Disable HW Torch Mode failed !\n");
+                break;
+            }
+
+			//set gpio: external->led_en to LOW
+			rc = gpio_request(external->led_en, "lm3561_torch");
+			if (rc <0){			
+				pr_err("msm_camera_flash_external: gpio_request (%d) failed!.\n", external->led_en);
+
+			}			
+			rc = gpio_direction_output(external->led_en, 0);
+			if (rc <0){            
+				pr_err("msm_camera_flash_external: gpio_tlmm_config(GPIO_%d) failed !\n", external->led_en);            
+				break;      
+			}
+
+			//set gpio: external->led_flash_en to LOW
+			rc = gpio_request(external->led_flash_en, "lm3561_strobe");
+			if (rc <0){			
+				pr_err("msm_camera_flash_external: gpio_request (%d) failed!.\n", external->led_flash_en);
+
+			}			
+			rc = gpio_direction_output(external->led_flash_en, 0);
+			if (rc <0){            
+				pr_err("msm_camera_flash_external: gpio_tlmm_config(GPIO_%d) failed !\n", external->led_flash_en);            
+				break;      
+			}
+			
+			gpio_free(external->led_en);
+			gpio_free(external->led_flash_en);
+		}
+		
+		break;
+
+	case MSM_CAMERA_LED_LOW:
+		printk("msm_camera_flash_external: case MSM_CAMERA_LED_LOW \n");
+		// Enable HW Torch Mode and STROBE Input Enable
+		if (lm3561_client){
+			rc = lm3561_mask_set(lm3561_client, CONFIGURATION1_REG, 0x84, 0x84);
+            if (rc<0){
+               printk("msm_camera_flash_external: case MSM_CAMERA_LED_LOW, Enable HW Torch Mode failed !\n");
+               break;
+            }
+			//set gpio: external->led_en to HIGH
+			rc = gpio_request(external->led_en, "lm3561_torch");
+			if (rc <0){			
+				pr_err("msm_camera_flash_external: gpio_request (%d) failed!.\n", external->led_en);
+
+			}			
+			rc = gpio_direction_output(external->led_en, 1);
+			if (rc <0){            
+				pr_err("msm_camera_flash_external: gpio_tlmm_config(GPIO_%d) failed !\n", external->led_en);            
+				break;      
+			}
+			
+			gpio_free(external->led_en);
+			gpio_free(external->led_flash_en);
+		}
+		
+		break;
+
+	case MSM_CAMERA_LED_HIGH:
+		printk("msm_camera_flash_external: case MSM_CAMERA_LED_HIGH \n");
+		// Enable HW Torch Mode and STROBE Input Enable
+		if (lm3561_client){
+			rc = lm3561_mask_set(lm3561_client, CONFIGURATION1_REG, 0x84, 0x84);
+            if (rc<0){
+               printk("msm_camera_flash_external: case MSM_CAMERA_LED_LOW, Enable HW Torch Mode failed !\n");
+               break;
+            }
+			//set gpio: external->led_en to HIGH
+			rc = gpio_request(external->led_en, "lm3561_torch");
+			if (rc <0){			
+				pr_err("msm_camera_flash_external: gpio_request (%d) failed!.\n", external->led_en);
+
+			}			
+			rc = gpio_direction_output(external->led_en, 1);
+			if (rc <0){            
+				pr_err("msm_camera_flash_external: gpio_tlmm_config(GPIO_%d) failed !\n", external->led_en);            
+				break;      
+			}
+
+			gpio_free(external->led_en);
+			gpio_free(external->led_flash_en);
+		}
+		
+		break;
+
+	default:
+		rc = -EFAULT;
+		break;
+	}	
+
+	#endif
+	/*MTD-MM-SL-SupportFlash-00*} */
 	return rc;
 }
+/*MTD-MM-SL-GpioRequesFail-00*} */
 
 static int msm_camera_flash_pwm(
 	struct msm_camera_sensor_flash_pwm *pwm,
@@ -760,6 +1059,12 @@ int msm_flash_ctrl(struct msm_camera_sensor_info *sdata,
 {
 	int rc = 0;
 	sensor_data = sdata;
+	/*MTD-MM-SL-SupportFlash-00+{ */
+	soc_led_mode = flash_info->ledmode;
+	printk("msm_flash_ctrl:soc_led_mode = %d\n", soc_led_mode);
+	/*MTD-MM-SL-SupportFlash-00+} */
+	printk("msm_flash_ctrl:flashtype = %d\n", flash_info->flashtype);/*MTD-MM-SL-SupportFlash-00+ */
+
 	switch (flash_info->flashtype) {
 	case LED_FLASH:
 		rc = msm_camera_flash_set_led_state(sdata->flash_data,
@@ -775,3 +1080,206 @@ int msm_flash_ctrl(struct msm_camera_sensor_info *sdata,
 	}
 	return rc;
 }
+
+/*MTD-MM-SL-SupportFlash-00+{ */
+#if defined (CONFIG_CAMERA_FLASH_LM3561)
+int msm_soc_get_led_mode(void)
+{
+    printk("msm_soc_get_led_mode: led_mode = %d \n",soc_led_mode);
+    return soc_led_mode;
+}
+EXPORT_SYMBOL(msm_soc_get_led_mode);
+
+int msm_soc_flash_trigger(void)
+{
+	int rc = 0;
+	printk("msm_soc_flash_trigger: Trigger start.\n");
+
+    // Pull low strobe pin for previous trigger.
+    rc = gpio_request(soc_led_en_pin, "lm3561_torch");
+	if (rc < 0){
+       	pr_err("msm_soc_flash_trigger: gpio_request soc_led_en_pin failed !\n");
+       	rc = -EIO;
+    }
+	rc = gpio_direction_output(soc_led_en_pin, 0);
+    if (rc < 0){
+       	pr_err("msm_soc_flash_trigger: Pull LOW lm3561_torch failed !\n");
+       	rc = -EIO;
+       	goto error;
+    }
+	gpio_free(soc_led_en_pin);
+	
+    // Pull low strobe pin for previous trigger.
+	rc = gpio_request(soc_led_flash_en_pin, "lm3561_strobe");
+	if (rc < 0){
+       	pr_err("msm_soc_flash_trigger: gpio_request soc_led_flash_en_pin failed !\n");
+       	rc = -EIO;
+    }
+    rc = gpio_direction_output(soc_led_flash_en_pin, 0);
+    if (rc < 0){
+       	pr_err("msm_soc_flash_trigger: Pull low lm3561_strobe failed !\n");
+       	rc = -EIO;
+       	goto error;
+    }
+	gpio_free(soc_led_flash_en_pin);
+
+    rc = lm3561_mask_set(lm3561_client, FLASH_DURATION_REG, 0x18, 0x18); 
+
+    // Enable HW Torch Mode and STROBE Input Enable
+    rc = lm3561_mask_set(lm3561_client, CONFIGURATION1_REG, 0x84, 0x84);
+    if (rc<0)
+    {
+        pr_err("msm_soc_flash_trigger: case MSM_CAMERA_LED_LOW, Enable HW Torch Mode failed !\n");
+        rc = -EIO;
+        goto error;
+    }
+
+	rc = gpio_request(soc_led_flash_en_pin, "lm3561_strobe");
+	if (rc < 0){
+        pr_err("msm_soc_flash_trigger: gpio_request soc_led_flash_en_pin failed !\n");
+        rc = -EIO;
+    }
+    rc = gpio_direction_output(soc_led_flash_en_pin, 1);
+    if (rc < 0){
+        pr_err("msm_soc_flash_trigger: Pull high lm3561_strobe failed !\n");
+        rc = -EIO;
+        goto error;
+    }
+	gpio_free(soc_led_flash_en_pin);
+
+    printk("msm_soc_flash_trigger: Trigger done\n");
+    return rc;
+    
+error:
+	pr_err("msm_soc_flash_trigger: Trigger failed\n");
+
+	return rc;
+}
+EXPORT_SYMBOL(msm_soc_flash_trigger);
+/*MTD-MM-SL-SupportFlash-01+{ */
+int msm_soc_flash_trigger_off(void)
+{
+    int rc = 0;
+
+    // Pull low strobe pin for previous trigger.
+	rc = gpio_request(soc_led_flash_en_pin, "lm3561_strobe");
+	if (rc < 0){
+       	pr_err("msm_soc_flash_trigger: gpio_request soc_led_flash_en_pin failed !\n");
+       	rc = -EIO;
+       	//goto error;
+    }
+    rc = gpio_direction_output(soc_led_flash_en_pin, 0);
+    if (rc < 0){
+       	pr_err("msm_soc_flash_trigger: Pull low lm3561_strobe failed !\n");
+       	rc = -EIO;
+       	goto error;
+    }
+	gpio_free(soc_led_flash_en_pin);
+	return rc;
+    
+error:
+	pr_err("msm_soc_flash_trigger_off: Trigger off failed!\n");
+
+	return rc;
+}
+EXPORT_SYMBOL(msm_soc_flash_trigger_off);
+
+/*MTD-MM-SL-SupportFlash-02*{ */
+int msm_soc_torch_trigger(void)
+{
+	int rc = 0;
+
+    // Pull low strobe pin for previous trigger.
+    rc = gpio_request(soc_led_flash_en_pin, "lm3561");
+	if (rc < 0){
+       	pr_err("msm_soc_torch_trigger: gpio_request soc_led_flash_en_pin failed !\n");
+    }
+	rc = gpio_direction_output(soc_led_flash_en_pin, 0);
+	if (rc < 0){
+		pr_err("msm_soc_torch_trigger: Pull low lm3561_strobe failed !\n");
+		rc = -EIO;
+		goto error;
+	}	
+
+    // Enable HW Torch Mode and STROBE Input Enable
+    rc = lm3561_mask_set(lm3561_client, CONFIGURATION1_REG, 0x84, 0x84);
+
+    rc = lm3561_mask_set(lm3561_client, TORCH_BRIGHTNESS_REG, 0x07, 0x03); 
+
+    if (rc<0)
+    {
+        pr_err("msm_soc_torch_trigger: case MSM_CAMERA_LED_LOW, Enable HW Torch Mode failed !\n");
+        rc = -EIO;
+        goto error;
+    }
+
+	rc = gpio_request(soc_led_en_pin, "lm3561");
+	if (rc < 0){
+       	pr_err("msm_soc_torch_trigger: gpio_request soc_led_en_pin failed !\n");
+    }
+	rc = gpio_direction_output(soc_led_en_pin, 1);
+	if (rc < 0){
+		pr_err("msm_soc_torch_trigger: Pull high lm3561_torch failed !\n");
+		rc = -EIO;
+		goto error;
+	}
+	
+    printk("msm_soc_torch_trigger: Trigger done\n");
+    return rc;
+    
+error:
+	pr_err("msm_soc_torch_trigger: Trigger failed!\n");
+	return rc;
+}
+
+EXPORT_SYMBOL(msm_soc_torch_trigger);
+
+int msm_soc_torch_flash_off(void)
+{
+    int rc = 0;
+
+    rc = lm3561_mask_set(lm3561_client, CONFIGURATION1_REG, 0xFF, 0x6A);
+    if (rc<0)
+    {
+        pr_err("msm_camera_flash_external: case MSM_CAMERA_LED_OFF, Disable HW Torch Mode failed !\n");
+        rc = -EIO;
+        goto error;
+    }	
+	 
+    // Pull low strobe pin for previous trigger.
+    rc = gpio_request(soc_led_en_pin, "lm3561");
+	if (rc < 0){
+       	pr_err("msm_soc_torch_flash_off: gpio_request soc_led_en_pin failed !\n");
+    }
+	rc = gpio_direction_output(soc_led_en_pin, 0);
+	if (rc < 0){
+        pr_err("msm_soc_torch_flash_off: Pull low lm3561_strobe failed !\n");
+        rc = -EIO;
+        goto error;
+    }	
+
+	rc = gpio_request(soc_led_flash_en_pin, "lm3561");
+	if (rc < 0){
+       	pr_err("msm_soc_torch_flash_off: gpio_request soc_led_flash_en_pin failed !\n");
+    }
+	rc = gpio_direction_output(soc_led_flash_en_pin, 0);
+    if (rc < 0){
+       	pr_err("msm_soc_torch_flash_off: Pull low lm3561_strobe failed !\n");
+       	rc = -EIO;
+       	goto error;
+    }	
+
+    printk("msm_soc_torch_flash_off: flass off done\n");
+    return rc;
+    
+error:
+	printk("msm_soc_torch_flash_off: flass off failed!\n");
+	return rc;
+}
+EXPORT_SYMBOL(msm_soc_torch_flash_off);
+/*MTD-MM-SL-SupportFlash-01+} */
+/*MTD-MM-SL-SupportFlash-02*} */
+
+#endif
+/*MTD-MM-SL-SupportFlash-00+} */
+

@@ -150,6 +150,8 @@ obj-$(CONFIG_FB_MSM_MIPI_SIMULATOR_VIDEO) += mipi_simulator_video.o
 obj-$(CONFIG_FB_MSM_MIPI_CHIMEI_WXGA) += mipi_chimei_wxga_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_CHIMEI_WUXGA) += mipi_chimei_wuxga.o
 obj-$(CONFIG_FB_MSM_MIPI_ILI9486_CMD_WVGA_PT) += mipi_ili9486_cmd_wvga_pt.o
+obj-$(CONFIG_FB_MSM_MIPI_ORISE_VIDEO_FWVGA_PT) += mipi_orise_video_fwvga_pt.o
+obj-$(CONFIG_FB_MSM_MIPI_ORISE_CMD_FWVGA_PT) += mipi_orise_cmd_fwvga_pt.o
 
 endif
 

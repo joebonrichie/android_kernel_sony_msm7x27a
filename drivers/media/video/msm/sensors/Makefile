@@ -13,6 +13,10 @@ obj-$(CONFIG_OV2720) += ov2720.o
 obj-$(CONFIG_MT9M114) += mt9m114_v4l2.o
 obj-$(CONFIG_S5K4E1) += s5k4e1_v4l2.o
 obj-$(CONFIG_MT9E013) += mt9e013_v4l2.o
+#MTD-MM-SL-CameraPorting-00+[
+obj-$(CONFIG_ISX006) += isx006_v4l2.o
+obj-$(CONFIG_MT9V115) += mt9v115_v4l2.o
+#MTD-MM-SL-CameraPorting-00+]
 obj-$(CONFIG_WEBCAM_OV9726) += ov9726_v4l2.o
 obj-$(CONFIG_OV7692) += ov7692_v4l2.o
 obj-$(CONFIG_VX6953) += vx6953.o
