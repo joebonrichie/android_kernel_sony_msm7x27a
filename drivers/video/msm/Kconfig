@@ -39,6 +39,12 @@ config FB_MSM_MDP_HW
 	bool
 	default n
 
+config FIH_FB_MSM_BACKLIGHT_CONTROL
+	bool "Support for conrol backlight on after flash"
+	default n
+	---help---
+	  Turn on backlight after showing first frame when on.
+
 choice
 	prompt "MDP HW version"
 	default FB_MSM_MDP22
@@ -210,6 +216,11 @@ config FB_MSM_MIPI_DSI_NOVATEK
         select FB_MSM_MIPI_DSI
         default n
 
+config FB_MSM_MIPI_DSI_ILITEK
+        bool
+        select FB_MSM_MIPI_DSI
+        default n
+
 config FB_MSM_MIPI_DSI_NT35510
 	bool
 	select FB_MSM_MIPI_DSI
@@ -217,7 +228,7 @@ config FB_MSM_MIPI_DSI_NT35510
 config FB_MSM_MIPI_DSI_ORISE
         bool
         select FB_MSM_MIPI_DSI
-        default n
+        default
 
 config FB_MSM_MIPI_DSI_NT35516
 	bool
@@ -232,6 +243,11 @@ config FB_MSM_MIPI_DSI_TC358764_DSI2LVDS
 	  using a single LVDS link
 	  and up to WUXGA 1920x1200 18-bit
 	  using a dual LVDS link.
+
+config FB_MSM_MIPI_DSI_HIMAX
+        bool
+        select FB_MSM_MIPI_DSI
+        default n
 
 config FB_MSM_LCDC_ST15_WXGA
     bool
@@ -367,6 +383,26 @@ config FB_MSM_MIPI_ORISE_VIDEO_720P_PT
 config FB_MSM_MIPI_ORISE_CMD_720P_PT
 	bool
 	select FB_MSM_MIPI_DSI_ORISE
+	default n
+
+config FB_MSM_MIPI_ILITEK_VIDEO_HVGA_PT
+	bool
+	select FB_MSM_MIPI_DSI_ILITEK
+	default n
+
+config FB_MSM_MIPI_ILITEK_CMD_HVGA_PT
+	bool
+	select FB_MSM_MIPI_DSI_ILITEK
+	default n
+
+config FB_MSM_MIPI_HIMAX_VIDEO_HVGA_PT
+	bool
+	select FB_MSM_MIPI_DSI_HIMAX
+	default n
+
+config FB_MSM_MIPI_HIMAX_CMD_HVGA_PT
+	bool
+	select FB_MSM_MIPI_DSI_HIMAX
 	default n
 
 config FB_MSM_MIPI_RENESAS_VIDEO_FWVGA_PT
@@ -710,6 +746,14 @@ config FB_MSM_MIPI_ORISE_CMD_720P_PT_PANEL
 	bool "MIPI ORISE CMD 720P PT Panel"
 	select FB_MSM_MIPI_ORISE_CMD_720P_PT
 
+config FB_MSM_MIPI_ILITEK_VIDEO_HVGA_PT_PANEL
+	bool "MIPI ILITEK VIDEO HVGA PT Panel"
+	select FB_MSM_MIPI_ILITEK_VIDEO_HVGA_PT
+
+config FB_MSM_MIPI_ILITEK_CMD_HVGA_PT_PANEL
+	bool "MIPI ILITEK CMD HVGA PT Panel"
+	select FB_MSM_MIPI_ILITEK_CMD_HVGA_PT
+
 config FB_MSM_MIPI_RENESAS_VIDEO_FWVGA_PT_PANEL
 	bool "MIPI Renesas Video FWVGA PT Panel"
 	select FB_MSM_MIPI_RENESAS_VIDEO_FWVGA_PT
@@ -721,6 +765,14 @@ config FB_MSM_MIPI_RENESAS_CMD_FWVGA_PT_PANEL
 config FB_MSM_MIPI_ILI9486_CMD_WVGA_PT_PANEL
 	bool "MIPI Ili9486 Command WVGA PT Panel"
 	select FB_MSM_MIPI_ILI9486_CMD_WVGA_PT
+
+config FB_MSM_MIPI_HIMAX_VIDEO_HVGA_PT_PANEL
+	bool "MIPI HIMAX Video HVGA PT Panel"
+	select FB_MSM_MIPI_HIMAX_VIDEO_HVGA_PT
+
+config FB_MSM_MIPI_HIMAX_CMD_HVGA_PT_PANEL
+	bool "MIPI HIMAX Command HVGA PT Panel"
+	select FB_MSM_MIPI_HIMAX_CMD_HVGA_PT
 
 config FB_MSM_MIPI_ORISE_VIDEO_FWVGA_PT_PANEL
 	bool "MIPI ORISE Video FWVGA PT Panel"

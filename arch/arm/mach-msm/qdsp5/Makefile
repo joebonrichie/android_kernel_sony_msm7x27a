@@ -4,7 +4,7 @@ obj-y += adsp_videoenc_verify_cmd.o
 obj-y += adsp_jpeg_verify_cmd.o adsp_jpeg_patch_event.o
 obj-y += adsp_vfe_verify_cmd.o adsp_vfe_patch_event.o
 obj-y += adsp_lpm_verify_cmd.o
-ifdef CONFIG_MSM7X27A_AUDIO
+ifdef CONFIG_MSM7X27A_AUDIOD
 obj-y += audio_pcm_in.o
 obj-$(CONFIG_DEBUG_FS) += audio_voice_lb.o
 else
@@ -18,3 +18,4 @@ obj-y += snd.o snd_cad.o snd_adie.o audio_acdb.o
 obj-$(CONFIG_ARCH_MSM7X27A) += audio_fm.o
 obj-$(CONFIG_ARCH_MSM7X27A) += audio_mvs.o
 obj-$(CONFIG_ARCH_MSM7X27A) += audio_lpa.o audio_ac3.o
+obj-$(CONFIG_FIH_HEADSET) += fih_headset.o
