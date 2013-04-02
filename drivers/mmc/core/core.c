@@ -2617,6 +2617,10 @@ int mmc_pm_notify(struct notifier_block *notify_block,
 
 		if (!host->bus_ops || host->bus_ops->suspend)
 			break;
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+        /* FIH-CONN-EC-WiFiSuspendResume-01+[ */
+        if (!host->card || (host->card && (host->card->type != MMC_TYPE_SDIO))) {
+#endif
 		mmc_claim_host(host);
 		if (mmc_can_poweroff_notify(host->card)) {
 			int err = host->bus_ops->poweroff_notify(host,
@@ -2636,6 +2640,10 @@ int mmc_pm_notify(struct notifier_block *notify_block,
 		mmc_power_off(host);
 		mmc_release_host(host);
 		host->pm_flags = 0;
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+        }
+        /* FIH-CONN-EC-WiFiSuspendResume-01+] */
+#endif
 		break;
 
 	case PM_POST_SUSPEND:
@@ -2649,8 +2657,15 @@ int mmc_pm_notify(struct notifier_block *notify_block,
 		}
 		host->rescan_disable = 0;
 		spin_unlock_irqrestore(&host->lock, flags);
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+        /* FIH-CONN-EC-WiFiSuspendResume-01+[ */
+        if (!host->card || (host->card && (host->card->type != MMC_TYPE_SDIO))) {
+#endif
 		mmc_detect_change(host, 0);
-
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+        }
+        /* FIH-CONN-EC-WiFiSuspendResume-01+] */
+#endif
 	}
 
 	return 0;

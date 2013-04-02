@@ -228,7 +228,7 @@ config FB_MSM_MIPI_DSI_NT35510
 config FB_MSM_MIPI_DSI_ORISE
         bool
         select FB_MSM_MIPI_DSI
-        default
+        default n
 
 config FB_MSM_MIPI_DSI_NT35516
 	bool

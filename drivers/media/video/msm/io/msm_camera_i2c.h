@@ -85,12 +85,34 @@ int32_t msm_camera_i2c_read(struct msm_camera_i2c_client *client,
 	uint16_t addr, uint16_t *data,
 	enum msm_camera_i2c_data_type data_type);
 
+/*MTD-MM-SL-SupportFlash-01+{ */
+int32_t msm_camera_i2c_read_invert(struct msm_camera_i2c_client *client,
+	uint16_t addr, uint16_t *data,
+	enum msm_camera_i2c_data_type data_type);
+/*MTD-MM-SL-SupportFlash-01+} */
+
 int32_t msm_camera_i2c_read_seq(struct msm_camera_i2c_client *client,
 	uint16_t addr, uint8_t *data, uint16_t num_byte);
 
 int32_t msm_camera_i2c_write(struct msm_camera_i2c_client *client,
 	uint16_t addr, uint16_t data,
 	enum msm_camera_i2c_data_type data_type);
+
+/*MTD-MM-SL-CameraPorting-00+{ */
+int32_t msm_camera_i2c_write_invert(struct msm_camera_i2c_client *client,
+	uint16_t addr, uint16_t data,
+	enum msm_camera_i2c_data_type data_type);
+
+int32_t msm_camera_i2c_write_tbl_invert(struct msm_camera_i2c_client *client,
+	struct msm_camera_i2c_reg_conf *reg_conf_tbl, uint16_t size,
+	enum msm_camera_i2c_data_type data_type);
+
+int32_t msm_sensor_write_conf_array_invert(struct msm_camera_i2c_client *client,
+			struct msm_camera_i2c_conf_array *array, uint16_t index);
+
+int32_t msm_sensor_write_all_conf_array_invert(struct msm_camera_i2c_client *client,
+			struct msm_camera_i2c_conf_array *array, uint16_t size);
+/*MTD-MM-SL-CameraPorting-00+} */
 
 int32_t msm_camera_i2c_write_seq(struct msm_camera_i2c_client *client,
 	uint16_t addr, uint8_t *data, uint16_t num_byte);
@@ -119,4 +141,21 @@ int32_t msm_sensor_write_enum_conf_array(struct msm_camera_i2c_client *client,
 
 int32_t msm_sensor_write_all_conf_array(struct msm_camera_i2c_client *client,
 	struct msm_camera_i2c_conf_array *array, uint16_t size);
+
+/*MTD-MM-SL-ImproveMainCamera-00+{ */
+int32_t msm_camera_i2c_rxdata_nonAck(struct msm_camera_i2c_client *dev_client,
+	unsigned char *rxdata, int data_length);
+
+int32_t msm_camera_i2c_read_invert_nonAck(struct msm_camera_i2c_client *client,
+	uint16_t addr, uint16_t *data,
+	enum msm_camera_i2c_data_type data_type);
+
+int32_t msm_camera_i2c_txdata_nonAck(struct msm_camera_i2c_client *dev_client,
+				unsigned char *txdata, int length);
+				
+int32_t msm_camera_i2c_write_invert_nonAck(struct msm_camera_i2c_client *client,
+	uint16_t addr, uint16_t data,
+	enum msm_camera_i2c_data_type data_type);
+/*MTD-MM-SL-ImproveMainCamera-00+} */
+
 #endif

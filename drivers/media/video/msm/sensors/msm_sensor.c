@@ -1,4 +1,5 @@
 /* Copyright (c) 2011-2012, Code Aurora Forum. All rights reserved.
+ * Copyright(C) 2012-2013 Foxconn International Holdings, Ltd. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -14,13 +15,29 @@
 #include "msm.h"
 #include "msm_ispif.h"
 #include "msm_camera_i2c_mux.h"
+#ifdef CONFIG_FIH_CAMERA
+#include <mach/camera.h> 
+#include <linux/i2c.h>
+#include <linux/gpio.h>
+
+struct focus_roi_info g_msm_sensor_focus_roi_info;
+static int8_t is_flash_enable = 0;
+extern int8_t rc_af_check; 
+extern bool torch_enable; 
+extern bool isx006_get_AE_value(struct msm_camera_i2c_client *client);
+
+extern bool STARTUP;
+extern bool F_STARTUP;
+#else
 extern int camera_id;
+#endif
 /*=============================================================*/
 int32_t msm_sensor_adjust_frame_lines(struct msm_sensor_ctrl_t *s_ctrl,
 	uint16_t res)
 {
 	uint16_t cur_line = 0;
 	uint16_t exp_fl_lines = 0;
+	int32_t rc = 0;
 	if (s_ctrl->sensor_exp_gain_info) {
 		if (s_ctrl->prev_gain && s_ctrl->prev_line &&
 			s_ctrl->func_tbl->sensor_write_exp_gain)
@@ -29,19 +46,31 @@ int32_t msm_sensor_adjust_frame_lines(struct msm_sensor_ctrl_t *s_ctrl,
 				s_ctrl->prev_gain,
 				s_ctrl->prev_line);
 
-		msm_camera_i2c_read(s_ctrl->sensor_i2c_client,
+		rc = msm_camera_i2c_read(s_ctrl->sensor_i2c_client,
 			s_ctrl->sensor_exp_gain_info->coarse_int_time_addr,
 			&cur_line,
 			MSM_CAMERA_I2C_WORD_DATA);
+		if (rc < 0) {
+				pr_err("%s: %s: read time_addr failed\n", __func__,
+					s_ctrl->sensordata->sensor_name);
+				return rc;
+		}
+		
 		exp_fl_lines = cur_line +
 			s_ctrl->sensor_exp_gain_info->vert_offset;
 		if (exp_fl_lines > s_ctrl->msm_sensor_reg->
 			output_settings[res].frame_length_lines)
-			msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
+			rc = msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
 				s_ctrl->sensor_output_reg_addr->
 				frame_length_lines,
 				exp_fl_lines,
 				MSM_CAMERA_I2C_WORD_DATA);
+		if (rc < 0) {
+				pr_err("%s: %s: write sensor_output_reg_addr failed\n", __func__,
+					s_ctrl->sensordata->sensor_name);
+				return rc;
+		}
+		
 		CDBG("%s cur_fl_lines %d, exp_fl_lines %d\n", __func__,
 			s_ctrl->msm_sensor_reg->
 			output_settings[res].frame_length_lines,
@@ -53,20 +82,21 @@ int32_t msm_sensor_adjust_frame_lines(struct msm_sensor_ctrl_t *s_ctrl,
 int32_t msm_sensor_write_init_settings(struct msm_sensor_ctrl_t *s_ctrl)
 {
 	int32_t rc;
+#ifndef CONFIG_FIH_CAMERA
 	if(camera_id)
-		{
+#endif
 	rc = msm_sensor_write_all_conf_array(
 		s_ctrl->sensor_i2c_client,
 		s_ctrl->msm_sensor_reg->init_settings,
 		s_ctrl->msm_sensor_reg->init_size);
-		}
-	else{
-       rc = msm_sensor_write_all_conf_array(
+#ifndef CONFIG_FIH_CAMERA
+	else
+	rc = msm_sensor_write_all_conf_array(
 		s_ctrl->sensor_i2c_client,
 		s_ctrl->msm_sensor_reg->init_settings_1,
 		s_ctrl->msm_sensor_reg->init_size_1);
+#endif
 
-		}
 	return rc;
 }
 
@@ -109,10 +139,12 @@ int32_t msm_sensor_write_output_settings(struct msm_sensor_ctrl_t *s_ctrl,
 			output_settings[res].frame_length_lines},
 	};
 
+#ifndef CONFIG_FIH_CAMERA
 	/*++ PeterShih - 20121004 Add for protecting ++*/
 	if(!s_ctrl->sensor_output_reg_addr)
 		return 0;
 	/*-- PeterShih - 20121004 Add for protecting --*/
+#endif
 
 	rc = msm_camera_i2c_write_tbl(s_ctrl->sensor_i2c_client, dim_settings,
 		ARRAY_SIZE(dim_settings), MSM_CAMERA_I2C_WORD_DATA);
@@ -168,6 +200,7 @@ int32_t msm_sensor_write_exp_gain1(struct msm_sensor_ctrl_t *s_ctrl,
 {
 	uint32_t fl_lines;
 	uint8_t offset;
+	int32_t rc = 0;
 	fl_lines = s_ctrl->curr_frame_length_lines;
 	fl_lines = (fl_lines * s_ctrl->fps_divider) / Q10;
 	offset = s_ctrl->sensor_exp_gain_info->vert_offset;
@@ -175,13 +208,13 @@ int32_t msm_sensor_write_exp_gain1(struct msm_sensor_ctrl_t *s_ctrl,
 		fl_lines = line + offset;
 
 	s_ctrl->func_tbl->sensor_group_hold_on(s_ctrl);
-	msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
+	rc = msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
 		s_ctrl->sensor_output_reg_addr->frame_length_lines, fl_lines,
 		MSM_CAMERA_I2C_WORD_DATA);
-	msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
+	rc = msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
 		s_ctrl->sensor_exp_gain_info->coarse_int_time_addr, line,
 		MSM_CAMERA_I2C_WORD_DATA);
-	msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
+	rc = msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
 		s_ctrl->sensor_exp_gain_info->global_gain_addr, gain,
 		MSM_CAMERA_I2C_WORD_DATA);
 	s_ctrl->func_tbl->sensor_group_hold_off(s_ctrl);
@@ -193,6 +226,7 @@ int32_t msm_sensor_write_exp_gain2(struct msm_sensor_ctrl_t *s_ctrl,
 {
 	uint32_t fl_lines, ll_pclk, ll_ratio;
 	uint8_t offset;
+	int32_t rc = 0;
 	fl_lines = s_ctrl->curr_frame_length_lines * s_ctrl->fps_divider / Q10;
 	ll_pclk = s_ctrl->curr_line_length_pclk;
 	offset = s_ctrl->sensor_exp_gain_info->vert_offset;
@@ -203,13 +237,13 @@ int32_t msm_sensor_write_exp_gain2(struct msm_sensor_ctrl_t *s_ctrl,
 	}
 
 	s_ctrl->func_tbl->sensor_group_hold_on(s_ctrl);
-	msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
+	rc = msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
 		s_ctrl->sensor_output_reg_addr->line_length_pclk, ll_pclk,
 		MSM_CAMERA_I2C_WORD_DATA);
-	msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
+	rc = msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
 		s_ctrl->sensor_exp_gain_info->coarse_int_time_addr, line,
 		MSM_CAMERA_I2C_WORD_DATA);
-	msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
+	rc = msm_camera_i2c_write(s_ctrl->sensor_i2c_client,
 		s_ctrl->sensor_exp_gain_info->global_gain_addr, gain,
 		MSM_CAMERA_I2C_WORD_DATA);
 	s_ctrl->func_tbl->sensor_group_hold_off(s_ctrl);
@@ -228,7 +262,13 @@ int32_t msm_sensor_setting1(struct msm_sensor_ctrl_t *s_ctrl,
 		CDBG("Register INIT\n");
 		s_ctrl->curr_csi_params = NULL;
 		msm_sensor_enable_debugfs(s_ctrl);
+
+#ifndef CONFIG_FIH_CAMERA
 		msm_sensor_write_init_settings(s_ctrl);
+#else
+		s_ctrl->func_tbl->sensor_init_setting(s_ctrl, update_type,res);
+#endif
+
 		csi_config = 0;
 	} else if (update_type == MSM_SENSOR_UPDATE_PERIODIC) {
 		CDBG("PERIODIC : %d\n", res);
@@ -251,7 +291,11 @@ int32_t msm_sensor_setting1(struct msm_sensor_ctrl_t *s_ctrl,
 			NOTIFY_PCLK_CHANGE,
 			&s_ctrl->sensordata->pdata->ioclk.vfe_clk_rate);
 
+#ifndef CONFIG_FIH_CAMERA
 		s_ctrl->func_tbl->sensor_start_stream(s_ctrl);
+#else
+		s_ctrl->func_tbl->sensor_start_stream_1(s_ctrl);
+#endif
 		msleep(50);
 	}
 	return rc;
@@ -429,6 +473,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 	cdata.cfgtype);
 		switch (cdata.cfgtype) {
 		case CFG_SET_FPS:
+#ifndef CONFIG_FIH_CAMERA
 			//Flea++
 			if (s_ctrl->func_tbl->
 			sensor_set_fps == NULL) {
@@ -441,6 +486,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 				&(cdata.cfg.fps));
 			break;
 			//Flea--
+#endif
 		case CFG_SET_PICT_FPS:
 			if (s_ctrl->func_tbl->
 			sensor_set_fps == NULL) {
@@ -450,7 +496,11 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 			rc = s_ctrl->func_tbl->
 				sensor_set_fps(
 				s_ctrl,
+#ifndef CONFIG_FIH_CAMERA
 				&(cdata.cfg.fps));
+#else
+				cdata.cfg.v_fps);
+#endif
 			break;
 
 		case CFG_SET_EXP_GAIN:
@@ -497,7 +547,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 			break;
 
 		case CFG_SET_EFFECT:
-			//Flea++
+#ifndef CONFIG_FIH_CAMERA
 			if (s_ctrl->func_tbl->
 			sensor_set_special_effect == NULL) {
 				rc = -EFAULT;
@@ -507,8 +557,8 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 				sensor_set_special_effect(
 				s_ctrl,
 				cdata.cfg.effect);
-			//Flea--
-			break;			
+#endif
+			break;
 
 		case CFG_SENSOR_INIT:
 			if (s_ctrl->func_tbl->
@@ -541,11 +591,19 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 			break;
 
 		case CFG_START_STREAM:
+#ifndef CONFIG_FIH_CAMERA
 			if (s_ctrl->func_tbl->sensor_start_stream == NULL) {
 				rc = -EFAULT;
 				break;
 			}
 			s_ctrl->func_tbl->sensor_start_stream(s_ctrl);
+#else
+			if (s_ctrl->func_tbl->sensor_start_stream_1 == NULL) {
+				rc = -EFAULT;
+				break;
+			}
+			s_ctrl->func_tbl->sensor_start_stream_1(s_ctrl);
+#endif
 			break;
 
 		case CFG_STOP_STREAM:
@@ -570,7 +628,36 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 				sizeof(struct sensor_cfg_data)))
 				rc = -EFAULT;
 			break;
+#ifdef CONFIG_FIH_CAMERA
+		case CFG_GET_FLASH_STATE:
+        	if(torch_enable){
+           		is_flash_enable = 1;
+			}else{
+           		if(isx006_get_AE_value(s_ctrl->sensor_i2c_client))
+              	is_flash_enable = 1;
+        	}
+			cdata.cfg.flash_state = is_flash_enable;
 
+			if (copy_to_user((void *)argp,
+                    &cdata,
+                	sizeof(struct sensor_cfg_data)))                	
+            	rc = -EFAULT;
+		
+  			is_flash_enable = 0;	
+			
+			break;
+		case CFG_GET_RC_AF_CHECK:
+			cdata.cfg.rc_af_check = rc_af_check;
+
+			if (copy_to_user((void *)argp,
+                    &cdata,
+                	sizeof(struct sensor_cfg_data)))                	
+            	rc = -EFAULT;
+
+			rc_af_check = 0;
+			
+			break;
+#endif
 		default:
 			rc = -EFAULT;
 			break;
@@ -719,18 +806,45 @@ int32_t msm_sensor_match_id(struct msm_sensor_ctrl_t *s_ctrl)
 {
 	int32_t rc = 0;
 	uint16_t chipid = 0;
-	rc = msm_camera_i2c_read(
+
+#ifdef CONFIG_FIH_CAMERA
+	if (STARTUP == 0){
+		printk("msm_sensor_match_id:STARTUP == 0 \n");
+		rc = msm_camera_i2c_read(
 			s_ctrl->sensor_i2c_client,
 			s_ctrl->sensor_id_info->sensor_id_reg_addr, &chipid,
 			MSM_CAMERA_I2C_WORD_DATA);
-	if (rc < 0) {
-		pr_err("%s: %s: read id failed\n", __func__,
-			s_ctrl->sensordata->sensor_name);
-		return rc;
+			if (rc < 0) {
+				pr_err("%s: %s: read id failed\n", __func__,
+					s_ctrl->sensordata->sensor_name);
+				return rc;
+		}
+	} else {
+		printk("msm_sensor_match_id:STARTUP == 1 \n");
+		rc = msm_camera_i2c_read_invert(
+#else
+	rc = msm_camera_i2c_read(
+#endif
+			s_ctrl->sensor_i2c_client,
+			s_ctrl->sensor_id_info->sensor_id_reg_addr, &chipid,
+			MSM_CAMERA_I2C_WORD_DATA);
+			if (rc < 0) {
+				pr_err("%s: %s: read id failed\n", __func__,
+				s_ctrl->sensordata->sensor_name);
+				return rc;
+#ifdef CONFIG_FIH_CAMERA
+		}
+#endif
 	}
 
 	CDBG("msm_sensor id: %d\n", chipid);
+
+#ifdef CONFIG_FIH_CAMERA
+	if ((chipid != s_ctrl->sensor_id_info->sensor_id)
+		&& (chipid != s_ctrl->sensor_id_info->sensor_id2)) { /*MTD-MM-SL-CameraPorting-00* */
+#else
 	if (chipid != s_ctrl->sensor_id_info->sensor_id) {
+#endif
 		pr_err("msm_sensor_match_id chip id doesnot match\n");
 		return -ENODEV;
 	}
@@ -748,6 +862,10 @@ int32_t msm_sensor_i2c_probe(struct i2c_client *client,
 	int rc = 0;
 	struct msm_sensor_ctrl_t *s_ctrl;
 	CDBG("%s %s_i2c_probe called\n", __func__, client->name);
+#ifdef CONFIG_FIH_CAMERA
+	STARTUP = 0;
+	F_STARTUP = 0;
+#endif
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		pr_err("%s %s i2c_check_functionality failed\n",
 			__func__, client->name);
@@ -858,6 +976,20 @@ int32_t msm_sensor_v4l2_s_ctrl(struct v4l2_subdev *sd,
 
 	CDBG("%s\n", __func__);
 	CDBG("%d\n", ctrl->id);
+
+#ifdef CONFIG_FIH_CAMERA
+    if (ctrl->id == V4L2_CID_FOCUS_ROI)
+    {
+        g_msm_sensor_focus_roi_info.x             = ctrl->focus_roi[0];
+        g_msm_sensor_focus_roi_info.y             = ctrl->focus_roi[1];
+        g_msm_sensor_focus_roi_info.dx            = ctrl->focus_roi[2];
+        g_msm_sensor_focus_roi_info.dy            = ctrl->focus_roi[3];
+        g_msm_sensor_focus_roi_info.preview_ratio = ctrl->focus_roi[4];
+        g_msm_sensor_focus_roi_info.num_roi       = ctrl->focus_roi[5];
+            
+    }
+#endif
+
 	if (v4l2_ctrl == NULL)
 		return rc;
 	for (i = 0; i < s_ctrl->num_v4l2_ctrl; i++) {
@@ -959,3 +1091,47 @@ int msm_sensor_enable_debugfs(struct msm_sensor_ctrl_t *s_ctrl)
 
 	return 0;
 }
+
+#ifdef CONFIG_FIH_CAMERA
+int fih_enable_mclk(struct msm_sensor_ctrl_t *s_ctrl)
+{
+    int rc = 0;
+
+	if (s_ctrl->clk_rate != 0)
+		cam_clk_info->clk_rate = s_ctrl->clk_rate;
+
+	rc = msm_cam_clk_enable(&s_ctrl->sensor_i2c_client->client->dev,
+		cam_clk_info, &s_ctrl->cam_clk, ARRAY_SIZE(cam_clk_info), 1);
+	
+	if (rc < 0) {
+		pr_err("FIH_Enable_MCLK: clk enable failed\n");
+		goto error;
+	}
+	
+	printk ("FIH_Enable_MCLK: End. \n");    
+    return rc;
+    
+error:
+    pr_err("FIH_Enable_MCLK: failed !, rc = %d.\n", rc);
+    return rc;
+}
+
+int fih_disable_mclk(struct msm_sensor_ctrl_t *s_ctrl)
+{
+    int rc = 0;
+
+	rc = msm_cam_clk_enable(&s_ctrl->sensor_i2c_client->client->dev,
+		cam_clk_info, &s_ctrl->cam_clk, ARRAY_SIZE(cam_clk_info), 0);
+	if (rc < 0) {
+		pr_err("FIH_Disable_MCLK: clk disable failed\n");
+		goto error;
+	}
+	
+    printk ("FIH_Disable_MCLK: End. \n");    
+    return rc;
+    
+error:
+    pr_err("FIH_Disable_MCLK: failed !, rc = %d.\n", rc);
+    return rc;
+}
+#endif

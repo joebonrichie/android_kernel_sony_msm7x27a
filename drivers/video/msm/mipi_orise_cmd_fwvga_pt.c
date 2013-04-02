@@ -62,10 +62,6 @@ static int __init mipi_cmd_orise_pt_init(void)
 	pinfo.bl_max = 10;
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
-/* FIH-SW-MM-VH-DISPLAY-22+[ */
-	pinfo.width = 50;
-	pinfo.height = 89;
-/* FIH-SW-MM-VH-DISPLAY-22+] */
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;

@@ -801,18 +801,18 @@ static struct platform_driver trout_h2w_driver = {
 static int __init trout_h2w_init(void)
 {
 	/* FIH-SW2-MM-AY-hsed_type-03 [ */
-    int product_id = fih_get_product_id();
-	int product_phase = fih_get_product_phase();
+//    int product_id = fih_get_product_id();
+//	int product_phase = fih_get_product_phase();
 	/* FIH-SW2-MM-AY-hsed_type-03 ] */
 
 	H2W_DBG("trout_h2w_init:set interrupt trigger level\n ");
 
 	/* FIH-SW2-MM-AY-hsed_type-03 [ */
-	if (((product_id == Project_TAP) && ((product_phase == Phase_AP2) || (product_phase == Phase_MP))) 
-		|| ((product_id == Project_MES) && (product_phase >= Phase_PreAP)) 
-		|| ((product_id == Project_JLO) && (product_phase >= Phase_SP3))) 
-		isCTIAheadset = true;
-	else
+//	if (((product_id == Project_TAP) && ((product_phase == Phase_AP2) || (product_phase == Phase_MP))) 
+//		|| ((product_id == Project_MES) && (product_phase >= Phase_PreAP)) 
+//		|| ((product_id == Project_JLO) && (product_phase >= Phase_SP3))) 
+//		isCTIAheadset = true;
+//	else
 		isCTIAheadset = false;
 	/* FIH-SW2-MM-AY-hsed_type-03 ] */
 	

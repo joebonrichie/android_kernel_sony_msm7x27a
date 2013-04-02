@@ -464,14 +464,6 @@ config MACH_MSM7X27_FFA
 	help
 	  Support for the Qualcomm MSM7x27 FFA eval board.
 
-config MACH_MSM7X27A_NANHU
-        depends on ARCH_MSM7X27A
-        depends on !MSM_STACKED_MEMORY
-        default y
-        bool "MSM7x27A RUMI3"
-        help
-          Support for the Sony Xperia E (nanhu) Platform.
-
 config MACH_MSM7X27A_RUMI3
         depends on ARCH_MSM7X27A
         depends on !MSM_STACKED_MEMORY
@@ -543,30 +535,6 @@ config MACH_MSM8625_RUMI3
 	bool "MSM8625 RUMI3"
 	help
 	  Support for the Qualcomm MSM8625 RUMI3 Emulation Platform.
-
-config MACH_MSM8625_JLO
-	depends on ARCH_MSM8625
-	depends on !MSM_STACKED_MEMORY
-	default y
-	bool "MSM8625 JLO"
-	help
-	  Support for the Sony Xperia J (jlo) Platform.
-
-config MACH_MSM8625_TAP
-	depends on ARCH_MSM8625
-	depends on !MSM_STACKED_MEMORY
-	default y
-	bool "MSM8625 TAP"
-	help
-	  Support for the Sony Xperia Tipo (tapioca) Platform.
-
-config MACH_MSM8625_MES
-	depends on ARCH_MSM8625
-	depends on !MSM_STACKED_MEMORY
-	default y
-	bool "MSM8625 MES"
-	help
-	  Support for the Sony Xperia Miro (mesona) Platform.
 
 config MACH_MSM8625_SURF
 	depends on ARCH_MSM8625

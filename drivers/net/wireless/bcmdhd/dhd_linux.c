@@ -3707,9 +3707,9 @@ dhd_net_attach(dhd_pub_t *dhdp, int ifidx)
 #if WIRELESS_EXT < 19
 	net->get_wireless_stats = dhd_get_wireless_stats;
 #endif /* WIRELESS_EXT < 19 */
-#if WIRELESS_EXT > 12
-	net->wireless_handlers = (struct iw_handler_def *)&wl_iw_handler_def;
-#endif /* WIRELESS_EXT > 12 */
+//#if WIRELESS_EXT > 12
+//	net->wireless_handlers = (struct iw_handler_def *)&wl_iw_handler_def;
+//#endif /* WIRELESS_EXT > 12 */
 #endif /* defined(WL_WIRELESS_EXT) */
 
 	dhd->pub.rxsz = DBUS_RX_BUFFER_SIZE_DHD(net);

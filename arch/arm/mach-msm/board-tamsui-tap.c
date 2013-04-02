@@ -641,7 +641,7 @@ static struct qpdss702_platform_data qpdss702_platform_data = {
 	.sensitivity = (QPDSS702_TYPICAL_MODE & QPDSS702_THRESHOLD_MASK) >> 2,
 };
 #endif
-#ifdef CONFIG_I2C) && defined(CONFIG_GPIO_SX150X)
+#ifdef CONFIG_I2C
 static struct i2c_board_info core_exp_i2c_info[] __initdata = {
 #ifdef CONFIG_GPIO_SX150X
 	{
@@ -1935,7 +1935,7 @@ static void __init msm7x2x_init(void)
 #ifdef CONFIG_USB_EHCI_MSM_72K
 	msm7x2x_init_host();
 #endif
-	7x27a_pm_init();
+	msm7x27a_pm_init();
 	register_i2c_devices();
 #if defined(CONFIG_BT) && defined(CONFIG_MARIMBA_CORE)
 	msm7627a_bt_power_init();

@@ -61,10 +61,6 @@ static int __init mipi_video_ilitek_hvga_pt_init(void)
 /* FIH-SW3-MM-NC-LCM-03-]- */
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
-/* FIH-SW3-MM-NC-LCM-11-[+ */
-	pinfo.width = 45;  /* 44.64mm */
-	pinfo.height = 67;  /* 66.96mm */
-/* FIH-SW3-MM-NC-LCM-11-]- */
 
 	pinfo.mipi.mode = DSI_VIDEO_MODE;
 	pinfo.mipi.pulse_mode_hsa_he = FALSE;

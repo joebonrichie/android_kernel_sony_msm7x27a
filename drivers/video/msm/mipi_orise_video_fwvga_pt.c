@@ -60,8 +60,6 @@ static int __init mipi_video_orise_pt_init(void)
 	pinfo.bl_max = 10;
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
-	pinfo.width = 50;
-	pinfo.height = 89;
 	pinfo.mipi.mode = DSI_VIDEO_MODE;
 	pinfo.mipi.pulse_mode_hsa_he = TRUE;
 	pinfo.mipi.hfp_power_stop = FALSE;

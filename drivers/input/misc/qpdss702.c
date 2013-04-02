@@ -179,12 +179,12 @@ static ssize_t qpdss702_enable_store(struct device *dev, struct device_attribute
     * Disable P-sensor in GUA-DP and TAP-DP phases.
     */
 
-    if ((fih_get_product_id() == Project_GUA || fih_get_product_id() == Project_TAP) && fih_get_product_phase() == Phase_DP)
-    //if ((fih_get_product_id() == Project_GUA) && fih_get_product_phase() == Phase_DP)
-    {
-        newState = SHUTDOWN_MODE;
-        PSENSOR_DEBUG(LEVEL0, "DP device, disable proximity sensor!! newState=%d", newState);
-    }
+//    if ((fih_get_product_id() == Project_GUA || fih_get_product_id() == Project_TAP) && fih_get_product_phase() == Phase_DP)
+//    //if ((fih_get_product_id() == Project_GUA) && fih_get_product_phase() == Phase_DP)
+//    {
+//        newState = SHUTDOWN_MODE;
+//        PSENSOR_DEBUG(LEVEL0, "DP device, disable proximity sensor!! newState=%d", newState);
+//    }
 
     /* workaround: +] */
     PSENSOR_DEBUG(LEVEL1, "start");

@@ -2,6 +2,7 @@
  *
  * Copyright (C) 2007 Google, Inc.
  * Copyright (c) 2008-2012, Code Aurora Forum. All rights reserved.
+ * Copyright (C) 2011-2012, Foxconn International Holdings, Ltd. All rights reserved.
  * Author: Brian Swetland <swetland@google.com>
  *
  * This software is licensed under the terms of the GNU General Public
@@ -45,6 +46,15 @@
 
 #include "smd_private.h"
 #include "modem_notifier.h"
+
+
+/*FIH-SW3-KERNEL-PK-MODEM_SUSPEND_LOG-00+[ */
+#ifdef CONFIG_FIH_MODEM_SUSPEND_LOG
+  #include "clock.h"
+  #include <linux/bitops.h>
+#endif
+/*FIH-SW3-KERNEL-PK-MODEM_SUSPEND_LOG-00+] */
+
 
 #if defined(CONFIG_ARCH_QSD8X50) || defined(CONFIG_ARCH_MSM8X60) \
 	|| defined(CONFIG_ARCH_MSM8960) || defined(CONFIG_ARCH_FSM9XXX) \
@@ -116,6 +126,54 @@ struct smsm_state_info {
 	uint32_t intr_mask_set;
 	uint32_t intr_mask_clear;
 };
+
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+/* MTD-BSP-VT-SMEM-00+[*/
+struct smem_boot_info
+{
+      unsigned int apps_boot_reason;
+};
+
+struct smem_oem_info
+{
+    unsigned int hw_id;
+    unsigned int keypad_info;
+    unsigned int power_on_cause;
+    /*Add SD RAM dump feature*/
+    unsigned int network_mode;
+    unsigned int oemsbl_mode; 
+    char   flash_name[32];
+    char   oem_mob_rev[16];
+    unsigned int  progress;
+    unsigned int  msg_counter;
+    unsigned int  dram_info;
+    char   amss_version[32];
+    unsigned int not_mpm_reason;
+    unsigned int mao_int_pendding;
+    unsigned int tcxo_off_time;
+    unsigned int tcxo_off_count;
+    unsigned int curr_not_okts_mask0;
+    unsigned int curr_not_okts_mask1;
+    unsigned int powercollapse_time;
+    unsigned int against_clock[4];
+    unsigned int acquired_resources;
+    unsigned int tcxo_sd_during_display_on;
+};
+
+#define PHASE_ID_SHIFT_MASK 8
+#define BAND_ID_SHIFT_MASK 16
+#define SIM_ID_SHIFT_MASK 24  
+
+static struct smem_oem_info oem_info = {0};
+unsigned long fih_hw_id = 0;
+static unsigned int fih_product_id = 0;
+static unsigned int fih_product_phase = 0;
+static unsigned int fih_band_id = 0;
+static unsigned int fih_sim_type = 0; 
+static char fih_amss_version[30] = {0};
+unsigned int fih_power_on_cause; 
+/* MTD-BSP-VT-SMEM-00+]*/
+#endif
 
 struct interrupt_config_item {
 	/* must be initialized */
@@ -350,9 +408,11 @@ static inline void smd_write_intr(unsigned int val,
 #define SMEM_SPINLOCK_SMEM_ALLOC       "S:3"
 static remote_spinlock_t remote_spinlock;
 
+#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
 /*Skies-2012/07/18, Keep a copy of SMEM++*/
 static void *radio_log_base = NULL;
 /*Skies-2012/07/18, Keep a copy of SMEM--*/
+#endif
 
 static LIST_HEAD(smd_ch_list_loopback);
 static void smd_fake_irq_handler(unsigned long arg);
@@ -367,6 +427,76 @@ static int spinlocks_initialized;
 static RAW_NOTIFIER_HEAD(smsm_driver_state_notifier_list);
 static DEFINE_MUTEX(smsm_driver_state_notifier_lock);
 static void smsm_driver_state_notify(uint32_t state, void *data);
+
+/*FIH-SW3-KERNEL-PK-MODEM_SUSPEND_LOG-00+[ */
+
+/* FIH-SW-KERNEL-SC-TCXO_SD_DURING_DISPLAY_ON-01+[ */
+#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
+static unsigned int fih_tcxo_sd_during_display_on = 0;
+
+unsigned int fih_get_tcxo_sd_during_display_on(void)
+{
+	return fih_tcxo_sd_during_display_on;
+}
+EXPORT_SYMBOL(fih_get_tcxo_sd_during_display_on);
+
+unsigned int fih_set_tcxo_sd_during_display_on(unsigned int flag)
+{
+	static struct smem_oem_info *gsmem_oem_info = NULL;
+
+	if (gsmem_oem_info==NULL)
+	{
+		unsigned int bsize;
+		gsmem_oem_info = (struct smem_oem_info *)smem_get_entry(SMEM_ID_VENDOR0, &bsize);
+		if (gsmem_oem_info==NULL)
+		{
+			pr_err("[PM] Cannot get smem sleep info !!!\n");
+			return -1;
+		}
+	}
+	gsmem_oem_info->tcxo_sd_during_display_on = flag;
+	fih_tcxo_sd_during_display_on = flag;
+	pr_info("fih_tcxo_sd_during_display_on = %d", fih_tcxo_sd_during_display_on);
+	return 0;
+}
+EXPORT_SYMBOL(fih_set_tcxo_sd_during_display_on);
+#endif
+/* FIH-SW-KERNEL-SC-TCXO_SD_DURING_DISPLAY_ON-01+] */
+
+#ifdef CONFIG_FIH_MODEM_SUSPEND_LOG
+void show_smem_sleep_info (void)
+{
+	static struct smem_oem_info *gsmem_oem_info = NULL;
+
+	if (gsmem_oem_info == NULL) {
+		unsigned int bsize;
+		gsmem_oem_info = (struct smem_oem_info *)smem_get_entry(SMEM_ID_VENDOR0, &bsize);
+		if (gsmem_oem_info == NULL)
+			printk(KERN_EMERG "[PM] Cannot get smem sleep info !!!\n");
+	}
+
+	if (gsmem_oem_info != NULL) {
+		printk(KERN_EMERG "[PM]NMPM:0x%08X, OKTS:%08X, %08X, AR:%08x, PC:%u, MPM:%u, %u, MAOINT:%08X\n", 
+			gsmem_oem_info->not_mpm_reason, 
+			gsmem_oem_info->curr_not_okts_mask1,
+			gsmem_oem_info->curr_not_okts_mask0,
+			gsmem_oem_info->acquired_resources,
+			gsmem_oem_info->powercollapse_time >> 5,
+			gsmem_oem_info->tcxo_off_time >> 5,
+			gsmem_oem_info->tcxo_off_count,
+			gsmem_oem_info->mao_int_pendding );
+
+		if (gsmem_oem_info->curr_not_okts_mask0 & 0x01) { /*clkrgm*/
+			printk(KERN_EMERG "[PM]CLK:%08X, %08X, %08X, %08X\n",
+				gsmem_oem_info->against_clock[3], gsmem_oem_info->against_clock[2], 
+				gsmem_oem_info->against_clock[1], gsmem_oem_info->against_clock[0]);
+			memset(gsmem_oem_info->against_clock, 0, sizeof(gsmem_oem_info->against_clock));
+		}
+	}
+}
+EXPORT_SYMBOL(show_smem_sleep_info);
+#endif /* CONFIG_FIH_MODEM_SUSPEND_LOG */
+/*FIH-SW3-KERNEL-PK-MODEM_SUSPEND_LOG-00+] */
 
 static inline void smd_write_intr(unsigned int val,
 				const void __iomem *addr)
@@ -574,7 +704,7 @@ void smd_diag(void)
 {
 	char *x;
 /*Skies-2012/07/18, Keep a copy of SMEM++*/
-#if 0
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
 	int size;
 #endif
 /*Skies-2012/07/18, Keep a copy of SMEM--*/
@@ -585,7 +715,7 @@ void smd_diag(void)
 		SMD_INFO("smem: DIAG '%s'\n", x);
 	}
 /*Skies-2012/07/18, Keep a copy of SMEM++*/
-#if 0
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
 	x = smem_get_entry(SMEM_ERR_CRASH_LOG, &size);
 	if (x != 0) {
 		x[size - 1] = 0;
@@ -2596,6 +2726,7 @@ restore_snapshot_count:
 	}
 }
 
+#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
 /*Skies-2012/07/18, Keep a copy of SMEM++*/
 static struct workqueue_struct *modem_save_log_wq = NULL;
 
@@ -2628,6 +2759,7 @@ void modem_queue_start_save_log(void)
 	}
 }
 /*Skies-2012/07/18, Keep a copy of SMEM--*/
+#endif
 
 static irqreturn_t smsm_irq_handler(int irq, void *data)
 {
@@ -2682,10 +2814,11 @@ static irqreturn_t smsm_irq_handler(int irq, void *data)
 				outer_flush_all();
 			}
 			
+#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
 			/*Skies-2012/07/18, Keep a copy of SMEM++*/
 			modem_queue_start_save_log();
 			/*Skies-2012/07/18, Keep a copy of SMEM--*/
-
+#endif
 			modem_queue_start_reset_notify();
 
 		} else if (modm & SMSM_INIT) {
@@ -3098,6 +3231,24 @@ int smsm_state_cb_deregister(uint32_t smsm_entry, uint32_t mask,
 }
 EXPORT_SYMBOL(smsm_state_cb_deregister);
 
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+/* MTD-BSP-VT-INFO-00+[ */
+unsigned int get_boot_info(void)
+{
+       struct smem_boot_info boot_info = {0};
+       struct smem_boot_info *p_boot_info = smem_alloc(SMEM_APPS_BOOT_MODE, sizeof(boot_info));
+       if (p_boot_info==NULL) {
+           return -1;
+       }
+       memcpy(&boot_info, p_boot_info, sizeof(boot_info));
+
+       printk(KERN_INFO "get_boot_info = 0x%x\r\n",boot_info.apps_boot_reason);
+       return boot_info.apps_boot_reason;
+}
+EXPORT_SYMBOL(get_boot_info);
+/* MTD-BSP-VT-INFO-00+] */
+#endif
+
 int smsm_driver_state_notifier_register(struct notifier_block *nb)
 {
 	int ret;
@@ -3472,6 +3623,7 @@ static int __devinit msm_smd_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
 	/*Skies-2012/07/18, Keep a copy of SMEM++*/
 	radio_log_base = ioremap(0x2D750000, 0x10000);
 	pr_emerg("smem %s: radio_log_base = 0x%x\n", __func__, (unsigned)radio_log_base);
@@ -3487,6 +3639,7 @@ static int __devinit msm_smd_probe(struct platform_device *pdev)
 		msm_init_last_radio_log(THIS_MODULE, (unsigned)radio_log_base);
 	}
 	/*Skies-2012/06/27, Save crash log to /proc/last_radio_log--*/
+#endif
 
 	smd_initialized = 1;
 
@@ -3527,6 +3680,106 @@ static int restart_notifier_cb(struct notifier_block *this,
 
 	return NOTIFY_DONE;
 }
+
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+/* MTD-BSP-VT-SMEM-00+[ */
+void fih_get_oem_info(void)
+{
+  #ifdef CONFIG_FIH_SEMC_S1
+  int count = 0;
+  #endif
+  struct smem_oem_info *fih_smem_info = smem_alloc(SMEM_ID_VENDOR0, sizeof(oem_info));
+  if (fih_smem_info==NULL)
+  {
+    return;
+  }
+  memcpy(&oem_info, fih_smem_info, sizeof(oem_info));
+
+  fih_hw_id = oem_info.hw_id;
+  
+  #ifdef CONFIG_FIH_SEMC_S1
+	while ( fih_hw_id == 0x44495778 )
+	{
+		count++;
+		if ( count%100 == 0 )
+		{
+			printk(KERN_ERR "FIH kernel - Waiting for fih_hw_id.\r\n");
+		}
+		memcpy(&oem_info, fih_smem_info, sizeof(oem_info));
+		fih_hw_id = oem_info.hw_id;
+		mdelay(10);
+		if ( count > 1000 )
+		{ 
+			printk(KERN_ERR "FIH kernel - Timeout for fih_hw_id.\r\n");
+			break;
+		}
+	}
+  #endif
+  
+  printk(KERN_ERR "FIH kernel - fih_hw_id = 0x%lx\r\n",fih_hw_id);
+
+  //get product id
+  fih_product_id = fih_hw_id&0xff;
+  printk(KERN_ERR "FIH kernel - fih_product_id = %d \r\n",fih_product_id);
+
+  //get product phase
+  fih_product_phase = (fih_hw_id>>PHASE_ID_SHIFT_MASK)&0xff;
+  printk(KERN_ERR "FIH kernel - fih_product_phase = %d \r\n",fih_product_phase);
+
+  //get band id
+  fih_band_id = (fih_hw_id>>BAND_ID_SHIFT_MASK)&0xff;
+  printk(KERN_ERR "FIH kernel - fih_band_id = %d \r\n",fih_band_id);
+
+  fih_sim_type = (fih_hw_id>>SIM_ID_SHIFT_MASK)&0x3;
+  printk(KERN_ERR "FIH kernel - fih_sim_type = %d \r\n",fih_sim_type);
+	
+  //get AMSS Version
+  snprintf(fih_amss_version, sizeof(fih_amss_version), oem_info.amss_version);
+  printk(KERN_ERR "FIH kernel - fih_amss_version = %s \r\n",fih_amss_version);
+
+  /* show power on cause */
+  printk(KERN_EMERG "FIH kernel - power on cause = 0x%08x \r\n", oem_info.power_on_cause);
+  fih_power_on_cause = oem_info.power_on_cause; 	
+} /*fih_get_oem_info*/
+EXPORT_SYMBOL(fih_get_oem_info);
+
+unsigned int fih_get_product_id(void)
+{
+	return fih_product_id;
+} 
+EXPORT_SYMBOL(fih_get_product_id);
+
+unsigned int fih_get_product_phase(void)
+{
+	return fih_product_phase;
+} 
+EXPORT_SYMBOL(fih_get_product_phase);
+
+unsigned int fih_get_band_id(void)
+{
+	return fih_band_id;
+} 
+EXPORT_SYMBOL(fih_get_band_id);
+
+unsigned int fih_get_sim_id(void)
+{
+	return fih_sim_type;
+} 
+EXPORT_SYMBOL(fih_get_sim_id);
+
+char *fih_get_amss_version(void)
+{
+	return fih_amss_version;
+} 
+EXPORT_SYMBOL(fih_get_amss_version);
+unsigned int fih_get_power_on_cause(void)
+{
+	return fih_power_on_cause;
+}
+EXPORT_SYMBOL(fih_get_power_on_cause);
+module_param_named(poweron_cause, fih_power_on_cause, int, S_IRUGO);
+/* MTD-BSP-VT-SMEM-00+] */
+#endif
 
 static __init int modem_restart_late_init(void)
 {

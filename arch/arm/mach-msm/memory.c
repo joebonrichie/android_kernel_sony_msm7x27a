@@ -239,6 +239,13 @@ static void __init adjust_reserve_sizes(void)
 
 	mt = &reserve_info->memtype_reserve_table[0];
 	for (i = 0; i < MEMTYPE_MAX; i++, mt++) {
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+		//MTD-SW3-KERNEL-DL-Fix_ioremap-00+[
+		if (i == MEMTYPE_EBI1_FIH) {
+			continue;
+		}
+		//MTD-SW3-KERNEL-DL-Fix_ioremap-00+]
+#endif
 		if (mt->flags & MEMTYPE_FLAGS_1M_ALIGN)
 			mt->size = (mt->size + SECTION_SIZE - 1) & SECTION_MASK;
 		if (mt->size > mt->limit) {
@@ -260,7 +267,13 @@ static void __init reserve_memory_for_mempools(void)
 	mt = &reserve_info->memtype_reserve_table[0];
 	for (memtype = 0; memtype < MEMTYPE_MAX; memtype++, mt++) {
 		if (mt->flags & MEMTYPE_FLAGS_FIXED || !mt->size)
+		{
+#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+			ret = memblock_remove(mt->start, mt->size);
+			BUG_ON(ret);
+#endif
 			continue;
+		}
 
 		/* We know we will find memory bank(s) of the proper size
 		 * as we have limited the size of the memory pool for

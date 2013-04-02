@@ -18,7 +18,7 @@ DHDCFLAGS = -Wall -Wstrict-prototypes -Dlinux -DBCMDRIVER                     \
 DHDCFLAGS += -DFIH_HW
 # Enable Static Buffer in driver
 DHDCFLAGS += -DCONFIG_DHD_USE_STATIC_BUF
-DHDCFLAGS += -DWL_WIRELESS_EXT
+#DHDCFLAGS += -DWL_WIRELESS_EXT
 # Add by FIH
 
 

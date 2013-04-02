@@ -4328,8 +4328,10 @@ static int __net_init dev_proc_net_init(struct net *net)
 	if (!proc_net_fops_create(net, "ptype", S_IRUGO, &ptype_seq_fops))
 		goto out_softnet;
 
+//#ifdef CONFIG_WEXT_CORE
 	if (wext_proc_init(net))
 		goto out_ptype;
+//#endif
 	rc = 0;
 out:
 	return rc;
@@ -4344,8 +4346,9 @@ out_dev:
 
 static void __net_exit dev_proc_net_exit(struct net *net)
 {
+//#ifdef CONFIG_WEXT_CORE
 	wext_proc_exit(net);
-
+//#endif
 	proc_net_remove(net, "ptype");
 	proc_net_remove(net, "softnet_stat");
 	proc_net_remove(net, "dev");
@@ -5143,9 +5146,11 @@ int dev_ioctl(struct net *net, unsigned int cmd, void __user *arg)
 			return ret;
 		}
 		/* Take care of Wireless Extensions */
+//#ifdef CONFIG_WEXT_CORE
 		if (cmd >= SIOCIWFIRST && cmd <= SIOCIWLAST)
 			return wext_handle_ioctl(net, &ifr, cmd, arg);
 		return -ENOTTY;
+//#endif
 	}
 }
 

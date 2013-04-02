@@ -6,10 +6,11 @@
 #define AKM8975_H
 
 #include <linux/ioctl.h>
-#include <linux/fih_hw_info.h>	/* FIH-SW2-PERIPHERAL-FG-MSENSOR-00+ */
+//#include <linux/fih_hw_info.h>	/* FIH-SW2-PERIPHERAL-FG-MSENSOR-00+ */
 
 #define AKM8975_I2C_NAME "akm8975"
-#define GPIO_COMPASS_INT (((fih_get_product_id() == Project_MES) && (fih_get_product_phase() < Phase_DP)) ? 114:39)	/* FIH-SW2-PERIPHERAL-FG-MSENSOR-00+ */
+#define GPIO_COMPASS_INT 114
+//(((fih_get_product_id() == Project_MES) && (fih_get_product_phase() < Phase_DP)) ? 114:39)	/* FIH-SW2-PERIPHERAL-FG-MSENSOR-00+ */
 
 #define SENSOR_DATA_SIZE	8
 #define YPR_DATA_SIZE		12

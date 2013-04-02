@@ -61,10 +61,6 @@ static int __init mipi_cmd_ilitek_hvga_pt_init(void)
 /* FIH-SW3-MM-NC-LCM-03-]- */
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
-/* FIH-SW3-MM-NC-LCM-10-[+ */
-	pinfo.width = 45;  /* 44.64mm */
-	pinfo.height = 67;  /* 66.96mm */
-/* FIH-SW3-MM-NC-LCM-10-]- */
 
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB666;

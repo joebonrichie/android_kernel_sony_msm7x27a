@@ -279,9 +279,11 @@ struct msm_sensor_ctrl {
 	uint32_t s_mount_angle;
 	enum msm_st_frame_packing s_video_packing;
 	enum msm_st_frame_packing s_snap_packing;
+#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
 	/*++ PeterShih - 20120417 for camera HW version ++*/
 	int hw_version;
 	/*-- PeterShih - 20120417 for camera HW version --*/
+#endif
 };
 
 struct msm_strobe_flash_ctrl {
@@ -451,6 +453,16 @@ int msm_camera_flash_set_led_state(
 int msm_strobe_flash_init(struct msm_sync *sync, uint32_t sftype);
 int msm_flash_ctrl(struct msm_camera_sensor_info *sdata,
 			struct flash_ctrl_data *flash_info);
+/*MTD-MM-SL-SupportFlash-00+{ */
+#if defined (CONFIG_CAMERA_FLASH_LM3561)
+int msm_soc_get_led_mode(void);
+int msm_soc_flash_trigger(void);
+int msm_soc_flash_trigger_off(void);
+int msm_soc_torch_trigger(void);
+int msm_soc_torch_flash_off(void);
+#endif
+/*MTD-MM-SL-SupportFlash-00+} */
+
 #else
 static inline int msm_camera_flash_set_led_state(
 	struct msm_camera_sensor_flash_data *fdata,

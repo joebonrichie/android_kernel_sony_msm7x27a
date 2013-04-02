@@ -44,6 +44,11 @@ enum {
 };
 static int state;
 
+//MTD-kernel-BH-PowerKeySuspendLock-00+[
+atomic_t gKeySuspendLock= ATOMIC_INIT(0); 
+EXPORT_SYMBOL(gKeySuspendLock);
+//MTD-kernel-BH-PowerKeySuspendLock-00+]
+
 void register_early_suspend(struct early_suspend *handler)
 {
 	struct list_head *pos;

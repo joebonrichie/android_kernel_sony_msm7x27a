@@ -149,3 +149,5 @@ obj-$(CONFIG_MOBICORE_SUPPORT)  += gud/
 obj-$(CONFIG_MSM_QDSS)		+= coresight/
 
 obj-$(CONFIG_FIH_VIBRATOR_CLASS)	+= vibrators/
+
+obj-$(CONFIG_FIH_DEVELOPMENT_TOOL)	+= development_tool/

@@ -973,7 +973,7 @@ config TOUCHSCREEN_ILITEK_2103T
 	  module will be called ilitek_aimv8. 
 ##>>MelChang,[Harry] Add ELAN eKTF2040 and ILITEK ILI2013t touch panel IC
 config TOUCHSCREEN_CYPRESS_CY8CTMA340
-        tristate "Cypress TMA340 touchscreen"
+        bool "Cypress TMA340 touchscreen"
         depends on I2C
 
         help
@@ -986,7 +986,7 @@ config TOUCHSCREEN_CYPRESS_CY8CTMA340
           module will be called cy8c_ts.
 
 config FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
-        tristate "FIH Cypress TMA340 touchscreen"
+        bool "FIH Cypress TMA340 touchscreen"
         depends on I2C
 
         help
