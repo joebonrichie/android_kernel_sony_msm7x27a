@@ -309,11 +309,15 @@ static struct msm_camera_sensor_platform_info sensor_board_info_isx006 = {
 	.gpio_conf = &gpio_conf_isx006,
 };
 
+#ifdef CONFIG_MSM_CAMERA_FLASH
 static struct msm_camera_sensor_flash_data flash_isx006 = {
 	.flash_type     = MSM_CAMERA_FLASH_LED, /*MTD-MM-SL-SupportFlash-00* */
 	.flash_src      = &msm_flash_src	
 };
-
+#else
+static struct msm_camera_sensor_flash_data flash_isx006 = {
+};
+#endif
 /*MTD-MM-SL-ImproveMainCamera-00*{ */
 static struct msm_camera_sensor_info msm_camera_sensor_isx006_data = {
 	.sensor_name	    = "isx006",
@@ -343,10 +347,15 @@ static struct msm_camera_sensor_platform_info sensor_board_info_mt9v115 = {
 	.gpio_conf = &gpio_conf_mt9v115,
 };
 
+#ifdef CONFIG_MSM_CAMERA_FLASH
 static struct msm_camera_sensor_flash_data flash_mt9v115 = {
 	.flash_type     = MSM_CAMERA_FLASH_NONE,
 	.flash_src      = &msm_flash_src	
 };
+#else
+static struct msm_camera_sensor_flash_data flash_mt9v115 = {
+};
+#endif
 /*MTD-MM-SL-ImproveFrontCamera-00*{ */
 static struct msm_camera_sensor_info msm_camera_sensor_mt9v115_data = {
 	.sensor_name	    = "mt9v115",

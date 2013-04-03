@@ -588,25 +588,25 @@ static struct cyttsp_platform_data cypress_i2c_ttsp_platform_data = {
 #endif
 /* SW1D3-Peripheral-OH-Cypress(TMA340)_TouchDriver_Porting-00+} */
 /*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-00+]*/
-#ifdef CONFIG_FIH_GSENSOR_BMA250
+#ifdef CONFIG_FIH_ASENSOR_BMA250
 static int bma250_gpio_init(void)
 {
 	int GS_INT = GPIO_GS_INT;
 	if (gpio_request(GS_INT, "GS_INT"))
 	{
-		GSENSOR_DEBUG(LEVEL0, "Request GPIO(%d) failed.", GS_INT);
+		ASENSOR_DEBUG(LEVEL0, "Request GPIO(%d) failed.", GS_INT);
 		return -EIO;
 	}
 	if (gpio_tlmm_config(GPIO_CFG(GS_INT, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_ENABLE))
 	{
 		gpio_free(GS_INT);
-		GSENSOR_DEBUG(LEVEL0, "Config GPIO(%d) failed.", GS_INT);
+		ASENSOR_DEBUG(LEVEL0, "Config GPIO(%d) failed.", GS_INT);
 		return -EIO;
 	}
 	gpio_direction_input(GS_INT);
 	gpio_set_value_cansleep(GS_INT, 0);
 
-	GSENSOR_DEBUG(LEVEL0, "GPIO(%d) Done.", GS_INT);
+	ASENSOR_DEBUG(LEVEL0, "GPIO(%d) Done.", GS_INT);
 	return 0;
 }
 
@@ -654,9 +654,9 @@ static struct i2c_board_info core_exp_i2c_info[] __initdata = {
 		.platform_data = &cypress_i2c_ttsp_platform_data,
 	},
 #endif
-#ifdef CONFIG_FIH_GSENSOR_BMA250
+#ifdef CONFIG_FIH_ASENSOR_BMA250
 	{
-		I2C_BOARD_INFO(GSENSOR_NAME, 0x18),
+		I2C_BOARD_INFO(ASENSOR_NAME, 0x18),
 		.platform_data = &bma250_platform_data,
 		.irq = MSM_GPIO_TO_INT(GPIO_GS_INT),
 	},
@@ -1083,7 +1083,7 @@ static struct platform_device android_pmem_device = {
 static struct msm_psy_batt_pdata msm_psy_batt_data = {
 	.voltage_min_design     = 3200,
 	.voltage_max_design     = 4200,
-	.voltage_fails_safe     = 3340,
+	.voltage_fail_safe     = 3340,
 	.avail_chg_sources      = AC_CHG | USB_CHG ,
 	.batt_technology        = POWER_SUPPLY_TECHNOLOGY_LION,
 	.calculate_capacity     = NULL,	

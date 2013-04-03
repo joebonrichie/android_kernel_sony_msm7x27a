@@ -375,7 +375,7 @@ ifdef CONFIG_MSM_PROC_COMM_REGULATOR
 obj-$(CONFIG_MACH_MSM7X27_SURF) += board-msm7627-regulator.o
 obj-$(CONFIG_MACH_MSM7X27_FFA) += board-msm7627-regulator.o
 obj-$(CONFIG_ARCH_MSM7X30) += board-msm7x30-regulator.o
-ifndef CONFIG_FIH_MACH_TAMSUI_JLO
+ifdef CONFIG_FIH_PROJECT_NAN
 obj-$(CONFIG_ARCH_MSM7X27A) += board-msm7x27a-regulator.o
 endif
 endif

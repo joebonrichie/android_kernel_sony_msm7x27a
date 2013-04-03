@@ -410,6 +410,20 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Set DD of 0x53
+        config FIH_CAMERA
+            bool "Enable Camera for FIH project"
+            depends on MSM_CAMERA
+            default y
+            ---help---
+              Enable Camera for FIH project
+              
+        config ISX006
+            bool "Sensor isx006 (SOC 5M)"
+            depends on FIH_CAMERA 
+            default n
+            ---help---
+              Sony 5M SOC Sensor 
+
 # FIH-SW-MM-VH-DISPLAY-21*]
     endmenu
     # --- FIH_PROJECT_TAP}-------------------------------------------------- END
@@ -827,6 +841,20 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Set DD of 0x53
+        config FIH_CAMERA
+            bool "Enable Camera for FIH project"
+            depends on MSM_CAMERA
+            default y
+            ---help---
+              Enable Camera for FIH project
+              
+        config ISX006
+            bool "Sensor isx006 (SOC 5M)"
+            depends on FIH_CAMERA 
+            default n
+            ---help---
+              Sony 5M SOC Sensor 
+
 # FIH-SW-MM-VH-DISPLAY-21*]
     endmenu
     # --- FIH_PROJECT_MES}-------------------------------------------------- END

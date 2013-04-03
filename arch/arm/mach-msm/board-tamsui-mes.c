@@ -636,25 +636,25 @@ static struct akm8975_platform_data akm8975_platform_data = {
 };
 #endif
 
-#ifdef CONFIG_FIH_GSENSOR_BMA250
+#ifdef CONFIG_FIH_ASENSOR_BMA250
 static int bma250_gpio_init(void)
 {
 	int GS_INT = GPIO_GS_INT;
 	if (gpio_request(GS_INT, "GS_INT"))
 	{
-		GSENSOR_DEBUG(LEVEL0, "Request GPIO(%d) failed.", GS_INT);
+		ASENSOR_DEBUG(LEVEL0, "Request GPIO(%d) failed.", GS_INT);
 		return -EIO;
 	}
 	if (gpio_tlmm_config(GPIO_CFG(GS_INT, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_ENABLE))
 	{
 		gpio_free(GS_INT);
-		GSENSOR_DEBUG(LEVEL0, "Config GPIO(%d) failed.", GS_INT);
+		ASENSOR_DEBUG(LEVEL0, "Config GPIO(%d) failed.", GS_INT);
 		return -EIO;
 	}
 	gpio_direction_input(GS_INT);
 	gpio_set_value_cansleep(GS_INT, 0);
 
-	GSENSOR_DEBUG(LEVEL0, "GPIO(%d) Done.", GS_INT);
+	ASENSOR_DEBUG(LEVEL0, "GPIO(%d) Done.", GS_INT);
 	return 0;
 }
 
@@ -711,9 +711,9 @@ static struct i2c_board_info core_exp_i2c_info[] __initdata = {
 		//.irq = MSM_GPIO_TO_INT(GPIO_COMPASS_INT),
 	},
 #endif
-#ifdef CONFIG_FIH_GSENSOR_BMA250
+#ifdef CONFIG_FIH_ASENSOR_BMA250
 	{
-		I2C_BOARD_INFO(GSENSOR_NAME, 0x18),
+		I2C_BOARD_INFO(ASENSOR_NAME, 0x18),
 		.platform_data = &bma250_platform_data,
 		.irq = MSM_GPIO_TO_INT(GPIO_GS_INT),
 	},

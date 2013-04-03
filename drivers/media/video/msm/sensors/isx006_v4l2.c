@@ -2102,16 +2102,17 @@ static int isx006_get_AF_state(struct msm_camera_i2c_client *client, const char 
 {
     int i = 0;
     int rc = 0;
-    int led_mode = 0;
     uint16_t v_read = 0x0;    
     uint16_t v_temp = 0x0;        
     uint16_t AF_result = 0xFF;
     uint16_t AF_state = 0xFF;
-    bool recover_AE = false;
 
-	//printk("isx006_get_AF_state: enter\n");
 
+#ifdef CONFIG_CAMERA_FLASH_LM3561
+	bool recover_AE = false;
+	int led_mode = 0;
 	led_mode = msm_soc_get_led_mode();
+#endif
 	//printk("isx006_get_AF_state: led_mode = %d !\n", led_mode);  
 
 	rc = msm_camera_i2c_read(client, 0x6D76, &AF_result, MSM_CAMERA_I2C_BYTE_DATA);
@@ -2121,6 +2122,7 @@ static int isx006_get_AF_state(struct msm_camera_i2c_client *client, const char 
 	} 
 	//printk("isx006_get_AF_state: msm_camera_i2c_read(0x6D76) AF satate = %d\n", AF_result);
 	
+#ifdef CONFIG_CAMERA_FLASH_LM3561
 	if( led_mode == LED_MODE_RED_EYE || led_mode == LED_MODE_AUTO){  
 		if(torch_enable)
 			recover_AE = true;
@@ -2135,7 +2137,7 @@ static int isx006_get_AF_state(struct msm_camera_i2c_client *client, const char 
 		
 		//cam_msleep(50); 
 	}
-
+#endif
 	/* 01.Check the AF result register -------------------------------------------------------*/
 	rc = msm_camera_i2c_read(client, 0x6D77, &AF_result, MSM_CAMERA_I2C_BYTE_DATA);//ADD_AF_RESULT = 0x6D77
 	if (rc < 0) {
@@ -2946,21 +2948,23 @@ int isx006_msm_sensor_s_af(struct msm_sensor_ctrl_t *s_ctrl, //uriwei
 		struct msm_sensor_v4l2_ctrl_info_t *ctrl_info, int value)
 {
 	int rc = 0;
+#ifdef CONFIG_CAMERA_FLASH_LM3561
 	int led_mode = 0;
+#endif
 	bool Low_Light = false;
 	uint16_t AF_state = 0xFF;
 	uint16_t v_read = 0x0; 
 	
-    printk("isx006_msm_sensor_s_af: enter\n");
+	printk("isx006_msm_sensor_s_af: enter\n");
 	
 	torch_enable = false;
 	/*get current environment AE valuel----------------------------*/
-    Low_Light = isx006_get_AE_value(s_ctrl->sensor_i2c_client);
+	Low_Light = isx006_get_AE_value(s_ctrl->sensor_i2c_client);
 	
 	/*get current flash model-------------------------------------*/
+#ifdef CONFIG_CAMERA_FLASH_LM3561
 	led_mode = msm_soc_get_led_mode();
 	printk("isx006_msm_sensor_s_af: led_mode = %d !\n", led_mode);  
-
 	/*judge pre-flash or not--------------------------------------*/
 	if( led_mode == LED_MODE_RED_EYE || led_mode == LED_MODE_AUTO){
 		 if(Low_Light)
@@ -2983,6 +2987,7 @@ int isx006_msm_sensor_s_af(struct msm_sensor_ctrl_t *s_ctrl, //uriwei
 		if (rc < 0)
 			pr_err("isx006_msm_sensor_s_af: isx006_PreFlash_setting failed !\n");	
 	}
+#endif
 	if(AF_full_range){
 		rc = msm_camera_i2c_write_invert(s_ctrl->sensor_i2c_client, 0x4876, AF_A_value, MSM_CAMERA_I2C_WORD_DATA);//AF_AREA_LOW_TYPE1
 		if (rc < 0)
@@ -3252,19 +3257,21 @@ static int32_t isx006_snapshot_config(struct msm_sensor_ctrl_t *s_ctrl, int mode
 {
 
     int32_t rc = 0;
-    int led_mode = 0;
-    uint16_t v_read = 0x0;            
-    int32_t Diff = 0;
-    uint16_t Diff_index = 0;
-    int i = 0;
-    uint16_t read_value = 0;
     
     /*get current flash mode*/
-    led_mode = msm_soc_get_led_mode();
-
+#ifdef CONFIG_CAMERA_FLASH_LM3561
+	int led_mode = 0;
+	uint16_t v_read = 0x0;            
+	int32_t Diff = 0;
+	uint16_t Diff_index = 0;
+	int i = 0;
+	uint16_t read_value = 0;
+	led_mode = msm_soc_get_led_mode();
 	printk("isx006_snapshot_config---------------E. led_mode = %d\n", led_mode);
+#endif
 
-	#if 1
+#if 1
+#ifdef CONFIG_CAMERA_FLASH_LM3561
     /*judge pre-flash or not--------------------------------------*/
     if(led_mode == LED_MODE_ON)
     {
@@ -3379,13 +3386,14 @@ static int32_t isx006_snapshot_config(struct msm_sensor_ctrl_t *s_ctrl, int mode
         }
             
     }
-
+#endif
 	/*msm_sensor_set_sensor_mode*/		
     rc = s_ctrl->func_tbl->sensor_csi_setting(s_ctrl, MSM_SENSOR_UPDATE_PERIODIC, RES_CAPTURE);  /*MTD-MM-SL-ImproveMainCamera-00* */
 	if (rc < 0)
 		return rc;
     	
 
+#ifdef CONFIG_CAMERA_FLASH_LM3561
     //Add condition type for flash trigger
     if(led_mode == LED_MODE_RED_EYE)
     {
@@ -3427,17 +3435,18 @@ static int32_t isx006_snapshot_config(struct msm_sensor_ctrl_t *s_ctrl, int mode
     {
         printk("isx006_snapshot_config: led_mode == LED_MODE_OFF\n");
     }
-
+#endif
     flash_enable = false;
     torch_enable = false;
     printk("isx006_snapshot_config---------------X\n");
-	#endif
+#endif
     return rc;
     
+#ifdef CONFIG_CAMERA_FLASH_LM3561
 error:
     printk("isx006_snapshot_config: ---------------X <Failed> !\n");
     return rc;
- 
+#endif 
 }
 
 /* MTD-MM-UW-AF_tune-00+ */

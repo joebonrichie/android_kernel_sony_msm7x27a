@@ -241,7 +241,7 @@ static int mipi_ilitek_lcd_on(struct platform_device *pdev)
 	}
 	
 	/*TODO: Is it necessary to enter critical section? */
-	rc = mipi_dsi_cmds_tx(mfd, &ilitek_tx_buf, ilitek_video_on_cmds,
+	rc = mipi_dsi_cmds_tx(&ilitek_tx_buf, ilitek_video_on_cmds,
 		ARRAY_SIZE(ilitek_video_on_cmds));
 
 	printk(KERN_ALERT "[DISPLAY] Finish sending dsi commands\n, rc=%d\r\n", rc);
@@ -276,7 +276,7 @@ static int mipi_ilitek_lcd_off(struct platform_device *pdev)
 
 	/*TODO: Is it necessary to enter critical section? */
 	mipi_set_tx_power_mode(0);
-	mipi_dsi_cmds_tx(mfd, &ilitek_tx_buf, ilitek_video_off_cmds,
+	mipi_dsi_cmds_tx(&ilitek_tx_buf, ilitek_video_off_cmds,
 			ARRAY_SIZE(ilitek_video_off_cmds));
 	mipi_set_tx_power_mode(1);
 
@@ -305,7 +305,7 @@ static void mipi_ilitek_lcd_backlight(struct msm_fb_data_type *mfd)
 	/* FIH-SW-MM-VH-DISPLAY-04*[ */
 	down(&mfd->dma->mutex);
 	mipi_set_tx_power_mode(0);
-	mipi_dsi_cmds_tx(mfd, &ilitek_tx_buf, ilitek_video_bkl_cmds,
+	mipi_dsi_cmds_tx(&ilitek_tx_buf, ilitek_video_bkl_cmds,
 			ARRAY_SIZE(ilitek_video_bkl_cmds));
 	mipi_set_tx_power_mode(1);
 	up(&mfd->dma->mutex);

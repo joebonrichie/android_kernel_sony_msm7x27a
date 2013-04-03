@@ -2054,19 +2054,19 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 			unset_bl_level = 0;
 		}
 		up(&bkl_sem);
-	if (unset_bl_level && !bl_updated) {
-		pdata = (struct msm_fb_panel_data *)mfd->pdev->
-			dev.platform_data;
-		if ((pdata) && (pdata->set_backlight)) {
-			down(&mfd->sem);
-			mfd->bl_level = unset_bl_level;
-			msleep(15);/*MTD-MM-CL-ResumeBacklight-00+ */
-			pdata->set_backlight(mfd);
-			bl_level_old = unset_bl_level;
-			up(&mfd->sem);
-			bl_updated = 1;
-		}
-	}
+//	if (unset_bl_level && !bl_updated) {
+//		pdata = (struct msm_fb_panel_data *)mfd->pdev->
+//			dev.platform_data;
+//		if ((pdata) && (pdata->set_backlight)) {
+//			down(&mfd->sem);
+//			mfd->bl_level = unset_bl_level;
+//			msleep(15);/*MTD-MM-CL-ResumeBacklight-00+ */
+//			pdata->set_backlight(mfd);
+//			bl_level_old = unset_bl_level;
+//			up(&mfd->sem);
+//			bl_updated = 1;
+//		}
+//	}
 #endif
 	++mfd->panel_info.frame_count;
 	return 0;

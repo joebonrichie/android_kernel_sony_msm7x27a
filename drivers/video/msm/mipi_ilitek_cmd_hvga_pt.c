@@ -80,8 +80,8 @@ static int __init mipi_cmd_ilitek_hvga_pt_init(void)
 	pinfo.mipi.frame_rate = 62;
 	pinfo.mipi.dsi_phy_db = &dsi_cmd_mode_phy_db;
 	pinfo.mipi.dlane_swap = 0x01;
-	pinfo.mipi.xres_pad = 0;
-	pinfo.mipi.yres_pad = 0;
+//	pinfo.mipi.xres_pad = 0;
+//	pinfo.mipi.yres_pad = 0;
 /* FIH-SW3-MM-NC-LCM-08-[+ */
 	pinfo.lcd.refx100 = 7000; /* adjust refx100 to prevent tearing */
 /* FIH-SW3-MM-NC-LCM-08-]- */
