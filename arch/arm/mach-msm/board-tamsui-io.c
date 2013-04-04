@@ -33,7 +33,7 @@
 // MTD-BSP-Y.S-Enable drivers
 
 #include "devices.h"
-#include "board-msm7627a.h"
+#include "board-tamsui.h"
 #include "devices-msm7x2xa.h"
 
 #define ATMEL_TS_I2C_NAME "maXTouch"

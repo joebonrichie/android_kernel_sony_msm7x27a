@@ -78,7 +78,7 @@
 #endif
 /* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*] */
 
-#include "board-msm7627a.h"
+#include "board-tamsui.h"
 /* MTD-BSP-VT-SMEM-00+[ */
 #include "linux/fih_hw_info.h" 
 #include <linux/fih_sw_info.h> //MTD-SW3-KERNEL-DL-Fix_ioremap-00+

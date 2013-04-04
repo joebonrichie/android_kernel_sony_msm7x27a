@@ -22,7 +22,7 @@
 #include <mach/board.h>
 #include <mach/irqs-7xxx.h>
 #include "devices-msm7x2xa.h"
-#include "board-msm7627a.h"
+#include "board-tamsui.h"
 #include <mach/vreg.h>
 
 #define GPIO_SKU1_CAM_VGA_SHDN    18

@@ -22,7 +22,7 @@
 #include <mach/rpc_pmapp.h>
 #include <mach/socinfo.h>
 
-#include "board-msm7627a.h"
+#include "board-tamsui.h"
 #include "devices-msm7x2xa.h"
 
 #if defined(CONFIG_BT) && defined(CONFIG_MARIMBA_CORE)

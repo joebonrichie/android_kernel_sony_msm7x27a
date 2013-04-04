@@ -25,7 +25,7 @@
 #include <mach/socinfo.h>
 #include <mach/rpc_pmapp.h>
 #include "devices.h"
-#include "board-msm7627a.h"
+#include "board-tamsui.h"
 /* FIH-SW-MM-VH-DISPLAY-JB00+ */
 #include <linux/fih_hw_info.h>
 

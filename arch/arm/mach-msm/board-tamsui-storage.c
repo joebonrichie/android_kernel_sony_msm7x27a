@@ -20,7 +20,7 @@
 #include <mach/board.h>
 #include "devices.h"
 #include "pm.h"
-#include "board-msm7627a.h"
+#include "board-tamsui.h"
 
 #if (defined(CONFIG_MMC_MSM_SDC1_SUPPORT)\
 	|| defined(CONFIG_MMC_MSM_SDC2_SUPPORT)\
