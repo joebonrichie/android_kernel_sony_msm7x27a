@@ -693,13 +693,13 @@ static int mipi_himax_lcd_on(struct platform_device *pdev)
 
 		/*TODO: Is it necessary to enter critical section? */
 		if(mfd->panel_info.lcm_model == LCM_ID_DA_MES_AUO_0B) {
-			rc = mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_AUO_0B_on_cmds,
+			rc = mipi_dsi_cmds_tx(&himax_tx_buf, himax_AUO_0B_on_cmds,
 				ARRAY_SIZE(himax_AUO_0B_on_cmds));
 		}else if(mfd->panel_info.lcm_model == LCM_ID_DA_MES_AUO_0D){
-			rc = mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_AUO_0D_on_cmds,
+			rc = mipi_dsi_cmds_tx(&himax_tx_buf, himax_AUO_0D_on_cmds,
 				ARRAY_SIZE(himax_AUO_0D_on_cmds));
 		}else{
-			rc = mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_CMI_on_cmds,
+			rc = mipi_dsi_cmds_tx(&himax_tx_buf, himax_CMI_on_cmds,
 				ARRAY_SIZE(himax_CMI_on_cmds));
 		}
 
@@ -740,10 +740,10 @@ static int mipi_himax_lcd_off(struct platform_device *pdev)
 	mipi_set_tx_power_mode(0);
 
 	if((mfd->panel_info.lcm_model == LCM_ID_DA_MES_AUO_0B) || (mfd->panel_info.lcm_model == LCM_ID_DA_MES_AUO_0D)) {
-		mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_AUO_off_cmds,
+		mipi_dsi_cmds_tx(&himax_tx_buf, himax_AUO_off_cmds,
 		ARRAY_SIZE(himax_AUO_off_cmds));
 	} else {
-		mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_CMI_off_cmds,
+		mipi_dsi_cmds_tx(&himax_tx_buf, himax_CMI_off_cmds,
 		ARRAY_SIZE(himax_CMI_off_cmds));
 	}
 
@@ -776,7 +776,7 @@ static void mipi_himax_lcd_backlight(struct msm_fb_data_type *mfd)
 
 	down(&mfd->dma->mutex);
 	mipi_set_tx_power_mode(0);
-	mipi_dsi_cmds_tx(mfd, &himax_tx_buf, himax_video_bkl_cmds,
+	mipi_dsi_cmds_tx(&himax_tx_buf, himax_video_bkl_cmds,
 			ARRAY_SIZE(himax_video_bkl_cmds));
 	mipi_set_tx_power_mode(1);
 	up(&mfd->dma->mutex);
