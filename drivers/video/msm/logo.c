@@ -54,6 +54,7 @@ static void memset32(void *_ptr, uint32_t val, unsigned count)
                  *ptr++ = val;
  }
 
+#if defined(CONFIG_FB_MSM_DEFAULT_DEPTH_RGB565)
 static void memset16(void *_ptr, unsigned short val, unsigned count)
 {
 	unsigned short *ptr = _ptr;
@@ -61,7 +62,7 @@ static void memset16(void *_ptr, unsigned short val, unsigned count)
 	while (count--)
 		*ptr++ = val;
 }
-
+#endif
 /* 565RLE image format: [count(2 bytes), rle(2 bytes)] */
 int load_565rle_image(char *filename, bool bf_supported)
 {
