@@ -61,6 +61,10 @@ static int __init mipi_cmd_ilitek_hvga_pt_init(void)
 /* FIH-SW3-MM-NC-LCM-03-]- */
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
+/* FIH-SW3-MM-NC-LCM-10-[+ */
+	pinfo.width = 45;  /* 44.64mm */
+	pinfo.height = 67;  /* 66.96mm */
+/* FIH-SW3-MM-NC-LCM-10-]- */
 
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB666;
@@ -80,8 +84,8 @@ static int __init mipi_cmd_ilitek_hvga_pt_init(void)
 	pinfo.mipi.frame_rate = 62;
 	pinfo.mipi.dsi_phy_db = &dsi_cmd_mode_phy_db;
 	pinfo.mipi.dlane_swap = 0x01;
-//	pinfo.mipi.xres_pad = 0;
-//	pinfo.mipi.yres_pad = 0;
+	pinfo.lcdc.xres_pad = 0;
+	pinfo.lcdc.yres_pad = 0;
 /* FIH-SW3-MM-NC-LCM-08-[+ */
 	pinfo.lcd.refx100 = 7000; /* adjust refx100 to prevent tearing */
 /* FIH-SW3-MM-NC-LCM-08-]- */

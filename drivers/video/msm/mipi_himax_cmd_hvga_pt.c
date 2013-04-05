@@ -57,6 +57,8 @@ static int __init mipi_cmd_himax_hvga_pt_init(void)
 	pinfo.bl_max = 10;
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
+	pinfo.width = 45;  /* 44.64mm */
+	pinfo.height = 67;  /* 66.96mm */
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;
@@ -74,8 +76,8 @@ static int __init mipi_cmd_himax_hvga_pt_init(void)
 	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.dsi_phy_db = &dsi_cmd_mode_phy_db;
 	pinfo.mipi.dlane_swap = 0x01;
-//	pinfo.mipi.xres_pad = 0;
-//	pinfo.mipi.yres_pad = 0;
+	pinfo.lcdc.xres_pad = 0;
+	pinfo.lcdc.yres_pad = 0;
 	pinfo.lcd.refx100 = 7000; /* adjust refx100 to prevent tearing */
 	pinfo.mipi.te_sel = 1; /* TE from vsync gpio */
 	pinfo.mipi.interleave_max = 1;

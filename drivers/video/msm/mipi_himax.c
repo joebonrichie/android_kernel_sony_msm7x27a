@@ -544,7 +544,7 @@ static int mipi_himax_get_healthy(struct msm_fb_data_type *mfd)
 	mipi_set_tx_power_mode(1);
 
 	/* Switch to page2*/
-	mipi_dsi_cmds_tx(mfd, &himax_tx_buf, &auo_cmd2_p1_cmd, 1);
+	mipi_dsi_cmds_tx(&himax_tx_buf, &auo_cmd2_p1_cmd, 1);
 	mipi_dsi_buf_init(rp);
 	mipi_dsi_buf_init(tp);
 	mipi_dsi_cmds_rx(mfd, tp, rp, &himax_ReadC1, 6);
@@ -556,7 +556,7 @@ static int mipi_himax_get_healthy(struct msm_fb_data_type *mfd)
 	}
 
 	/* Return from page2*/
-	mipi_dsi_cmds_tx(mfd, &himax_tx_buf, &auo_cmd_ret_cmd, 1);
+	mipi_dsi_cmds_tx(&himax_tx_buf, &auo_cmd_ret_cmd, 1);
 
 	return retVal;
 }

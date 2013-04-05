@@ -57,6 +57,8 @@ static int __init mipi_video_himax_hvga_pt_init(void)
 	pinfo.bl_max = 10;
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
+	pinfo.width = 45;  /* 44.64mm */
+	pinfo.height = 67;  /* 66.96mm */
 	pinfo.mipi.mode = DSI_VIDEO_MODE;
 	pinfo.mipi.pulse_mode_hsa_he = FALSE;
 	pinfo.mipi.hfp_power_stop = FALSE;
@@ -81,8 +83,8 @@ static int __init mipi_video_himax_hvga_pt_init(void)
 	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.dsi_phy_db = &dsi_video_mode_phy_db;
 	pinfo.mipi.dlane_swap = 0x01;
-	pinfo.mipi.xres_pad = 0;
-	pinfo.mipi.yres_pad = 0;
+	pinfo.lcdc.xres_pad = 0;
+	pinfo.lcdc.yres_pad = 0;
 	pinfo.mipi.interleave_max = 1;
 	pinfo.mipi.insert_dcs_cmd = TRUE;
 	/* FIH-SW-MM-VH-DISPLAY-40+ */

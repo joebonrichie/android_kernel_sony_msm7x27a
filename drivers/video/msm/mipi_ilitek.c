@@ -357,7 +357,7 @@ static int mipi_ilitek_manufacture_id(struct msm_fb_data_type *mfd)
 	/* Disable TE */
 	down(&mfd->dma->mutex);
 	mipi_set_tx_power_mode(0);
-	mipi_dsi_cmds_tx(mfd, tp, &dsi_tear_off_cmd, 1);
+	mipi_dsi_cmds_tx(tp, &dsi_tear_off_cmd, 1);
 	mipi_set_tx_power_mode(1);
 	up(&mfd->dma->mutex);
 
@@ -388,7 +388,7 @@ static int mipi_ilitek_manufacture_id(struct msm_fb_data_type *mfd)
 	/* Enable TE */
 	down(&mfd->dma->mutex);
 	mipi_set_tx_power_mode(0);
-	mipi_dsi_cmds_tx(mfd, tp, &dsi_tear_on_cmd, 1);
+	mipi_dsi_cmds_tx(tp, &dsi_tear_on_cmd, 1);
 	mipi_set_tx_power_mode(1);
 	up(&mfd->dma->mutex);
 
