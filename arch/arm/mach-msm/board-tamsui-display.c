@@ -1022,7 +1022,7 @@ static int msm_fb_dsi_client_qrd3_reset(void)
 	return rc;
 }
 
-static int msm_fb_dsi_client_reset(void)
+static int msm_fb_dsi_clientreset(void)
 {
 	int rc = 0;
 

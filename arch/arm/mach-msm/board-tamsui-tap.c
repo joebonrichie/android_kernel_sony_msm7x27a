@@ -76,7 +76,7 @@
 #endif
 /* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*] */
 
-#include "board-msm7627a.h"
+#include "board-tamsui.h"
 /* MTD-BSP-VT-SMEM-00+[ */
 #include "linux/fih_hw_info.h" 
 #include <linux/fih_sw_info.h> //MTD-SW3-KERNEL-DL-Fix_ioremap-00+
@@ -256,7 +256,6 @@ static struct platform_device bluesleep_device = {
 };
 #endif //defined(CONFIG_BROADCOM_BCM4330_BTFM) && defined(CONFIG_BROADCOM_BCM4330_BTFM_SLEEP)
 
-
 /* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*[ */
 #ifdef CONFIG_FIH_SW3_BATTERY
 static struct bq27520_platform_data bq27520_pdata = {
@@ -283,7 +282,6 @@ static struct i2c_board_info msm_bq27520_board_info[] = {
 #endif
 };
 #endif
-/* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*] */
 
 #ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
 #define TOUCH_DEVICE_VREG "emmc"
@@ -294,7 +292,7 @@ static ssize_t tma340_virtual_keys_show(struct kobject *kobj,
                                struct kobj_attribute *attr, char *buf)
 {
 				return snprintf(buf,74,
-                        __stringify(EV_KEY) ":" __stringify(KEY_BACK)  ":53:523:53:58"
+                      __stringify(EV_KEY) ":" __stringify(KEY_BACK)  ":53:523:53:58"
                    ":" __stringify(EV_KEY) ":" __stringify(KEY_HOME)   ":160:523:53:58"
                    ":" __stringify(EV_KEY) ":" __stringify(KEY_MENU)   ":267:523:53:58"
                    "\n");
@@ -316,7 +314,7 @@ static struct attribute *tma340_properties_attrs[] = {
 static struct attribute_group tma340_properties_attr_group = {
         .attrs = tma340_properties_attrs,
 };
-#endif
+#endif 
 
 #define GPIO_WL_REG_ON     82
 
@@ -389,11 +387,10 @@ out:
 }
 EXPORT_SYMBOL(bcm4330_wifi_suspend);
 
-
 static struct regulator_bulk_data regs_tch[] = {
 	{ .supply = "emmc",   .min_uV = 3000000, .max_uV = 3000000 },
 };
-/*FIH-MTD-PERIPHERAL-CH-2016-00+[*/
+
 static unsigned touch_config_gpio[] = {
 	/*IRQ*/
 	GPIO_CFG(CY_I2C_IRQ_GPIO, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA),
@@ -402,8 +399,6 @@ static unsigned touch_config_gpio[] = {
 	/*WAKU up chip*/
 	GPIO_CFG(CY_I2C_IRQ_GPIO, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 };
-/*FIH-MTD-PERIPHERAL-CH-2016-00+]*/
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-01+]*/
 
 /* optional init function; set up IRQ GPIO;
  * call reference in platform data structure
@@ -411,27 +406,22 @@ static unsigned touch_config_gpio[] = {
 static int cyttsp_i2c_init(int on)
 { 
 	int ret;
-#ifndef FIH_VIRTUAL_BUTTON /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
-	struct kobject *properties_kobj;/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-03+*/
-#endif /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
-	/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-01+[*/
-	/*struct vreg *device_vreg; */
+#ifndef FIH_VIRTUAL_BUTTON
+	struct kobject *properties_kobj;
+#endif 
 
 	/* add any special code to initialize any required system hw
 	 * such as regulators or gpio pins
 	 */
 	//Power on vreg-emmc
 	ret=regulator_bulk_get(NULL, ARRAY_SIZE(regs_tch), regs_tch);
-	/*device_vreg = regulator_bulk_get(0, TOUCH_DEVICE_VREG);*/
 	if (ret) 
 	{
 		printk(KERN_INFO"%s: vreg get failed \n", __func__); 
 		return -EFAULT;
 	}
 
-	/*vreg_set_level(device_vreg, 3000);*/
 	regulator_bulk_set_voltage(ARRAY_SIZE(regs_tch), regs_tch);
-	/*ret = vreg_enable(device_vreg);*/
 	ret=regulator_bulk_enable(ARRAY_SIZE(regs_tch), regs_tch);
 
 	//request GPIO resource
@@ -442,7 +432,7 @@ static int cyttsp_i2c_init(int on)
 		 * replaced with the more explicit call:
 		 */
 
-		ret = gpio_tlmm_config(touch_config_gpio[0], GPIO_CFG_ENABLE);/*FIH-SW3-PERIPHERAL-CH-TAP-02++*/
+		ret = gpio_tlmm_config(touch_config_gpio[0], GPIO_CFG_ENABLE);
 		if (ret)
 		{
 			printk(KERN_ERR "%s: Failed to gpio_tlmm_config %d\n",
@@ -459,7 +449,7 @@ static int cyttsp_i2c_init(int on)
 		}
 
 		gpio_direction_input(CY_I2C_IRQ_GPIO);
-/*FIH-SW3-PERIPHERAL-CH-TAP-01++[*/
+
 		/*Add to control reset pin*/
 		ret = gpio_tlmm_config(touch_config_gpio[1], GPIO_CFG_ENABLE);
 		if (ret)
@@ -478,8 +468,6 @@ static int cyttsp_i2c_init(int on)
 		}
 
 		gpio_set_value_cansleep(CY_RST_N_GPIO, 1);
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-01+]*/
-/*FIH-SW3-PERIPHERAL-CH-TAP-01++]*/
 	} 
 	else 
 	{
@@ -487,20 +475,20 @@ static int cyttsp_i2c_init(int on)
 		gpio_free(CY_I2C_IRQ_GPIO);
 	}
 
-#ifndef FIH_VIRTUAL_BUTTON /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-02+[*/
+#ifndef FIH_VIRTUAL_BUTTON 
+
 	properties_kobj = kobject_create_and_add("board_properties", NULL);
 	if (properties_kobj)
         ret = sysfs_create_group(properties_kobj,&tma340_properties_attr_group);
 
 	if (!properties_kobj || ret)
 		printk(KERN_ERR "%s: failed to create board_properties\n",__func__);
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-02+]*/
-#endif /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
+
+#endif 
 
 	return 0;
 }
-/*FIH-MTD-PERIPHERAL-CH-Add_command-00++[*/
+
 #ifdef reset_cmd
 static int cyttsp_reset(void)
 {
@@ -510,13 +498,12 @@ static int cyttsp_reset(void)
 	return 0;
 }
 #endif
-/*FIH-MTD-PERIPHERAL-CH-Add_command-00++]*/
+
 static int cyttsp_i2c_wakeup(void)
 {
 	//assert from host to chip by interrupt pin
-/*FIH-MTD-PERIPHERAL-CH-2016-00+[*/
 	int ret =0;
-	ret = gpio_tlmm_config(touch_config_gpio[2], GPIO_CFG_ENABLE);/*FIH-SW3-PERIPHERAL-CH-TAP-02++*/
+	ret = gpio_tlmm_config(touch_config_gpio[2], GPIO_CFG_ENABLE);
 	if (ret)
 	{
 		printk(KERN_ERR "%s: Failed to gpio_tlmm_config %d\n",
@@ -527,13 +514,13 @@ static int cyttsp_i2c_wakeup(void)
 	gpio_direction_output(CY_I2C_IRQ_GPIO, 0);
 	msleep(10);
 	gpio_direction_output(CY_I2C_IRQ_GPIO, 1);
-	ret = gpio_tlmm_config(touch_config_gpio[0], GPIO_CFG_ENABLE);/*FIH-SW3-PERIPHERAL-CH-TAP-02++*/
+	ret = gpio_tlmm_config(touch_config_gpio[0], GPIO_CFG_ENABLE);
 	if (ret)
 	{
 		printk(KERN_ERR "%s: Failed to gpio_tlmm_config %d\n",
 		       __func__, CY_I2C_IRQ_GPIO);
 	}
-/*FIH-MTD-PERIPHERAL-CH-2016-00+]*/
+
 	gpio_direction_input(CY_I2C_IRQ_GPIO);
 
 	return 0;
@@ -544,19 +531,19 @@ static struct cyttsp_platform_data cypress_i2c_ttsp_platform_data = {
 	.init = cyttsp_i2c_init, /*init power and gpio resource*/
 	.mt_sync = input_mt_sync, /*sync mutli-touch event*/
 #ifdef reset_cmd
-	.reset = cyttsp_reset,/*FIH-MTD-PERIPHERAL-CH-Add_command-00*/
+	.reset = cyttsp_reset,
 #endif
 #ifdef SECOND_MODULE
-	.module_1 = "J-TOUCH",/*FIH-MTD-PERIPHERAL-CH-Add_command-00*/
-	.module_2 = "    ELK",/*FIH-MTD-PERIPHERAL-CH-Add_command-00*/
+	.module_1 = "J-TOUCH",
+	.module_2 = "    ELK",
 #endif
-	.maxx = 320, /*480, 479, 320 for Tapioca*/
-	.maxy = 480/*553*/, /*800, 799, 480 for Tapioca(553 includes keys area) FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-01*/
+	.maxx = 320, /*Parameter don't use*/
+	.maxy = 480, /*Parameter don't use*/
 	.flags = 0, /*0x05, reverse x / y or not, 1:yes, 0:no*/
 	.gen = CY_GEN3, /*generation */
-	.use_st = 0, /*support single-touch FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-02+*/
-	.use_mt = 1, /*support multi-touch FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-02+*/
-	.use_trk_id = 1, /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
+	.use_st = 0, /*support single-touch*/
+	.use_mt = 1, /*support multi-touch*/
+	.use_trk_id = 1, 
 	.use_hndshk = 0, /*FIH-MTD-PERIPHERAL-CH-Handshake-00++*/
 	.use_timer = 0, /*use polling*/
 	.use_sleep = 1, /*deep sleep mode for early suspend/late resume*/
@@ -581,13 +568,13 @@ static struct cyttsp_platform_data cypress_i2c_ttsp_platform_data = {
 	 */
 	.lp_intrvl = CY_LP_INTRVL_DFLT, //low power interval, page 13.
 	.name = CY_I2C_NAME,
-	.irq_gpio = 86,/*MSM_GPIO_TO_INT(CY_I2C_IRQ_GPIO),FIH-SW3-PERIPHERAL-CH-MES-02++*/ //ISR Number
+	.irq_gpio = 86,
 	.row_pins_number = 16, /*FIH-MTD-PERIPHERAL-CH-AREA_JUDGE-00++*/	
 	.col_pins_number = 10, /*FIH-MTD-PERIPHERAL-CH-AREA_JUDGE-00++*/	
 };
 #endif
-/* SW1D3-Peripheral-OH-Cypress(TMA340)_TouchDriver_Porting-00+} */
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-00+]*/
+
+
 #ifdef CONFIG_FIH_ASENSOR_BMA250
 static int bma250_gpio_init(void)
 {
@@ -641,6 +628,7 @@ static struct qpdss702_platform_data qpdss702_platform_data = {
 	.sensitivity = (QPDSS702_TYPICAL_MODE & QPDSS702_THRESHOLD_MASK) >> 2,
 };
 #endif
+
 #ifdef CONFIG_I2C
 static struct i2c_board_info core_exp_i2c_info[] __initdata = {
 #ifdef CONFIG_GPIO_SX150X
@@ -672,10 +660,10 @@ static struct i2c_board_info core_exp_i2c_info[] __initdata = {
 
 static void __init register_i2c_devices(void)
 {
+
 #ifdef CONFIG_GPIO_SX150X
 	if (machine_is_msm7x27a_surf() || machine_is_msm7625a_surf() ||
-			machine_is_msm8625a_surf())
-
+			machine_is_msm8625_surf())
 		sx150x_data[SX150X_CORE].io_open_drain_ena = 0xe0f0;
 
 	core_exp_i2c_info[0].platform_data =
@@ -724,7 +712,6 @@ static void gsbi_qup_i2c_gpio_config(int adap_id, int config_type)
 	if (rc < 0)
 		pr_err("QUP GPIO request/enable failed: %d\n", rc);
 }
-
 static struct msm_i2c_platform_data msm_gsbi0_qup_i2c_pdata = {
 	.clk_freq		= 400000,
 	.msm_i2c_config_gpio	= gsbi_qup_i2c_gpio_config,
@@ -1053,7 +1040,6 @@ static int __init pmem_adsp_size_setup(char *p)
 
 early_param("pmem_adsp_size", pmem_adsp_size_setup);
 
-
 static struct android_pmem_platform_data android_pmem_audio_pdata = {
 	.name = "pmem_audio",
 	.allocator_type = PMEM_ALLOCATORTYPE_BITMAP,
@@ -1079,16 +1065,14 @@ static struct platform_device android_pmem_device = {
 	.dev = { .platform_data = &android_pmem_pdata },
 };
 
-/* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*[ */
 static struct msm_psy_batt_pdata msm_psy_batt_data = {
 	.voltage_min_design     = 3200,
 	.voltage_max_design     = 4200,
-	.voltage_fail_safe     = 3340,
+	.voltage_fail_safe      = 3340,
 	.avail_chg_sources      = AC_CHG | USB_CHG ,
 	.batt_technology        = POWER_SUPPLY_TECHNOLOGY_LION,
 	.calculate_capacity     = NULL,	
 };
-/* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*] */
 
 static struct platform_device msm_batt_device = {
 	.name               = "msm-battery",
@@ -1097,6 +1081,7 @@ static struct platform_device msm_batt_device = {
 };
 
 #ifdef CONFIG_SMSC911X
+
 static struct smsc911x_platform_config smsc911x_config = {
 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
@@ -1279,12 +1264,12 @@ static struct platform_device *common_devices[] __initdata = {
 #ifdef CONFIG_ION_MSM
 	&ion_dev,
 #endif
-	#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
+#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
 	&bcm4330_bt_power_device,
-	#endif
-	#if defined(CONFIG_BROADCOM_BCM4330_BTFM) && defined(CONFIG_BROADCOM_BCM4330_BTFM_SLEEP)
+#endif
+#if defined(CONFIG_BROADCOM_BCM4330_BTFM) && defined(CONFIG_BROADCOM_BCM4330_BTFM_SLEEP)
 	&bluesleep_device,
-	#endif
+#endif
 
 
 };
@@ -1698,6 +1683,14 @@ static struct platform_device fih_device_vibrator = {
 };
 // MTD-BSP-Y.S-Enable drivers
 
+static struct platform_device msm_proccomm_regulator_dev = {
+	.name   = PROCCOMM_REGULATOR_DEV_NAME,
+	.id     = -1,
+	.dev    = {
+		.platform_data = &msm7x27a_proccomm_regulator_data
+	}
+};
+
 static void msm_adsp_add_pdev(void)
 {
 	int rc = 0;
@@ -1732,14 +1725,6 @@ static struct platform_device fih_device_headset = {
 	.dev    = {
 		.platform_data = &fih_headset_data,
 	},
-};
-
-static struct platform_device msm_proccomm_regulator_dev = {
-	.name   = PROCCOMM_REGULATOR_DEV_NAME,
-	.id     = -1,
-	.dev    = {
-		.platform_data = &msm7x27a_proccomm_regulator_data
-	}
 };
 /* SW-MM-RC-JLO2535_headset_00 ] */
 static void __init msm7627a_rumi3_init(void)
@@ -1914,7 +1899,7 @@ static void __init msm7x2x_init(void)
 	/* Initialize regulators first so that other devices can use them */
 	msm7x27a_init_regulators();
 	msm_adsp_add_pdev();
-	if(cpu_is_msm8625())
+	if (cpu_is_msm8625())
 		msm8625_device_i2c_init();
 	else
 		msm7x27a_device_i2c_init();
@@ -1964,15 +1949,15 @@ static void __init msm7x2x_init(void)
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
 	platform_device_register(&ram_console_device);
-	#ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG
+#ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG
 	platform_device_register(&alog_ram_console_device);
-	#endif
+#endif
 #endif
 	msm7x25a_kgsl_3d0_init();
 	msm8x25_kgsl_3d0_init();
-	#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
+#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
 	bcm4330_bt_power_init();
-	#endif
+#endif
 	wifi_power(1);
 }
 

@@ -76,7 +76,7 @@
 #endif
 /* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*] */
 
-#include "board-msm7627a.h"
+#include "board-tamsui.h"
 /* MTD-BSP-VT-SMEM-00+[ */
 #include "linux/fih_hw_info.h" 
 #include <linux/fih_sw_info.h> //MTD-SW3-KERNEL-DL-Fix_ioremap-00+
@@ -292,11 +292,12 @@ static ssize_t tma340_virtual_keys_show(struct kobject *kobj,
                                struct kobj_attribute *attr, char *buf)
 {
 				return snprintf(buf,74,
-                        __stringify(EV_KEY) ":" __stringify(KEY_BACK)  ":45:523:70:55"
+                      __stringify(EV_KEY) ":" __stringify(KEY_BACK)  ":45:523:70:55"
                    ":" __stringify(EV_KEY) ":" __stringify(KEY_HOME)   ":160:523:53:55"
                    ":" __stringify(EV_KEY) ":" __stringify(KEY_MENU)   ":275:523:70:55"
                    "\n");
 }
+
 static struct kobj_attribute tma340_virtual_keys_attr = {
         .attr = {
                 .name = "virtualkeys.cyttsp_i2c_tma340",
@@ -389,10 +390,9 @@ EXPORT_SYMBOL(bcm4330_wifi_suspend);
 static struct regulator_bulk_data regs_tch[] = {
 	{ .supply = "emmc",   .min_uV = 3000000, .max_uV = 3000000 },
 };
-/*FIH-MTD-PERIPHERAL-CH-2020-00++[*/
-/*FIH-MTD-PERIPHERAL-CH-MES-02++[*/
+
 static unsigned touch_config_gpio[] = {
-	/*IRQ for PD*/
+	/*IRQ*/
 	GPIO_CFG(40, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA),
 	/*RESET*/
 	GPIO_CFG(121, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
@@ -402,9 +402,6 @@ static unsigned touch_config_gpio[] = {
 	GPIO_CFG(40, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 	GPIO_CFG(86, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 };
-/*FIH-MTD-PERIPHERAL-CH-2020-00++]*/
-/*FIH-MTD-PERIPHERAL-CH-MES-02++]*/
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-01+]*/
 
 /* optional init function; set up IRQ GPIO;
  * call reference in platform data structure
@@ -412,11 +409,9 @@ static unsigned touch_config_gpio[] = {
 static int cyttsp_i2c_init(int on)
 { 
 	int ret;
-#ifndef FIH_VIRTUAL_BUTTON /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
-	struct kobject *properties_kobj;/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-03+*/
-#endif /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
-	/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-01+[*/
-	/*struct vreg *device_vreg; */
+#ifndef FIH_VIRTUAL_BUTTON
+	struct kobject *properties_kobj;
+#endif 
 
 	/* add any special code to initialize any required system hw
 	 * such as regulators or gpio pins
@@ -430,9 +425,7 @@ static int cyttsp_i2c_init(int on)
 		return -EFAULT;
 	}
 
-	/*vreg_set_level(device_vreg, 3000);*/
 	regulator_bulk_set_voltage(ARRAY_SIZE(regs_tch), regs_tch);
-	/*ret = vreg_enable(device_vreg);*/
 	ret=regulator_bulk_enable(ARRAY_SIZE(regs_tch), regs_tch);
 
 	//request GPIO resource
@@ -442,8 +435,6 @@ static int cyttsp_i2c_init(int on)
 		/* for MSM systems the call to gpio_direction_input can be
 		 * replaced with the more explicit call:
 		 */
-		/*FIH-MTD-PERIPHERAL-CH-2020-00++[*/
-		/*FIH-MTD-PERIPHERAL-CH-MES-02++[*/
 		if(fih_get_product_phase() < Phase_DP)
 		{
 			printk(KERN_INFO "%s: PD config GPIO 40\n",
@@ -456,8 +447,6 @@ static int cyttsp_i2c_init(int on)
 			       __func__);
 			ret = gpio_tlmm_config(touch_config_gpio[2], GPIO_CFG_ENABLE);
 		}
-		/*FIH-MTD-PERIPHERAL-CH-MES-02++]*/
-		/*FIH-MTD-PERIPHERAL-CH-2020-00++]*/
 		if (ret)
 		{
 			printk(KERN_ERR "%s: Failed to gpio_tlmm_config %d\n",
@@ -474,7 +463,7 @@ static int cyttsp_i2c_init(int on)
 		}
 
 		gpio_direction_input(CY_I2C_IRQ_GPIO);
-/*FIH-SW3-PERIPHERAL-CH-TAP-01++[*/
+
 		/*Add to control reset pin*/
 		ret = gpio_tlmm_config(touch_config_gpio[1], GPIO_CFG_ENABLE);
 		if (ret)
@@ -493,8 +482,6 @@ static int cyttsp_i2c_init(int on)
 		}
 
 		gpio_set_value_cansleep(CY_RST_N_GPIO, 1);
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-01+]*/
-/*FIH-SW3-PERIPHERAL-CH-TAP-01++]*/
 	} 
 	else 
 	{
@@ -502,20 +489,20 @@ static int cyttsp_i2c_init(int on)
 		gpio_free(CY_I2C_IRQ_GPIO);
 	}
 
-#ifndef FIH_VIRTUAL_BUTTON /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-02+[*/
+#ifndef FIH_VIRTUAL_BUTTON 
+
 	properties_kobj = kobject_create_and_add("board_properties", NULL);
 	if (properties_kobj)
         ret = sysfs_create_group(properties_kobj,&tma340_properties_attr_group);
 
 	if (!properties_kobj || ret)
 		printk(KERN_ERR "%s: failed to create board_properties\n",__func__);
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-02+]*/
-#endif /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
+
+#endif 
 
 	return 0;
 }
-/*FIH-MTD-PERIPHERAL-CH-Add_command-00++[*/
+
 #ifdef reset_cmd
 static int cyttsp_reset(void)
 {
@@ -525,8 +512,7 @@ static int cyttsp_reset(void)
 	return 0;
 }
 #endif
-/*FIH-MTD-PERIPHERAL-CH-Add_command-00++]*/
-/*FIH-MTD-PERIPHERAL-CH-2020-00++[*/
+
 static int cyttsp_i2c_wakeup(void)
 {
 	//assert from host to chip by interrupt pin
@@ -554,30 +540,30 @@ static int cyttsp_i2c_wakeup(void)
 		printk(KERN_ERR "%s: Failed to gpio_tlmm_config %d\n",
 		       __func__, CY_I2C_IRQ_GPIO);
 	}
+
 	gpio_direction_input(CY_I2C_IRQ_GPIO);
 
 	return 0;
 }
-/*FIH-MTD-PERIPHERAL-CH-2020-00++]*/
 
 static struct cyttsp_platform_data cypress_i2c_ttsp_platform_data = {
 	.wakeup = cyttsp_i2c_wakeup, /*wake up IC from deep sleep, assert interrupt pin by host-side*/
 	.init = cyttsp_i2c_init, /*init power and gpio resource*/
 	.mt_sync = input_mt_sync, /*sync mutli-touch event*/
 #ifdef reset_cmd
-	.reset = cyttsp_reset, /*FIH-MTD-PERIPHERAL-CH-Add_command-00*/
+	.reset = cyttsp_reset,
 #endif
 #ifdef SECOND_MODULE
 	.module_1 = "    TPK", /*FIH-MTD-PERIPHERAL-CH-Add_command-00*/
 	.module_2 = "    ELK",/*FIH-MTD-PERIPHERAL-CH-Add_command-00*/
 #endif
-	.maxx = 320, /*480, 479, 320 for Tapioca*/
-	.maxy = 480/*553*/, /*800, 799, 480 for Tapioca(553 includes keys area) FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-01*/
+	.maxx = 320, /*Parameter don't use*/
+	.maxy = 480, /*Parameter don't use*/
 	.flags = 0, /*0x05, reverse x / y or not, 1:yes, 0:no*/
 	.gen = CY_GEN3, /*generation */
-	.use_st = 0, /*support single-touch FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-02+*/
-	.use_mt = 1, /*support multi-touch FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-02+*/
-	.use_trk_id = 1, /*FIH-MTD-PERIPHERAL-CH-TRACKING_ID-00++*/
+	.use_st = 0, /*support single-touch*/
+	.use_mt = 1, /*support multi-touch*/
+	.use_trk_id = 1, 
 	.use_hndshk = 0, /*FIH-MTD-PERIPHERAL-CH-Handshake-00++*/
 	.use_timer = 0, /*use polling*/
 	.use_sleep = 1, /*deep sleep mode for early suspend/late resume*/
@@ -602,13 +588,12 @@ static struct cyttsp_platform_data cypress_i2c_ttsp_platform_data = {
 	 */
 	.lp_intrvl = CY_LP_INTRVL_DFLT, //low power interval, page 13.
 	.name = CY_I2C_NAME,
-	.irq_gpio = 86,/*FIH-MTD-PERIPHERAL-CH-MES-02++[*/ //ISR Number
+	.irq_gpio = 86,
 	.row_pins_number = 18, /*FIH-MTD-PERIPHERAL-CH-MES-02++*/	
 	.col_pins_number = 11, /*FIH-MTD-PERIPHERAL-CH-MES-02++*/	
 };
 #endif
-/* SW1D3-Peripheral-OH-Cypress(TMA340)_TouchDriver_Porting-00+} */
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-00+]*/
+
 #ifdef CONFIG_FIH_MSENSOR_AKM8975
 static int akm8975_gpio_init(void)
 {
@@ -1330,12 +1315,12 @@ static struct platform_device *common_devices[] __initdata = {
 #ifdef CONFIG_ION_MSM
 	&ion_dev,
 #endif
-	#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
+#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
 	&bcm4330_bt_power_device,
-	#endif
-	#if defined(CONFIG_BROADCOM_BCM4330_BTFM) && defined(CONFIG_BROADCOM_BCM4330_BTFM_SLEEP)
+#endif
+#if defined(CONFIG_BROADCOM_BCM4330_BTFM) && defined(CONFIG_BROADCOM_BCM4330_BTFM_SLEEP)
 	&bluesleep_device,
-	#endif
+#endif
 
 
 };
@@ -2296,7 +2281,7 @@ static void __init msm7x2x_init(void)
 	msm7627a_bt_power_init();
 #endif
 	msm7627a_camera_init();
-	msm7626a_add_io_devices();
+	msm7627a_add_io_devices();
 #ifdef CONFIG_FIH_SW3_BATTERY
 	fih_bq27520_driver_init();
 #endif
@@ -2322,15 +2307,15 @@ static void __init msm7x2x_init(void)
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
 	platform_device_register(&ram_console_device);
-	#ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG
+#ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG
 	platform_device_register(&alog_ram_console_device);
-	#endif
+#endif
 #endif
 	msm7x25a_kgsl_3d0_init();
 	msm8x25_kgsl_3d0_init();
-	#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
+#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
 	bcm4330_bt_power_init();
-	#endif
+#endif
 	wifi_power(1);
 }
 

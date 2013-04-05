@@ -63,31 +63,6 @@ if FIH_CONFIG_GROUP
             default y
             help
                 Select if the touch panel is attached.
-
-        if FIH_TOUCHSCREEN
-        menuconfig FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            bool "Synaptics T1320 Touchscreen"
-            depends on I2C && FIH_TOUCHSCREEN
-            default n
-            help
-                Select if the Synaptics T1320 touch panel is attached.
-
-        if FIH_TOUCHSCREEN_SYNAPTICS_T1320
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            bool "Synaptics T1320 Touchscreen Upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            default n
-            help
-                Select if the Synaptics T1320 touch panel upgrade FW needed.
-
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_AUTOUPGRADE
-            bool "Synaptics T1320 Touchscreen AUTO-upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            default n
-            help
-                Select if the Synaptics T1320 touch panel AUTO upgrade FW needed.
-        endif
-        endif
         
         # FIH-SW3-PERIPHERAL-AH-Touch_Porting-00
         if FIH_TOUCHSCREEN
@@ -153,39 +128,6 @@ if FIH_CONFIG_GROUP
                 Provide more efficient sleep function.
         #FIH-KERNEL-SC-sleep-func-00+]
         
-        
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+[
-        config FEATURE_FIH_SW3_LAST_ALOG
-            bool "RAM console for last alog"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable RAM console for last alog
-
-        # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+[
-        config FIH_SW3_POWER_ON_REASON
-            bool "turn on the power on reason detection for battery driver"
-            default n
-            help
-                turn on the power on reason detection for battery driver
-        # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+]
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+]
-
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+[
-
-        config FEATURE_FIH_SW3_BUILDTYPE_DEBUG
-            bool "enable debug mode for printk"
-            default n
-            help
-                if build debug, printk will not lost log when resume
-
-        config FEATURE_FIH_SW3_REMOVE_SERIAL_DYNAMICALLY
-            bool "turn off serial port dynamically"
-            default n
-            help
-                turn off serial port dynamically
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+]
-
         # FIH-SW2-PERIPHERAL-FG-SENSOR-00*[
         config FIH_SENSOR
             bool "FIH Sensors"
@@ -193,14 +135,6 @@ if FIH_CONFIG_GROUP
             default y
             help
                 Say Y here if you want to support FIH senosrs.
-
-        config FIH_MSENSOR_AKM8975
-            bool "Magnetic Field Sensor: AK8975B"
-            depends on I2C && FIH_SENSOR
-            default n
-            help
-                Say Y here if you want to support Asahi Kasei's
-                magnetic/orientation sensor AK8975.
 
         config FIH_ASENSOR_BMA250
             bool "Acceleration Sensor: BMA250"
@@ -461,32 +395,6 @@ if FIH_CONFIG_GROUP
             help
                 Select if the touch panel is attached.
 
-        if FIH_TOUCHSCREEN
-        menuconfig FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            bool "Synaptics T1320 Touchscreen"
-            depends on I2C && FIH_TOUCHSCREEN
-            default n
-            help
-                Select if the Synaptics T1320 touch panel is attached.
-
-        if FIH_TOUCHSCREEN_SYNAPTICS_T1320
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            bool "Synaptics T1320 Touchscreen Upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            default n
-            help
-                Select if the Synaptics T1320 touch panel upgrade FW needed.
-
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_AUTOUPGRADE
-            bool "Synaptics T1320 Touchscreen AUTO-upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            default n
-            help
-                Select if the Synaptics T1320 touch panel AUTO upgrade FW needed.
-
-        endif
-        endif
-        
         # FIH-SW3-PERIPHERAL-AH-Touch_Porting-00
         if FIH_TOUCHSCREEN
         menuconfig FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
@@ -495,8 +403,8 @@ if FIH_CONFIG_GROUP
             default y
             help
                 Select if the Cypress TMA340 touch panel is attached.
-		
-		if FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
+
+	if FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
         config FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
             bool "Cypress TMA340 Touchscreen ESD workaround"
             depends on I2C && FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
@@ -504,7 +412,7 @@ if FIH_CONFIG_GROUP
             help
                 Select if the Cypress TMA340 Touchscreen ESD workaround needed.
 
-		endif
+	endif
         endif
 
 
@@ -543,39 +451,6 @@ if FIH_CONFIG_GROUP
                 Enable the patch which get battery temperature from PMIC.
         #FIH-SW3-KERNEL-VH-CHARGING-21*]
         #FIH-SW3-KERNEL-VH-CHARGING-11*]
-        
-        
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+[
-        config FEATURE_FIH_SW3_LAST_ALOG
-            bool "RAM console for last alog"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable RAM console for last alog
-        # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+[
-        config FIH_SW3_POWER_ON_REASON
-            bool "turn on the power on reason detection for battery driver"
-            default n
-            help
-                turn on the power on reason detection for battery driver
-        # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+]  
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+]
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+[
-
-        config FEATURE_FIH_SW3_BUILDTYPE_DEBUG
-            bool "enable debug mode for printk"
-            default n
-            help
-                if build debug, printk will not lost log when resume
-
-        config FEATURE_FIH_SW3_REMOVE_SERIAL_DYNAMICALLY
-            bool "turn off serial port dynamically"
-            default n
-            help
-                turn off serial port dynamically
-
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+]
-
         # FIH-SW2-PERIPHERAL-FG-SENSOR-00*[
         config FIH_SENSOR
             bool "FIH Sensors"
@@ -891,32 +766,6 @@ if FIH_CONFIG_GROUP
             help
                 Select if the touch panel is attached.
 
-        if FIH_TOUCHSCREEN
-        menuconfig FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            bool "Synaptics T1320 Touchscreen"
-            depends on I2C && FIH_TOUCHSCREEN
-            default n
-            help
-                Select if the Synaptics T1320 touch panel is attached.
-
-        if FIH_TOUCHSCREEN_SYNAPTICS_T1320
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            bool "Synaptics T1320 Touchscreen Upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            default n
-            help
-                Select if the Synaptics T1320 touch panel upgrade FW needed.
-
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_AUTOUPGRADE
-            bool "Synaptics T1320 Touchscreen AUTO-upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            default n
-            help
-                Select if the Synaptics T1320 touch panel AUTO upgrade FW needed.
-
-        endif
-        endif
-        
         # FIH-SW3-PERIPHERAL-AH-Touch_Porting-00
         if FIH_TOUCHSCREEN
         config FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
@@ -973,38 +822,6 @@ if FIH_CONFIG_GROUP
                 Enable the patch which get battery temperature from PMIC.
         #FIH-SW3-KERNEL-VH-CHARGING-21*]
         #FIH-SW3-KERNEL-VH-CHARGING-11*]
-        
-        
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+[
-        config FEATURE_FIH_SW3_LAST_ALOG
-            bool "RAM console for last alog"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable RAM console for last alog
-        # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+[
-        config FIH_SW3_POWER_ON_REASON
-            bool "turn on the power on reason detection for battery driver"
-            default n
-            help
-                turn on the power on reason detection for battery driver
-        # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+]  
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+]
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+[
-
-        config FEATURE_FIH_SW3_BUILDTYPE_DEBUG
-            bool "enable debug mode for printk"
-            default n
-            help
-                if build debug, printk will not lost log when resume
-
-        config FEATURE_FIH_SW3_REMOVE_SERIAL_DYNAMICALLY
-            bool "turn off serial port dynamically"
-            default n
-            help
-                turn off serial port dynamically
-
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+]
 
         # FIH-SW2-PERIPHERAL-FG-SENSOR-00*[
         config FIH_SENSOR

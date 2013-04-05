@@ -48,11 +48,9 @@
 #include <mach/rpc_pmapp.h>
 #include <mach/msm_battery.h>
 
-/* MTD-Kernel-HC-Remove_smsc911x-00+[ */
 #ifdef CONFIG_SMSC911X
 #include <linux/smsc911x.h>
 #endif
-/* MTD-Kernel-HC-Remove_smsc911x-00+] */
 
 #include <linux/atmel_maxtouch.h>
 #include <linux/fmem.h>
@@ -121,14 +119,12 @@ static struct sx150x_platform_data sx150x_data[] __initdata = {
 };
 #endif
 
-
 #if defined(CONFIG_BT) && defined(CONFIG_MARIMBA_CORE)
 static struct platform_device msm_wlan_ar6000_pm_device = {
 	.name           = "wlan_ar6000_pm_dev",
 	.id             = -1,
 };
 #endif
-//MTD-Conn-JC-JB2525_Porting-00+[
 
 #if defined(CONFIG_BROADCOM_BCM4330_BTFM)
 #define GPIO_BT_REG_ON     31
@@ -230,7 +226,6 @@ static void __init bcm4330_bt_power_init(void)
 }
 #endif
 
-
 #if defined(CONFIG_BROADCOM_BCM4330_BTFM) && defined(CONFIG_BROADCOM_BCM4330_BTFM_SLEEP)
 static struct resource bluesleep_resources[] = {
     {
@@ -260,7 +255,6 @@ static struct platform_device bluesleep_device = {
     .resource = bluesleep_resources,
 };
 #endif //defined(CONFIG_BROADCOM_BCM4330_BTFM) && defined(CONFIG_BROADCOM_BCM4330_BTFM_SLEEP)
-//MTD-Conn-JC-JB2525_Porting-00+]
 
 /* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*[ */
 #ifdef CONFIG_FIH_SW3_BATTERY
@@ -288,17 +282,15 @@ static struct i2c_board_info msm_bq27520_board_info[] = {
 #endif
 };
 #endif
-/* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*] */
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2525-00++[*/
+
 #ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
 #define TOUCH_DEVICE_VREG "emmc"
-#define CY_RST_N_GPIO	  121 
+#define CY_RST_N_GPIO	  121
 
-#ifndef FIH_VIRTUAL_BUTTON 
+#ifndef FIH_VIRTUAL_BUTTON
 static ssize_t tma340_virtual_keys_show(struct kobject *kobj,
                                struct kobj_attribute *attr, char *buf)
 {
-/* center: x: back: 65, menu: 415, home: 240, y: 912 SHIFT for moving down 14 points away  TOUCH AA */
 				return snprintf(buf,74,
                       __stringify(EV_KEY) ":" __stringify(KEY_BACK)    ":65:912:130:102"
                    ":" __stringify(EV_KEY) ":" __stringify(KEY_HOME)  ":240:912:130:102"
@@ -324,7 +316,6 @@ static struct attribute_group tma340_properties_attr_group = {
 };
 #endif 
 
-//CONN-EC-WIFI-Porting-01+[
 #define GPIO_WL_REG_ON     82
 
 static unsigned wifi_config_gpio[] = {
@@ -395,7 +386,6 @@ out:
     return 0;
 }
 EXPORT_SYMBOL(bcm4330_wifi_suspend);
-//CONN-EC-WIFI-Porting-01+]
 
 static struct regulator_bulk_data regs_tch[] = {
 	{ .supply = "emmc",   .min_uV = 3000000, .max_uV = 3000000 },
@@ -416,7 +406,7 @@ static unsigned touch_config_gpio[] = {
 static int cyttsp_i2c_init(int on)
 { 
 	int ret;
-#ifndef FIH_VIRTUAL_BUTTON 
+#ifndef FIH_VIRTUAL_BUTTON
 	struct kobject *properties_kobj;
 #endif 
 
@@ -478,7 +468,6 @@ static int cyttsp_i2c_init(int on)
 		}
 
 		gpio_set_value_cansleep(CY_RST_N_GPIO, 1);
-		
 	} 
 	else 
 	{
@@ -579,14 +568,12 @@ static struct cyttsp_platform_data cypress_i2c_ttsp_platform_data = {
 	 */
 	.lp_intrvl = CY_LP_INTRVL_DFLT, //low power interval, page 13.
 	.name = CY_I2C_NAME,
-	.irq_gpio = 86, /*MSM_GPIO_TO_INT(CY_I2C_IRQ_GPIO), ISR Number*/
+	.irq_gpio = 86,
 	.row_pins_number = 20, /*AREA_JUDGE*/
 	.col_pins_number = 11, /*AREA_JUDGE*/
 };
 #endif
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2525-00++]*/
 
-/* FIH-SW2-PERIPHERAL-FG-SENSOR-00+[ */
 #ifdef CONFIG_FIH_MSENSOR_AKM8975
 static int akm8975_gpio_init(void)
 {
@@ -667,7 +654,6 @@ static struct qpdss702_platform_data qpdss702_platform_data = {
 	.sensitivity = QPDSS207_SENSITIVITY_LEVEL2,	/*FIH-SW1-PERIPHERAL-AC-PSENSOR_SENSITIVITY-03*/
 };
 #endif
-/* FIH-SW2-PERIPHERAL-FG-SENSOR-00+] */
 
 #ifdef CONFIG_I2C
 static struct i2c_board_info core_exp_i2c_info[] __initdata = {
@@ -676,15 +662,12 @@ static struct i2c_board_info core_exp_i2c_info[] __initdata = {
 		I2C_BOARD_INFO("sx1509q", 0x3e),
 	},
 #endif
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2525-00++[*/
 #ifdef CONFIG_FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
 	{
 		I2C_BOARD_INFO(CY_I2C_NAME, 0x24),
 		.platform_data = &cypress_i2c_ttsp_platform_data,
 	},
 #endif
-/*FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2525-00++]*/
-/* FIH-SW2-PERIPHERAL-FG-SENSOR-00+[ */
 #ifdef CONFIG_FIH_MSENSOR_AKM8975
 	{
 		I2C_BOARD_INFO(AKM8975_I2C_NAME, 0x0C),
@@ -707,7 +690,6 @@ static struct i2c_board_info core_exp_i2c_info[] __initdata = {
 		.irq = MSM_GPIO_TO_INT(GPIO_ALPS_OUT),
 	},
 #endif
-/* FIH-SW2-PERIPHERAL-FG-SENSOR-00+] */
 };
 
 static void __init register_i2c_devices(void)
@@ -764,7 +746,6 @@ static void gsbi_qup_i2c_gpio_config(int adap_id, int config_type)
 	if (rc < 0)
 		pr_err("QUP GPIO request/enable failed: %d\n", rc);
 }
-/*FIH-MTD-PERIPHERAL-CH-I2C_Clock-00++[*/
 static struct msm_i2c_platform_data msm_gsbi0_qup_i2c_pdata = {
 	.clk_freq		= 400000,
 	.msm_i2c_config_gpio	= gsbi_qup_i2c_gpio_config,
@@ -774,15 +755,13 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 	.clk_freq		= 400000,
 	.msm_i2c_config_gpio	= gsbi_qup_i2c_gpio_config,
 };
-/*FIH-MTD-PERIPHERAL-CH-I2C_Clock-00++]*/
+
 #ifdef CONFIG_ARCH_MSM7X27A
 #define MSM_PMEM_MDP_SIZE       0x2300000
 #define MSM7x25A_MSM_PMEM_MDP_SIZE       0x1500000
 
-/*MTD-MM-SL-CameraPorting-00*{ */
-#define MSM_PMEM_ADSP_SIZE      0x1800000 //0x1200000 
-#define MSM7x25A_MSM_PMEM_ADSP_SIZE      0x1800000 //0xB91000
-/*MTD-MM-SL-CameraPorting-00*} */
+#define MSM_PMEM_ADSP_SIZE      0x1800000
+#define MSM7x25A_MSM_PMEM_ADSP_SIZE      0x1800000
 #define CAMERA_ZSL_SIZE		(SZ_1M * 60)
 #endif
 
@@ -1120,7 +1099,6 @@ static struct platform_device android_pmem_device = {
 	.dev = { .platform_data = &android_pmem_pdata },
 };
 
-/* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*[ */
 static struct msm_psy_batt_pdata msm_psy_batt_data = {
 	.voltage_min_design     = 3200,
 	.voltage_max_design     = 4200,
@@ -1129,7 +1107,6 @@ static struct msm_psy_batt_pdata msm_psy_batt_data = {
 	.batt_technology        = POWER_SUPPLY_TECHNOLOGY_LION,
 	.calculate_capacity     = NULL,	
 };
-/* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*] */
 
 static struct platform_device msm_batt_device = {
 	.name               = "msm-battery",
@@ -1137,7 +1114,6 @@ static struct platform_device msm_batt_device = {
 	.dev.platform_data  = &msm_psy_batt_data,
 };
 
-/* MTD-Kernel-HC-Remove_smsc911x-00+[ */
 #ifdef CONFIG_SMSC911X
 
 static struct smsc911x_platform_config smsc911x_config = {
@@ -1177,7 +1153,6 @@ static struct msm_gpio smsc911x_gpios[] = {
 };
 
 #endif
-/* MTD-Kernel-HC-Remove_smsc911x-00+] */
 
 static char *msm_adc_surf_device_names[] = {
 	"XO_ADC",
@@ -1197,7 +1172,6 @@ static struct platform_device msm_adc_device = {
 	},
 };
 
-/* MTD-Kernel-HC-Remove_smsc911x-00+[ */
 #ifdef CONFIG_SMSC911X
 
 #define ETH_FIFO_SEL_GPIO	49
@@ -1223,9 +1197,7 @@ static void msm7x27a_cfg_smsc911x(void)
 	}
 	gpio_set_value(ETH_FIFO_SEL_GPIO, 0);
 }
-
 #endif
-/* MTD-Kernel-HC-Remove_smsc911x-00+] */
 
 #if defined(CONFIG_SERIAL_MSM_HSL_CONSOLE) \
 		&& defined(CONFIG_MSM_SHARED_GPIO_FOR_UART2DM)
@@ -1301,11 +1273,9 @@ static struct platform_device *msm7627a_surf_ffa_devices[] __initdata = {
 	&msm_device_otg,
 	&msm_device_gadget_peripheral,
 
-/* MTD-Kernel-HC-Remove_smsc911x-00+[ */
 #ifdef CONFIG_SMSC911X
 	&smsc911x_device,
 #endif
-/* MTD-Kernel-HC-Remove_smsc911x-00+] */
 
 	&msm_kgsl_3d0,
 };
@@ -1328,14 +1298,12 @@ static struct platform_device *common_devices[] __initdata = {
 #ifdef CONFIG_ION_MSM
 	&ion_dev,
 #endif
-   //MTD-Conn-JC-JB2525_Porting-00+[
-  #if defined(CONFIG_BROADCOM_BCM4330_BTFM)
+#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
 	&bcm4330_bt_power_device,
-	#endif
-	#if defined(CONFIG_BROADCOM_BCM4330_BTFM) && defined(CONFIG_BROADCOM_BCM4330_BTFM_SLEEP)
-	&bluesleep_device,//MTD-Conn-JC-BTSleep-00+
-	#endif
-	//MTD-Conn-JC-JB2525_Porting-00+]
+#endif
+#if defined(CONFIG_BROADCOM_BCM4330_BTFM) && defined(CONFIG_BROADCOM_BCM4330_BTFM_SLEEP)
+	&bluesleep_device,
+#endif
 
 
 };
@@ -2258,8 +2226,8 @@ static void __init msm7x27a_pm_init(void)
 
 static void __init msm7x2x_init(void)
 {
-	fih_get_oem_info(); /* MTD-BSP-VT-SMEM-00+ */
-	fih_info_init(); /* MTD-BSP-VT-INFO-00+ */
+	fih_get_oem_info();
+	fih_info_init();
 
 	msm7x2x_misc_init();
 
@@ -2275,20 +2243,16 @@ static void __init msm7x2x_init(void)
 
 	msm7x27a_otg_gadget();
 
-/* MTD-Kernel-HC-Remove_smsc911x-00+[ */
 #ifdef CONFIG_SMSC911X
 	msm7x27a_cfg_smsc911x();
 #endif
-/* MTD-Kernel-HC-Remove_smsc911x-00+] */
-
-
 	msm7x27a_add_footswitch_devices();
 	msm7x27a_add_platform_devices();
 	/* Ensure ar6000pm device is registered before MMC/SDC */
 	msm7x27a_init_ar6000pm();
 	msm7627a_init_mmc();
 	msm_fb_add_devices();
-#ifdef CONFIG_USB_EHCI_MSM_72K/*MTD-CONN-EH_USBPORTING-01+*/	
+#ifdef CONFIG_USB_EHCI_MSM_72K
 	msm7x2x_init_host();
 #endif
 	msm7x27a_pm_init();
@@ -2298,13 +2262,10 @@ static void __init msm7x2x_init(void)
 #endif
 	msm7627a_camera_init();
 	msm7627a_add_io_devices();
-/* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*[ */
 #ifdef CONFIG_FIH_SW3_BATTERY
 	fih_bq27520_driver_init();
 #endif
-/* FIH-SW3-KERNEL-PK-Battery_Gauge_Porting-00*] */
 
-	// MTD-BSP-Y.S-Enable drivers
 	switch( fih_get_product_phase() )
 	{
 		case	Phase_DP :
@@ -2327,27 +2288,21 @@ static void __init msm7x2x_init(void)
 
 	platform_device_register( &fih_device_leds );
 	platform_device_register( &fih_device_vibrator );
-	// MTD-BSP-Y.S-Enable drivers
-platform_device_register( &fih_device_headset); /* SW-MM-RC-JLO2535_headset_00 */
 
-/* FIH-SW3-KERNEL-TH-add_last_alog-00+[ */
+	platform_device_register( &fih_device_headset);
+
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
-    platform_device_register(&ram_console_device);
-	#ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG
-	    platform_device_register(&alog_ram_console_device);
-	#endif
+	platform_device_register(&ram_console_device);
+#ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG
+	platform_device_register(&alog_ram_console_device);
 #endif
-/* FIH-SW3-KERNEL-TH-add_last_alog-00+] */
-	/*7x25a kgsl initializations*/
+#endif
 	msm7x25a_kgsl_3d0_init();
-	/*8x25 kgsl initializations*/
 	msm8x25_kgsl_3d0_init();
-	//MTD-Conn-JC-JB2525_Porting-00+[
-	#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
+#if defined(CONFIG_BROADCOM_BCM4330_BTFM)
 	bcm4330_bt_power_init();
-	#endif
-	//MTD-Conn-JC-JB2525_Porting-00+]
-    wifi_power(1);  //CONN-EC-WIFI-Porting-02+
+#endif
+	wifi_power(1);
 }
 
 static void __init msm7x2x_init_early(void)
