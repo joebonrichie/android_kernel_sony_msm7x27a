@@ -23,9 +23,7 @@ static struct mipi_dsi_phy_ctrl dsi_cmd_mode_phy_db = {
 	/* DSI_BIT_CLK at 140MHz, 1 lane, RGB666 */
 	{0x03, 0x01, 0x01, 0x00},	/* regulator */
 	/* timing   */
-/* FIH-SW3-MM-NC-LCM-03-[+ */
 	{0x3C, 0x0f, 0x0f, 0x00, 0x1E, 0x1E, 0x14, 0x1E,
-/* FIH-SW3-MM-NC-LCM-03-]- */
 	0x13, 0x03, 0x04},
 	{0x7f, 0x00, 0x00, 0x00},	/* phy ctrl */
 	{0xee, 0x02, 0x86, 0x00},	/* strength */
@@ -56,15 +54,9 @@ static int __init mipi_cmd_ilitek_hvga_pt_init(void)
 	pinfo.lcdc.border_clr = 0;  /* blk */
 	pinfo.lcdc.underflow_clr = 0xff;  /* blue */
 	pinfo.lcdc.hsync_skew = 0;
-/* FIH-SW3-MM-NC-LCM-03-[+ */
 	pinfo.bl_max = 10;
-/* FIH-SW3-MM-NC-LCM-03-]- */
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
-/* FIH-SW3-MM-NC-LCM-10-[+ */
-	pinfo.width = 45;  /* 44.64mm */
-	pinfo.height = 67;  /* 66.96mm */
-/* FIH-SW3-MM-NC-LCM-10-]- */
 
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB666;
@@ -74,21 +66,16 @@ static int __init mipi_cmd_ilitek_hvga_pt_init(void)
 	pinfo.mipi.data_lane1 = FALSE;
 	pinfo.mipi.data_lane2 = FALSE;
 	pinfo.mipi.data_lane3 = FALSE;
-	pinfo.mipi.tx_eot_append = TRUE;
 	pinfo.mipi.t_clk_post = 0x04;
 	pinfo.mipi.t_clk_pre = 0x0D;
 	pinfo.mipi.stream = 0;  /* dma_p */
 	pinfo.mipi.mdp_trigger = DSI_CMD_TRIGGER_SW;
 	pinfo.mipi.dma_trigger = DSI_CMD_TRIGGER_SW;
-/* FIH-SW-MM-VH-DISPLAY-23* */
 	pinfo.mipi.frame_rate = 62;
 	pinfo.mipi.dsi_phy_db = &dsi_cmd_mode_phy_db;
+	pinfo.mipi.tx_eot_append = TRUE;
 	pinfo.mipi.dlane_swap = 0x01;
-	pinfo.lcdc.xres_pad = 0;
-	pinfo.lcdc.yres_pad = 0;
-/* FIH-SW3-MM-NC-LCM-08-[+ */
 	pinfo.lcd.refx100 = 7000; /* adjust refx100 to prevent tearing */
-/* FIH-SW3-MM-NC-LCM-08-]- */
 	pinfo.mipi.te_sel = 1; /* TE from vsync gpio */
 	pinfo.mipi.interleave_max = 1;
 	pinfo.mipi.insert_dcs_cmd = TRUE;
@@ -97,7 +84,6 @@ static int __init mipi_cmd_ilitek_hvga_pt_init(void)
 	pinfo.mipi.rx_eot_ignore = 0;
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
-	pinfo.mipi.dsi_pclk_rate = 12000000;
 
 	ret = mipi_ilitek_device_register(&pinfo, MIPI_DSI_PRIM,
 						MIPI_DSI_PANEL_FWVGA_PT);

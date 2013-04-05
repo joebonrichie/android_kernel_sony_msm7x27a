@@ -23,9 +23,7 @@ static struct mipi_dsi_phy_ctrl dsi_video_mode_phy_db = {
 	/* DSI_BIT_CLK at 200MHz, 1 lane, RGB666 */
 	{0x03, 0x01, 0x01, 0x00},	/* regulator */
 	/* timing   */
-/* FIH-SW3-MM-NC-LCM-03-[+ */
 	{0x3C, 0x0f, 0x0f, 0x00, 0x1E, 0x1E, 0x14, 0x1E,
-/* FIH-SW3-MM-NC-LCM-03-]- */
 	0x13, 0x03, 0x04},
 	{0x7f, 0x00, 0x00, 0x00},	/* phy ctrl */
 	{0xee, 0x02, 0x86, 0x00},	/* strength */
@@ -56,15 +54,9 @@ static int __init mipi_video_ilitek_hvga_pt_init(void)
 	pinfo.lcdc.border_clr = 0;  /* blk */
 	pinfo.lcdc.underflow_clr = 0xff;  /* blue */
 	pinfo.lcdc.hsync_skew = 0;
-/* FIH-SW3-MM-NC-LCM-03-[+ */
 	pinfo.bl_max = 10;
-/* FIH-SW3-MM-NC-LCM-03-]- */
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
-/* FIH-SW3-MM-NC-LCM-11-[+ */
-	pinfo.width = 45;  /* 44.64mm */
-	pinfo.height = 67;  /* 66.96mm */
-/* FIH-SW3-MM-NC-LCM-11-]- */
 
 	pinfo.mipi.mode = DSI_VIDEO_MODE;
 	pinfo.mipi.pulse_mode_hsa_he = FALSE;
@@ -73,7 +65,7 @@ static int __init mipi_video_ilitek_hvga_pt_init(void)
 	pinfo.mipi.hsa_power_stop = FALSE;
 	pinfo.mipi.eof_bllp_power_stop = TRUE;
 	pinfo.mipi.bllp_power_stop = TRUE;
-	pinfo.mipi.traffic_mode = DSI_NON_BURST_SYNCH_PULSE;
+	pinfo.mipi.traffic_mode = DSI_NON_BURST_SYNCH_EVENT;
 	pinfo.mipi.dst_format = DSI_VIDEO_DST_FORMAT_RGB666_LOOSE;
 	pinfo.mipi.vc = 0;
 	pinfo.mipi.rgb_swap = DSI_RGB_SWAP_BGR;
