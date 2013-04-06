@@ -168,14 +168,19 @@ struct msm_panel_info {
 	__u32 frame_count;
 	__u32 is_3d_panel;
 	__u32 frame_rate;
-
+#ifndef CONFIG_FIH_PROJECT_NAN
+	__u32 width;
+	__u32 height;
+#endif
 
 	struct mddi_panel_info mddi;
 	struct lcd_panel_info lcd;
 	struct lcdc_panel_info lcdc;
 	struct mipi_panel_info mipi;
 	struct lvds_panel_info lvds;
+#ifndef CONFIG_FIH_PROJECT_NAN
 	__u32 lcm_model;
+#endif
 };
 
 #define MSM_FB_SINGLE_MODE_PANEL(pinfo)		\
@@ -190,7 +195,9 @@ struct msm_fb_panel_data {
 	void (*set_rect) (int x, int y, int xres, int yres);
 	void (*set_vsync_notifier) (msm_fb_vsync_handler_type, void *arg);
 	void (*set_backlight) (struct msm_fb_data_type *);
+#ifdef CONFIG_FIH_PROJECT_NAN
 	int (*vreg_control) (int on);   //tracy 20121024 fix sleep current
+#endif
 	/* function entry chain */
 	int (*on) (struct platform_device *pdev);
 	int (*off) (struct platform_device *pdev);

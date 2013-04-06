@@ -42,13 +42,13 @@
 #include <linux/leds.h>
 #include <linux/pm_runtime.h>
 
+#ifdef CONFIG_FIH_PROJECT_NAN
 /*++ Tracy - 20121003 Add for using ++*/
-#ifdef CONFIG_LEDS_CHIP_LM3533
 #include <mach/vreg.h>
 #include <linux/gpio.h>
 #include <linux/leds-lm3533.h>
-#endif
 /*-- Tracy - 20121003 Add for using --*/
+#endif
 
 #define MSM_FB_C
 #include "msm_fb.h"
@@ -56,10 +56,12 @@
 #include "tvenc.h"
 #include "mdp.h"
 #include "mdp4.h"
+#ifdef CONFIG_FIH_PROJECT_NAN
 // 121005 add by JB_VB start
 #include "mipi_dsi.h"
 
 // 121005 add by JB_VB end
+#endif
 
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
 #define MSM_FB_NUM	3
@@ -73,7 +75,7 @@ static boolean bf_supported;
 static struct platform_device *pdev_list[MSM_FB_MAX_DEV_LIST];
 static int pdev_list_cnt;
 
-#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
+#ifdef CONFIG_FIH_PROJECT_NAN
 /*++ Tracy - 20121003 Add for using ++*/
 static int LCM_flag;
 static int logo_init = 0;
@@ -81,6 +83,7 @@ static int logo_init = 0;
 #endif
 
 int vsync_mode = 1;
+
 
 #define MAX_BLIT_REQ 256
 
@@ -131,6 +134,7 @@ static int mdp_bl_scale_config(struct msm_fb_data_type *mfd,
 #ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 static void msm_fb_scale_bl(__u32 *bl_lvl);
 #endif
+
 #ifdef MSM_FB_ENABLE_DBGFS
 
 #define MSM_FB_MAX_DBGFS 1024
@@ -216,6 +220,7 @@ static struct led_classdev backlight_led = {
 };
 #endif
 
+#ifndef CONFIG_FIH_PROJECT_NAN
 #ifdef CONFIG_FB_MSM_LOGO
 int draw_logo(struct fb_info *fbi)
 {
@@ -268,7 +273,7 @@ static ssize_t fb_dim_write(struct device *dev,
 	return size;
 }
 static DEVICE_ATTR(dim, 0644, fb_dim_read, fb_dim_write);
-
+#endif
 static ssize_t display_show_battery(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t size)
 {
@@ -321,9 +326,11 @@ static ssize_t display_show_battery(struct device *dev,
 			memset(fbi->screen_base, 0x00,
 					fbi->var.xres * fbi->var.yres * fbi->var.bits_per_pixel / 8);
 			msm_fb_blank_sub(FB_BLANK_POWERDOWN, fbi, mfd->op_enable);
+#ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 		down(&bkl_sem);
 		unset_bl_level = mfd->panel_info.bl_max;
 		up(&bkl_sem);
+#endif
 			break;
 
 		case DISP_LOGO:
@@ -341,72 +348,10 @@ static ssize_t display_show_battery(struct device *dev,
 static DEVICE_ATTR(display_battery, 0644, NULL, display_show_battery);
 #endif
 #endif
+
 static struct msm_fb_platform_data *msm_fb_pdata;
 unsigned char hdmi_prim_display;
 unsigned char hdmi_prim_resolution;
-
-#if (defined(CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK) || defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK))
-enum {
-	LCM_ID_DA_MES_CMI_DP = 0x0A,
-	LCM_ID_DA_MES_AUO_0B = 0x0B,
-	LCM_ID_DA_MES_AUO_0D = 0x0D,
-	LCM_ID_DA_MES_CMI_TP = 0x0C,
-	LCM_ID_DA_JLO_AUO = 0x42,
-	LCM_ID_DA_JLO_CMI = 0x43,
-	LCM_ID_DA_TAP_CMI = 0x54,
-};
-int msm_fb_check_lcm_healthy(struct msm_fb_data_type *mfd, struct fb_info *fbi)
-{
-	int retVal = 0;
-	
-	int duration = 0;
-	struct timespec cur_time = {0, 0};
-	static struct timespec pre_time = {0, 0};
-
-	struct msm_fb_panel_data *pdata =
-		(struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
-
-#if defined(CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK)
-	if(mfd->panel_info.lcm_model == (__u32)LCM_ID_DA_TAP_CMI){
-		cur_time = current_kernel_time();
-		duration = cur_time.tv_sec - pre_time.tv_sec;
-
-		if (duration < 2)
-			return 0;
-		else
-			pre_time = cur_time;
-
-		down(&mfd->sem);
-		if(pdata->get_id != NULL) {
-			retVal = pdata->get_id(mfd);
-		}
-		up(&mfd->sem);
-
-	}
-#endif
-#if defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
-	if((mfd->panel_info.lcm_model == (__u32)LCM_ID_DA_MES_AUO_0B) ||
-		(mfd->panel_info.lcm_model == (__u32)LCM_ID_DA_MES_AUO_0D))
-	{
-			cur_time = current_kernel_time();
-			duration = cur_time.tv_sec - pre_time.tv_sec;
-			
-			if (duration < 2)
-				return 0;
-			else
-				pre_time = cur_time;
-
-			down(&mfd->sem);
-			if(pdata->get_healthy != NULL) {
-				retVal = pdata->get_healthy(mfd);
-			}
-			up(&mfd->sem);
-	}
-#endif
-
-	return retVal;
-}
-#endif
 
 int msm_fb_detect_client(const char *name)
 {
@@ -617,6 +562,7 @@ static int msm_fb_probe(struct platform_device *pdev)
 	if (err < 0)
 		printk(KERN_ERR "pm_runtime: fail to set active.\n");
 	pm_runtime_enable(mfd->fbi->dev);
+	
 #ifndef CONFIG_LEDS_CHIP_LM3533	 //Edison change backlight regester place to board init ++
 #ifdef CONFIG_FB_BACKLIGHT
 	msm_fb_config_backlight(mfd);
@@ -1021,20 +967,15 @@ static void msmfb_early_resume(struct early_suspend *h)
 }
 #endif
 
-#ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
-static int mdp_bl_scale_config(struct msm_fb_data_type *mfd,
-						struct mdp_bl_scale_data *data)
-{
-	pr_info("[DISPLAY]%s: Not support CABL on this board.\r\n", __func__);
-	return 0;
-}
-#else
+#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 static int unset_bl_level, bl_updated;
 static int bl_level_old;
+#endif
 static int mdp_bl_scale_config(struct msm_fb_data_type *mfd,
 						struct mdp_bl_scale_data *data)
 {
 	int ret = 0;
+#ifdef CONFIG_FIH_PROJECT_NAN
 	int curr_bl = mfd->bl_level;
 	bl_scale = data->scale;
 	bl_min_lvl = data->min_lvl;
@@ -1043,9 +984,12 @@ static int mdp_bl_scale_config(struct msm_fb_data_type *mfd,
 
 	/* update current backlight to use new scaling*/
 	msm_fb_set_backlight(mfd, curr_bl);
-
+#else
+	pr_info("[DISPLAY]%s: Not support CABL on this board.\r\n", __func__);
+#endif
 	return ret;
 }
+#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 static void msm_fb_scale_bl(__u32 *bl_lvl)
 {
 	__u32 temp = *bl_lvl;
@@ -1123,24 +1067,25 @@ void msm_fb_set_backlight(struct msm_fb_data_type *mfd, __u32 bkl_lvl)
 	}
 }
 #endif
-
+#ifdef CONFIG_FIH_PROJECT_NAN
 // tracy 20121026 sleep current ++
 DEFINE_MUTEX(msm_fb_vreg_set);
 // tracy 20121026 sleep current --
-
+#endif
 static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 			    boolean op_enable)
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
 	struct msm_fb_panel_data *pdata = NULL;
-#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
+#ifdef CONFIG_FIH_PROJECT_NAN
 	/*++ Tracy - 20121003 Add for using ++*/
 	struct vreg *vreg_l1;
+	/*-- Tracy - 20121003 Add for using --*/
+	// tracy 20121026 sleep current ++
 	int update_vreg =0;
 	// tracy 20121026 sleep current --
 #endif
 	int ret = 0;
-
 	if (!op_enable)
 		return -EPERM;
 
@@ -1153,12 +1098,16 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 	switch (blank_mode) {
 	case FB_BLANK_UNBLANK:
 		if (!mfd->panel_power_on) {
-#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
+#ifndef CONFIG_FIH_PROJECT_NAN
+#ifdef CONFIG_FB_MSM_LCDC
+			msleep(16);
+#endif
+#else
 			/*++ Tracy - 20121003 Modify for using ++*/
 			vreg_l1= vreg_get(NULL, "rfrx1");
    			vreg_set_level(vreg_l1, 3000);
    			vreg_enable(vreg_l1);
-// tracy 20121026 sleep current ++
+			// tracy 20121026 sleep current ++
 			mutex_lock(&msm_fb_vreg_set);
 			update_vreg = pdata->vreg_control(1);
 			mutex_unlock(&msm_fb_vreg_set);
@@ -1171,38 +1120,33 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 			gpio_set_value(34, 0);
 			msleep(10);
 			gpio_set_value(34, 1);
-	}else{
+		}else{
 				printk(KERN_NOTICE "not performing lcm hw reset \n");
 			}
-// tracy 20121026 sleep current --
+			// tracy 20121026 sleep current --
 
 			if(logo_init == 1)
 			{
 				//tracy flag for check first call pandisplay function
 				LCM_flag = 1;
 			}
-#else
-#ifdef CONFIG_FB_MSM_LCDC
-			msleep(16);
-#endif
 #endif
 			ret = pdata->on(mfd->pdev);
 			if (ret == 0) {
 				mfd->panel_power_on = TRUE;
 
-/* ToDo: possible conflict with android which doesn't expect sw refresher */
-/*
-	  if (!mfd->hw_refresh)
-	  {
-	    if ((ret = msm_fb_resume_sw_refresher(mfd)) != 0)
-	    {
-	      MSM_FB_INFO("msm_fb_blank_sub: msm_fb_resume_sw_refresher failed = %d!\n",ret);
-	    }
-	  }
-*/
+				/* ToDo: possible conflict with android which doesn't expect sw refresher */
+				/*
+				if (!mfd->hw_refresh)
+				{
+					if ((ret = msm_fb_resume_sw_refresher(mfd)) != 0)
+					{
+						MSM_FB_INFO("msm_fb_blank_sub: msm_fb_resume_sw_refresher failed = %d!\n",ret);
+					}
+				}
+				*/
 			}
 		}
-		/*-- Tracy - 20121003 Modify for using --*/
 		break;
 
 	case FB_BLANK_VSYNC_SUSPEND:
@@ -1223,20 +1167,29 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 #else
 			bl_updated = 0;
 #endif
+
+#ifdef CONFIG_FIH_PROJECT_NAN
+			/*++ Tracy - Modify for using ++*/
+			msleep(10);
+			/*-- Tracy - Modify for using --*/
+#else
 #ifdef CONFIG_FB_MSM_LCDC
             msleep(16);
 #endif
+#endif
+
 			ret = pdata->off(mfd->pdev);
 			if (ret)
 				mfd->panel_power_on = curr_pwr_state;
-#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
-// tracy 20121026 sleep current ++
+#ifdef CONFIG_FIH_PROJECT_NAN
+				// tracy 20121026 sleep current ++
 
 				mutex_lock(&msm_fb_vreg_set);
 				update_vreg = pdata->vreg_control(0);
 				mutex_unlock(&msm_fb_vreg_set);
-// tracy 20121026 sleep current --
+				// tracy 20121026 sleep current --
 #endif
+
 			mfd->op_enable = TRUE;
 #ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 			isDim = 0;
@@ -1340,7 +1293,7 @@ static void msm_fb_imageblit(struct fb_info *info, const struct fb_image *image)
 static int msm_fb_blank(int blank_mode, struct fb_info *info)
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
-#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
+#ifdef CONFIG_FIH_PROJECT_NAN
 	//[Arima Edison] add a condition for power off charge++
 	if(blank_mode==4 && (boot_reason==0x40 || boot_reason==0x20) )  
 		return 0;
@@ -1646,7 +1599,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 		((PAGE_SIZE - remainder)/fix->line_length) * mfd->fb_page;
 	var->bits_per_pixel = bpp * 8;	/* FrameBuffer color depth */
 	if (mfd->dest == DISPLAY_LCD) {
-#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
+#ifdef CONFIG_FIH_PROJECT_NAN
 		if (panel_info->type == MDDI_PANEL && panel_info->mddi.is_type1)
 			var->reserved[3] = panel_info->lcd.refx100 / (100 * 2);
 		else
@@ -1728,6 +1681,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 #ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 	sema_init(&bkl_sem, 1);
 #endif
+
 	init_timer(&mfd->msmfb_no_update_notify_timer);
 	mfd->msmfb_no_update_notify_timer.function =
 			msmfb_no_update_notify_timer_cb;
@@ -1812,18 +1766,7 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 
 #ifdef CONFIG_FB_MSM_LOGO
 	/* Flip buffer */
-#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
-	if (!load_565rle_image(INIT_IMAGE_FILE, bf_supported));
-	ret = 0;
-if(logo_init == 0)
-	{
-		msm_fb_resume_sw_refresher(mfd);
-		mdp_set_dma_pan_info(fbi, NULL, TRUE);
-		msm_fb_blank_sub(FB_BLANK_UNBLANK, fbi, mfd->op_enable);
-		mdp_dma_pan_update(fbi);
-		lm3533_backlight_control(500);// [Arima Jim] add for boot backlight on
-	}
-#else
+#ifndef CONFIG_FIH_PROJECT_NAN
 	fih_load_565rle_image(INIT_IMAGE_FILE);
 
 	/* File node: /sys/class/graphics/fb?/display_battery */
@@ -1832,15 +1775,26 @@ if(logo_init == 0)
 		printk(KERN_ERR "[DISPLAY] %s: create dev_attr_display_battery failed\n",
 				__func__);
 	}
+#endif
+#ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 	ret = device_create_file(fbi->dev, &dev_attr_dim);
 	if (ret) {
 		printk(KERN_ERR "[DISPLAY] %s: create dev_attr_dim failed\n",
 				__func__);
 	}
+#endif
 	ret = 0;
+#else
+	if (!load_565rle_image(INIT_IMAGE_FILE, bf_supported));
+	ret = 0;
+	if(logo_init == 0){
+		msm_fb_resume_sw_refresher(mfd);
+		mdp_set_dma_pan_info(fbi, NULL, TRUE);
+		msm_fb_blank_sub(FB_BLANK_UNBLANK, fbi, mfd->op_enable);
+		mdp_dma_pan_update(fbi);
+		lm3533_backlight_control(500);// [Arima Jim] add for boot backlight on
+	}
 #endif
-#endif
-
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	if (hdmi_prim_display || mfd->panel_info.type != DTV_PANEL) {
 		mfd->early_suspend.suspend = msmfb_early_suspend;
@@ -2048,7 +2002,7 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 	struct mdp_dirty_region dirty;
 	struct mdp_dirty_region *dirtyPtr = NULL;
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
-#ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
+#ifndef CONFIG_FIH_PROJECT_NAN
 	struct msm_fb_panel_data *pdata = NULL;
 #endif
 	/*
@@ -2115,7 +2069,7 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 
 		dirtyPtr = &dirty;
 	}
-#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
+#ifdef CONFIG_FIH_PROJECT_NAN
 	//tracy 20121210 fix flash after sonylogo when chargeing++
 	if(logo_init == 0&& (boot_reason==0x40 || boot_reason==0x20) )
 	{
@@ -2150,21 +2104,7 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 	mdp_dma_pan_update(info);
 	up(&msm_fb_pan_sem);
 
-#ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
-	/*++ Tracy - 20121003 Modfiy for using ++*/
-	
-	if(logo_init==0)
-	{
-		msm_fb_stop_sw_refresher(mfd);
-		logo_init = 1;
-	}
-	else if ((logo_init==1)&&(LCM_flag == 1))
-	{
-		lm3533_backlight_control(255);//[Arima Jim] add for wake up backlight on
-		LCM_flag = 0;
-	}
-	/*-- Tracy - 20121003 Modify for using --*/
-#else
+#ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 		down(&bkl_sem);
 		if (unset_bl_level > 0) {
 			pr_info("[DISPLAY]%s: unset_bl_level = %d\r\n", __func__, unset_bl_level);
@@ -2178,58 +2118,24 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 			unset_bl_level = 0;
 		}
 		up(&bkl_sem);
-#endif
+#else
+	/*++ Tracy - 20121003 Modfiy for using ++*/
+	
+	if(logo_init==0)
+	{
+		msm_fb_stop_sw_refresher(mfd);
+		logo_init = 1;
+	}
+	else if ((logo_init==1)&&(LCM_flag == 1))
+	{
+		lm3533_backlight_control(255);//[Arima Jim] add for wake up backlight on
+		LCM_flag = 0;
+	}
+	/*-- Tracy - 20121003 Modify for using --*/
 
-/* FIH-SW-MM-VH-DISPLAY-40*[ */
-#if defined(CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK) || defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
-		if (mfd->bl_level > 0){
-			if (msm_fb_check_lcm_healthy(mfd, info) < 0) {
-				printk(KERN_ERR "[DISPLAY] %s, panel crash detected at pan display, reset panel\n", __func__);
-				msm_fb_blank_sub(FB_BLANK_POWERDOWN, info, mfd->op_enable);
-				mdelay(5);
-				msm_fb_blank_sub(FB_BLANK_UNBLANK, info, mfd->op_enable);
-				mdelay(50);
-
-				down(&msm_fb_pan_sem);
-				mdp_set_dma_pan_info(info, dirtyPtr,
-				             (var->activate == FB_ACTIVATE_VBL));
-				mdp_dma_pan_update(info);
-				up(&msm_fb_pan_sem);
-
-				mdelay(50);
-				pdata = (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
-				pdata->set_backlight(mfd);
-				mdelay(50);
-				down(&msm_fb_pan_sem);
-				mdp_set_dma_pan_info(info, dirtyPtr,
-							(var->activate == FB_ACTIVATE_VBL));
-				mdp_dma_pan_update(info);
-				up(&msm_fb_pan_sem);
-				mdelay(50);
-				pdata->set_backlight(mfd);
-				mdelay(50);
-				down(&msm_fb_pan_sem);
-				mdp_set_dma_pan_info(info, dirtyPtr,
-							(var->activate == FB_ACTIVATE_VBL));
-				mdp_dma_pan_update(info);
-				up(&msm_fb_pan_sem);
-				mdelay(50);
-				pdata->set_backlight(mfd);
-				mdelay(50);
-
-				down(&msm_fb_pan_sem);
-				mdp_set_dma_pan_info(info, dirtyPtr,
-									(var->activate == FB_ACTIVATE_VBL));
-				mdp_dma_pan_update(info);
-				up(&msm_fb_pan_sem);
-				mdelay(50);
-			pdata->set_backlight(mfd);
-
-
-			}
-		}
 #endif
 	++mfd->panel_info.frame_count;
+
 	return 0;
 }
 

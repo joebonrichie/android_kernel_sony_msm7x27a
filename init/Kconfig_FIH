@@ -298,12 +298,6 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Enable MIPI healthy check, retry initial sequence once panel crashed.
-        config FIH_SW_DISPLAY_LCM_ID_CHECK
-            depends on FIH_SW_DISPLAY && FIH_PROJECT_TAP
-            bool "Enable LCM id check"
-            default n
-            help
-                Enable LCM id check.
         config FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable AUO LCM healthy check"
@@ -661,12 +655,6 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Enable MIPI healthy check, retry initial sequence once panel crashed.
-        config FIH_SW_DISPLAY_LCM_ID_CHECK
-            depends on FIH_SW_DISPLAY && FIH_PROJECT_TAP
-            bool "Enable LCM id check"
-            default n
-            help
-                Enable LCM id check.
         config FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable AUO LCM healthy check"
@@ -1024,12 +1012,6 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Enable MIPI healthy check, retry initial sequence once panel crashed.
-        config FIH_SW_DISPLAY_LCM_ID_CHECK
-            depends on FIH_SW_DISPLAY && FIH_PROJECT_TAP
-            bool "Enable LCM id check"
-            default n
-            help
-                Enable LCM id check.
         config FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable AUO LCM healthy check"
