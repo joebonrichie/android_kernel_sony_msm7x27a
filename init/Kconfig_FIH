@@ -119,15 +119,6 @@ if FIH_CONFIG_GROUP
                 Enable to dump suspend information while suspend hang.
         #FIH-KERNEL-SC-Suspend_Hang_Timer-00+]
     
-        #FIH-KERNEL-SC-sleep-func-00+[
-        config FIH_HR_MSLEEP
-            bool "FIH_HR_MSLEEP"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Provide more efficient sleep function.
-        #FIH-KERNEL-SC-sleep-func-00+]
-        
         # FIH-SW2-PERIPHERAL-FG-SENSOR-00*[
         config FIH_SENSOR
             bool "FIH Sensors"
@@ -585,15 +576,6 @@ if FIH_CONFIG_GROUP
             help
                 Enable to dump suspend information while suspend hang.
         #FIH-KERNEL-SC-Suspend_Hang_Timer-00+]
-    
-        #FIH-KERNEL-SC-sleep-func-00+[
-        config FIH_HR_MSLEEP
-            bool "FIH_HR_MSLEEP"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Provide more efficient sleep function.
-        #FIH-KERNEL-SC-sleep-func-00+]
 
         # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+[
         config FIH_MODEM_CRASH_LOG
@@ -957,15 +939,6 @@ if FIH_CONFIG_GROUP
             help
                 Enable to dump suspend information while suspend hang.
         #FIH-KERNEL-SC-Suspend_Hang_Timer-00+]
-    
-        #FIH-KERNEL-SC-sleep-func-00+[
-        config FIH_HR_MSLEEP
-            bool "FIH_HR_MSLEEP"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Provide more efficient sleep function.
-        #FIH-KERNEL-SC-sleep-func-00+]
 
         # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+[
         config FIH_MODEM_CRASH_LOG

@@ -33,11 +33,7 @@
 #define ISX006_ENABLE_HW_STANDBY 1
 /*MTD-MM-SL-ImproveMainCamera-00+} */
 
-#ifdef CONFIG_FIH_HR_MSLEEP
-#define cam_msleep hr_msleep
-#else
 #define cam_msleep msleep
-#endif
 
 extern struct focus_roi_info g_msm_sensor_focus_roi_info;//FIH-SW-MM-MC-ImplementCameraTouchFocusforIsx006-00+
 DEFINE_MUTEX(isx006_mut);

@@ -1183,11 +1183,7 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 			}
 #else
 #ifdef CONFIG_FB_MSM_LCDC
-#ifdef CONFIG_FIH_HR_MSLEEP
-			hr_msleep(16);
-#else
 			msleep(16);
-#endif
 #endif
 #endif
 			ret = pdata->on(mfd->pdev);
@@ -1228,11 +1224,7 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 			bl_updated = 0;
 #endif
 #ifdef CONFIG_FB_MSM_LCDC
-#ifdef CONFIG_FIH_HR_MSLEEP
-            hr_msleep(16);
-#else
             msleep(16);
-#endif
 #endif
 			ret = pdata->off(mfd->pdev);
 			if (ret)
@@ -2180,11 +2172,7 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 				dev.platform_data;
 
 			if ((pdata) && (pdata->set_backlight)) {
-#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(50);
-#else
 				mdelay(50);
-#endif
 				pdata->set_backlight(mfd);
 			}
 			unset_bl_level = 0;
@@ -2198,17 +2186,9 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 			if (msm_fb_check_lcm_healthy(mfd, info) < 0) {
 				printk(KERN_ERR "[DISPLAY] %s, panel crash detected at pan display, reset panel\n", __func__);
 				msm_fb_blank_sub(FB_BLANK_POWERDOWN, info, mfd->op_enable);
-#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(5);
-#else
 				mdelay(5);
-#endif
 				msm_fb_blank_sub(FB_BLANK_UNBLANK, info, mfd->op_enable);
-#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(50);
-#else
 				mdelay(50);
-#endif
 
 				down(&msm_fb_pan_sem);
 				mdp_set_dma_pan_info(info, dirtyPtr,
@@ -2216,61 +2196,33 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 				mdp_dma_pan_update(info);
 				up(&msm_fb_pan_sem);
 
-#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(50);
-#else
 				mdelay(50);
-#endif
 				pdata = (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
 				pdata->set_backlight(mfd);
-#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(50);
-#else
 				mdelay(50);
-#endif
 				down(&msm_fb_pan_sem);
 				mdp_set_dma_pan_info(info, dirtyPtr,
 							(var->activate == FB_ACTIVATE_VBL));
 				mdp_dma_pan_update(info);
 				up(&msm_fb_pan_sem);
-#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(50);
-#else
 				mdelay(50);
-#endif
 				pdata->set_backlight(mfd);
-#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(50);
-#else
 				mdelay(50);
-#endif
 				down(&msm_fb_pan_sem);
 				mdp_set_dma_pan_info(info, dirtyPtr,
 							(var->activate == FB_ACTIVATE_VBL));
 				mdp_dma_pan_update(info);
 				up(&msm_fb_pan_sem);
-#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(50);
-#else
 				mdelay(50);
-#endif
 				pdata->set_backlight(mfd);
-#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(50);
-#else
 				mdelay(50);
-#endif
 
 				down(&msm_fb_pan_sem);
 				mdp_set_dma_pan_info(info, dirtyPtr,
 									(var->activate == FB_ACTIVATE_VBL));
 				mdp_dma_pan_update(info);
 				up(&msm_fb_pan_sem);
-#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(50);
-#else
 				mdelay(50);
-#endif
 			pdata->set_backlight(mfd);
 
 

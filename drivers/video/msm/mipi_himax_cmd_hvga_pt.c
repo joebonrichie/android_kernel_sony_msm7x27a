@@ -57,6 +57,8 @@ static int __init mipi_cmd_himax_hvga_pt_init(void)
 	pinfo.bl_max = 10;
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
+	pinfo.width = 45;  /* 44.64mm */
+	pinfo.height = 67;  /* 66.96mm */
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;
@@ -65,6 +67,7 @@ static int __init mipi_cmd_himax_hvga_pt_init(void)
 	pinfo.mipi.data_lane1 = FALSE;
 	pinfo.mipi.data_lane2 = FALSE;
 	pinfo.mipi.data_lane3 = FALSE;
+	pinfo.mipi.tx_eot_append = TRUE;
 	pinfo.mipi.t_clk_post = 0x04;
 	pinfo.mipi.t_clk_pre = 0x0D;
 	pinfo.mipi.stream = 0;  /* dma_p */
@@ -72,8 +75,9 @@ static int __init mipi_cmd_himax_hvga_pt_init(void)
 	pinfo.mipi.dma_trigger = DSI_CMD_TRIGGER_SW;
 	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.dsi_phy_db = &dsi_cmd_mode_phy_db;
-	pinfo.mipi.tx_eot_append = TRUE;
 	pinfo.mipi.dlane_swap = 0x01;
+	pinfo.lcdc.xres_pad = 0;
+	pinfo.lcdc.yres_pad = 0;
 	pinfo.lcd.refx100 = 7000; /* adjust refx100 to prevent tearing */
 	pinfo.mipi.te_sel = 1; /* TE from vsync gpio */
 	pinfo.mipi.interleave_max = 1;
@@ -83,6 +87,8 @@ static int __init mipi_cmd_himax_hvga_pt_init(void)
 	pinfo.mipi.rx_eot_ignore = 0;
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
+	pinfo.mipi.dsi_pclk_rate = 12000000;
+	/* FIH-SW-MM-VH-DISPLAY-40+ */
 	pinfo.lcm_model = 0;
 
 	ret = mipi_himax_device_register(&pinfo, MIPI_DSI_PRIM,

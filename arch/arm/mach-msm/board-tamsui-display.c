@@ -884,25 +884,13 @@ static int msm_fb_dsi_client_msm_reset(int hold)
 	if (hold) {
 		gpio_direction_output(GPIO_LCM_RESET, 0);
 	} else {
-#ifdef CONFIG_FIH_HR_MSLEEP
-		rc |= gpio_direction_output(GPIO_LCM_RESET, 1);
-		hr_msleep(5);
-		rc |= gpio_direction_output(GPIO_LCM_RESET, 0);
-		hr_msleep(5);
-		rc |= gpio_direction_output(GPIO_LCM_RESET, 1);
-#else
 		rc |= gpio_direction_output(GPIO_LCM_RESET, 1);
 		msleep(5);
 		rc |= gpio_direction_output(GPIO_LCM_RESET, 0);
 		msleep(5);
 		rc |= gpio_direction_output(GPIO_LCM_RESET, 1);
-#endif
 	}
-#ifdef CONFIG_FIH_HR_MSLEEP
-	hr_msleep(150);
-#else
 	msleep(150);
-#endif
 #if 0
 	if (!rc) {
 		if (machine_is_msm7x27a_surf() || machine_is_msm7625a_surf()

@@ -57,6 +57,8 @@ static int __init mipi_video_himax_hvga_pt_init(void)
 	pinfo.bl_max = 10;
 	pinfo.bl_min = 1;
 	pinfo.fb_num = 2;
+	pinfo.width = 45;  /* 44.64mm */
+	pinfo.height = 67;  /* 66.96mm */
 	pinfo.mipi.mode = DSI_VIDEO_MODE;
 	pinfo.mipi.pulse_mode_hsa_he = FALSE;
 	pinfo.mipi.hfp_power_stop = FALSE;
@@ -64,7 +66,7 @@ static int __init mipi_video_himax_hvga_pt_init(void)
 	pinfo.mipi.hsa_power_stop = FALSE;
 	pinfo.mipi.eof_bllp_power_stop = TRUE;
 	pinfo.mipi.bllp_power_stop = TRUE;
-	pinfo.mipi.traffic_mode = DSI_NON_BURST_SYNCH_EVENT;
+	pinfo.mipi.traffic_mode = DSI_NON_BURST_SYNCH_PULSE;
 	pinfo.mipi.dst_format = DSI_VIDEO_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;
 	pinfo.mipi.rgb_swap = DSI_RGB_SWAP_RGB;
@@ -85,6 +87,7 @@ static int __init mipi_video_himax_hvga_pt_init(void)
 	pinfo.lcdc.yres_pad = 0;
 	pinfo.mipi.interleave_max = 1;
 	pinfo.mipi.insert_dcs_cmd = TRUE;
+	/* FIH-SW-MM-VH-DISPLAY-40+ */
 	pinfo.lcm_model = 0;
 
 	ret = mipi_himax_device_register(&pinfo, MIPI_DSI_PRIM,

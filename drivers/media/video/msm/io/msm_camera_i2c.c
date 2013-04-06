@@ -14,11 +14,7 @@
 
 #include <linux/delay.h>//For hr_msleep()
 
-#ifdef CONFIG_FIH_HR_MSLEEP
-#define cam_msleep hr_msleep
-#else
 #define cam_msleep msleep
-#endif
 
 int32_t msm_camera_i2c_rxdata(struct msm_camera_i2c_client *dev_client,
 	unsigned char *rxdata, int data_length)

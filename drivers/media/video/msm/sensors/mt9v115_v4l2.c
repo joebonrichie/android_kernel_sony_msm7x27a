@@ -23,11 +23,7 @@
 #define SENSOR_NAME "mt9v115"
 
 /*MTD-MM-SL-FrontCameraCapture-00+{ */
-#ifdef CONFIG_FIH_HR_MSLEEP
-#define cam_msleep hr_msleep
-#else
 #define cam_msleep msleep
-#endif
 /*MTD-MM-SL-FrontCameraCapture-00+} */
 
 /*MTD-MM-SL-ImproveFrontCamera-00+{ */
