@@ -1576,14 +1576,6 @@ static struct i2c_board_info i2c_bus1_i2c_info[] __initdata =
 #endif    
 /* FIH-SW3-PERIPHERAL-CH-TouchDriver_Porting_2010-00+} */
 
-/* FIH-SW3-PERIPHERAL-AH-TouchDriver_Porting_JLO +{ */
-#ifdef CONFIG_FIH_TOUCHSCREEN_SYNAPTICS_T1320
-    {
-        I2C_BOARD_INFO("synaptics-t1320-ts", 0x20),
-    },
-#endif
-/* FIH-SW3-PERIPHERAL-AH-TouchDriver_Porting_JLO +} */
-
 /* FIH-SW1-PERIPHERAL-FG-MSENSOR-00+[ */
 #ifdef CONFIG_FIH_MSENSOR_AKM8975
 	{

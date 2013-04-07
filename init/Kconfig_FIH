@@ -59,31 +59,6 @@ if FIH_CONFIG_GROUP
             help
                 Select if the touch panel is attached.
 
-        if FIH_TOUCHSCREEN
-        menuconfig FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            bool "Synaptics T1320 Touchscreen"
-            depends on I2C && FIH_TOUCHSCREEN
-            default n
-            help
-                Select if the Synaptics T1320 touch panel is attached.
-
-        if FIH_TOUCHSCREEN_SYNAPTICS_T1320
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            bool "Synaptics T1320 Touchscreen Upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            default n
-            help
-                Select if the Synaptics T1320 touch panel upgrade FW needed.
-
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_AUTOUPGRADE
-            bool "Synaptics T1320 Touchscreen AUTO-upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            default n
-            help
-                Select if the Synaptics T1320 touch panel AUTO upgrade FW needed.
-        endif
-        endif
-        
         # FIH-SW3-PERIPHERAL-AH-Touch_Porting-00
         if FIH_TOUCHSCREEN
         config FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
@@ -428,32 +403,6 @@ if FIH_CONFIG_GROUP
             help
                 Select if the touch panel is attached.
 
-        if FIH_TOUCHSCREEN
-        menuconfig FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            bool "Synaptics T1320 Touchscreen"
-            depends on I2C && FIH_TOUCHSCREEN
-            default n
-            help
-                Select if the Synaptics T1320 touch panel is attached.
-
-        if FIH_TOUCHSCREEN_SYNAPTICS_T1320
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            bool "Synaptics T1320 Touchscreen Upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            default n
-            help
-                Select if the Synaptics T1320 touch panel upgrade FW needed.
-
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_AUTOUPGRADE
-            bool "Synaptics T1320 Touchscreen AUTO-upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            default n
-            help
-                Select if the Synaptics T1320 touch panel AUTO upgrade FW needed.
-
-        endif
-        endif
-        
         # FIH-SW3-PERIPHERAL-AH-Touch_Porting-00
         if FIH_TOUCHSCREEN
         menuconfig FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
@@ -832,32 +781,6 @@ if FIH_CONFIG_GROUP
             help
                 Select if the touch panel is attached.
 
-        if FIH_TOUCHSCREEN
-        menuconfig FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            bool "Synaptics T1320 Touchscreen"
-            depends on I2C && FIH_TOUCHSCREEN
-            default n
-            help
-                Select if the Synaptics T1320 touch panel is attached.
-
-        if FIH_TOUCHSCREEN_SYNAPTICS_T1320
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            bool "Synaptics T1320 Touchscreen Upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320
-            default n
-            help
-                Select if the Synaptics T1320 touch panel upgrade FW needed.
-
-        config FIH_TOUCHSCREEN_SYNAPTICS_T1320_AUTOUPGRADE
-            bool "Synaptics T1320 Touchscreen AUTO-upgrade Enable"
-            depends on I2C && FIH_TOUCHSCREEN_SYNAPTICS_T1320_UPGRADE
-            default n
-            help
-                Select if the Synaptics T1320 touch panel AUTO upgrade FW needed.
-
-        endif
-        endif
-        
         # FIH-SW3-PERIPHERAL-AH-Touch_Porting-00
         if FIH_TOUCHSCREEN
         config FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
