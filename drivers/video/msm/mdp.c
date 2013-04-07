@@ -556,6 +556,7 @@ static int mdp_lut_update_lcdc(struct fb_info *info, struct fb_cmap *cmap)
 	return 0;
 }
 
+#ifdef CONFIG_FIH_PROJECT_NAN
 static void mdp_lut_enable(void)
 {
 	uint32_t out;
@@ -568,6 +569,7 @@ static void mdp_lut_enable(void)
 		mutex_unlock(&mdp_lut_push_sem);
 	}
 }
+#endif
 
 #define MDP_REV42_HIST_MAX_BIN 128
 #define MDP_REV41_HIST_MAX_BIN 32
@@ -1406,7 +1408,19 @@ void mdp_pipe_kickoff(uint32 term, struct msm_fb_data_type *mfd)
 		mdp_ppp_waiting = TRUE;
 		spin_unlock_irqrestore(&mdp_spin_lock, flag);
 		outpdw(MDP_BASE + 0x30, 0x1000);
+#ifndef CONFIG_FIH_PROJECT_NAN
+		if(!wait_for_completion_killable_timeout(&mdp_ppp_comp, 5* HZ)) {
+			/* Free MDP_PPP_BLOCK here. */
+			mdp_pipe_ctrl(MDP_PPP_BLOCK, MDP_BLOCK_POWER_OFF, TRUE);
+
+			if (mdp_ppp_waiting) {
+				mdp_ppp_waiting = FALSE;
+				complete(&mdp_ppp_comp);
+			}
+		}
+#else
 		wait_for_completion_killable(&mdp_ppp_comp);
+#endif
 		mdp_disable_irq(term);
 
 		if (mdp_debug[MDP_PPP_BLOCK]) {
@@ -1430,8 +1444,9 @@ void mdp_pipe_kickoff(uint32 term, struct msm_fb_data_type *mfd)
 #ifdef CONFIG_FB_MSM_MDP22
 		outpdw(MDP_CMD_DEBUG_ACCESS_BASE + 0x0044, 0x0);/* start DMA */
 #else
+#ifdef CONFIG_FIH_PROJECT_NAN
 		mdp_lut_enable();
-
+#endif
 #ifdef CONFIG_FB_MSM_MDP40
 		outpdw(MDP_BASE + 0x000c, 0x0);	/* start DMA */
 #else
@@ -2295,12 +2310,13 @@ static int mdp_irq_clk_setup(struct platform_device *pdev,
 	else {
 		regulator_enable(footswitch);
 		mdp_footswitch_on = 1;
-
+#ifdef CONFIG_FB_MSM_OVERLAY
 		if (mdp_rev == MDP_REV_42 && !cont_splashScreen) {
 			regulator_disable(footswitch);
 			msleep(20);
 			regulator_enable(footswitch);
 		}
+#endif
 	}
 
 	mdp_clk = clk_get(&pdev->dev, "core_clk");
@@ -2315,6 +2331,7 @@ static int mdp_irq_clk_setup(struct platform_device *pdev,
 	if (IS_ERR(mdp_pclk))
 		mdp_pclk = NULL;
 
+#ifdef CONFIG_FB_MSM_OVERLAY
 	if (mdp_rev >= MDP_REV_42) {
 		mdp_lut_clk = clk_get(&pdev->dev, "lut_clk");
 		if (IS_ERR(mdp_lut_clk)) {
@@ -2324,7 +2341,9 @@ static int mdp_irq_clk_setup(struct platform_device *pdev,
 			free_irq(mdp_irq, 0);
 			return ret;
 		}
-	} else {
+	} else 
+#endif
+	{
 		mdp_lut_clk = NULL;
 	}
 
