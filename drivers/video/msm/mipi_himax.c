@@ -26,10 +26,6 @@ static struct dsi_buf himax_rx_buf;
 
 /* FIH-SW-MM-VH-DISPLAY-09*[ */
 static struct msm_fb_data_type *gmfd = NULL;
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-int gMinBrightness = DEALULT_MIN_BRIGHTNESS;
-int gDeltaMinBrightness = DEALULT_DELTA_BRIGHTNESS;
-#endif
 /* FIH-SW-MM-VH-DISPLAY-09*] */
 
 static int display_initialize = 0;
@@ -125,23 +121,6 @@ static struct dsi_cmd_desc himax_ReadC1 = {
 	DTYPE_DCS_READ, 1, 0, 1, 20, sizeof(himax_manufacture_C1), himax_manufacture_C1};
 #endif
 /* FIH-SW-MM-VH-DISPLAY-40*] */
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-static char himax_WriteCABCMode[2] = {0x55, 0x00};  /* DTYPE_DCS_WRITE1 */
-static char himax_WriteCABCMinBrightness[2] = {0x5E, 0x00};  /* DTYPE_DCS_WRITE1 */
-#endif
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-static char himax_ReadCABCMode[2] = {0x56, 0x00}; /* DTYPE_DCS_READ */
-static char himax_ReadCABCMinBrightness[2] = {0x5F, 0x00};  /* DTYPE_DCS_WRITE1 */
-static char himax_WriteCABCBrightness[2] = {0x51, 0x00};  /* DTYPE_DCS_WRITE1 */
-static char himax_ReadCABCBrightness[2] = {0x52, 0x00};  /* DTYPE_DCS_WRITE1 */
-/* FIH-SW-MM-VH-DISPLAY-21*] */
-static char set_tear_on[2] = {0x35, 0x00};
-static struct dsi_cmd_desc dsi_tear_on_cmd = {	DTYPE_DCS_WRITE, 1, 0, 0, 0, sizeof(set_tear_on), set_tear_on};
-static char set_tear_off[2] = {0x34, 0x00};
-static struct dsi_cmd_desc dsi_tear_off_cmd = {	DTYPE_DCS_WRITE, 1, 0, 0, 0, sizeof(set_tear_off), set_tear_off};
-#endif
-/* FIH-SW-MM-VH-DISPLAY-28*[ */
 /* FIH-SW-MM-VH-DISPLAY-33*[ */
 static char set_tear_on[2] = {0x35, 0x00};
 static char auo_unlock_cmd2[3] = {0xED, 0x01, 0xFE}; /* DTYPE_GEN_LWRITE */
@@ -321,10 +300,6 @@ static struct dsi_cmd_desc himax_CMI_on_cmds[] = {
 		sizeof(CMI_PWM), CMI_PWM},
 	{DTYPE_DCS_WRITE, 1, 0, 0, 10,
 		sizeof(himax_DisplayON), himax_DisplayON},
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
-		sizeof(himax_WriteCABCMode), himax_WriteCABCMode},
-#endif
 #ifndef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
 		sizeof(write_display_brightness), write_display_brightness},
@@ -438,40 +413,6 @@ static struct dsi_cmd_desc himax_video_bkl_cmds[] = {
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
 		sizeof(write_display_brightness), write_display_brightness}
 };
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-static struct dsi_cmd_desc himax_write_cabc_mode_cmds[] = {
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
-		sizeof(himax_WriteCABCMode), himax_WriteCABCMode}
-	
-};
-static struct dsi_cmd_desc himax_write_cabc_min_brightness_cmds[] = {
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
-		sizeof(himax_WriteCABCMinBrightness), himax_WriteCABCMinBrightness}
-};
-
-#endif
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-static struct dsi_cmd_desc himax_read_cabc_mode_cmds = {
-	DTYPE_GEN_READ, 1, 0, 1, 5, 
-		sizeof(himax_ReadCABCMode), himax_ReadCABCMode
-};
-
-static struct dsi_cmd_desc himax_read_cabc_min_brightness_cmds = {
-	DTYPE_GEN_READ, 1, 0, 1, 5, 
-		sizeof(himax_ReadCABCMinBrightness),himax_ReadCABCMinBrightness
-};
-/* FIH-SW-MM-VH-DISPLAY-21*] */
-static struct dsi_cmd_desc himax_read_cabc_brightness_cmds = {
-	DTYPE_GEN_READ, 1, 0, 1, 5, 
-		sizeof(himax_ReadCABCBrightness),himax_ReadCABCBrightness
-};
-
-static struct dsi_cmd_desc himax_write_cabc_brightness_cmds[] = {
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
-		sizeof(himax_WriteCABCBrightness), himax_WriteCABCBrightness}
-};
-#endif
 /* FIH-SW-MM-VH-DISPLAY-40*[ */
 static int mipi_himax_manufacture_id(struct msm_fb_data_type *mfd)
 {
@@ -759,9 +700,6 @@ static void mipi_himax_lcd_backlight(struct msm_fb_data_type *mfd)
 {
 	struct mipi_panel_info *mipi;
 	
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-	int brightnessTmp = 0;
-#endif
 
 	mipi = &mfd->panel_info.mipi;
 
@@ -781,26 +719,6 @@ static void mipi_himax_lcd_backlight(struct msm_fb_data_type *mfd)
 	mipi_set_tx_power_mode(1);
 	up(&mfd->dma->mutex);
 
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-	brightnessTmp = mfd->bl_level - gDeltaMinBrightness;
-
-	if(brightnessTmp <0)
-		gMinBrightness = 0;
-	else
-		gMinBrightness = brightnessTmp;
-
-	
-	himax_WriteCABCMinBrightness[1] = BKL_PWM[gMinBrightness];
-	printk("[DISPLAY] mfd->bl_level = %d, gMinBrightness = %d\r\n", mfd->bl_level, gMinBrightness);
-	printk("[DISPLAY] himax_WriteCABCMinBrightness[1] = %d, BKL_PWM[gMinBrightness] = %d\r\n", himax_WriteCABCMinBrightness[1], BKL_PWM[gMinBrightness]);
-
-	down(&gmfd->dma->mutex);
-	mipi_set_tx_power_mode(0);
-	mipi_dsi_cmds_tx(gmfd, &himax_tx_buf, himax_write_cabc_min_brightness_cmds,
-			ARRAY_SIZE(himax_write_cabc_min_brightness_cmds));
-	mipi_set_tx_power_mode(1);
-	up(&gmfd->dma->mutex);
-#endif
 }
 
 /* FIH-SW-MM-VH-DISPLAY-21+[ */
@@ -831,312 +749,6 @@ static int mipi_himax_set_dimming(char enable)
 #endif
 /* FIH-SW-MM-VH-DISPLAY-21+] */
 
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-/* FIH-SW-MM-VH-DISPLAY-18+[ */
-static int mipi_himax_set_cabc_mode(char mode)
-{
-		printk(KERN_ALERT "[DISPLAY] Enter %s, set cabc mode to %d\n",
-			__func__, mode);
-
-	if (!display_initialize)
-		return 0;
-
-	himax_WriteCABCMode[1] =mode;
-
-	down(&gmfd->dma->mutex);
-	mipi_set_tx_power_mode(0);
-	mipi_dsi_cmds_tx(gmfd, &himax_tx_buf, himax_write_cabc_mode_cmds,
-			ARRAY_SIZE(himax_write_cabc_mode_cmds));
-	mipi_set_tx_power_mode(1);
-	up(&gmfd->dma->mutex);
-
-	return 0;
-}
-/* FIH-SW-MM-VH-DISPLAY-18+] */
-/* FIH-SW-MM-VH-DISPLAY-21+[ */
-#endif
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-/* FIH-SW-MM-VH-DISPLAY-21+] */
-static ssize_t himax_read_cabc_mode(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	int retVal = 0;
-	char retData = 0;
-	struct dsi_buf *rp, *tp;
-
-	if ((!display_initialize) || (gmfd == NULL))
-		return -1;
-
-	tp = &himax_tx_buf;
-	rp = &himax_rx_buf;
-	mipi_dsi_buf_init(rp);
-	mipi_dsi_buf_init(tp);
-
-	down(&gmfd->dma->mutex);
-	mipi_set_tx_power_mode(1);
-	mipi_dsi_cmds_tx(gmfd, tp, &dsi_tear_off_cmd, 1);	
-	retVal = mipi_dsi_cmds_rx(gmfd, tp, rp, &himax_read_cabc_mode_cmds, 1);
-	mipi_dsi_cmds_tx(gmfd, tp, &dsi_tear_on_cmd, 1);
-	up(&gmfd->dma->mutex);
-
-	retData = *((char *) rp->data);
-	retVal = snprintf(buf, PAGE_SIZE, "0x%02x\n", retData);
-	printk(KERN_ALERT "-%s: %x\r\n", __func__, retData);
-
-	return retVal;
-}
-
-static ssize_t himax_write_cabc_mode(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	ssize_t ret = strnlen(buf, PAGE_SIZE);
-	int cmd;
-
-	if ((!display_initialize) || (gmfd == NULL))
-	return -1;
-
-	sscanf(buf, "%x", &cmd);
-	himax_WriteCABCMode[1] = cmd;
-
-	down(&gmfd->dma->mutex);
-	mipi_set_tx_power_mode(0);
-	mipi_dsi_cmds_tx(gmfd, &himax_tx_buf, himax_write_cabc_mode_cmds,
-			ARRAY_SIZE(himax_write_cabc_mode_cmds));
-	mipi_set_tx_power_mode(1);
-	up(&gmfd->dma->mutex);
-	
-	printk(KERN_ALERT "-%s: %x\r\n", __func__ , cmd);
-
-	return ret;
-}
-
-static ssize_t himax_read_cabc_min_brightness(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	int retVal = 0;
-	char retData = 0;
-	struct dsi_buf *rp, *tp;
-
-	if ((!display_initialize) || (gmfd == NULL))
-		return -1;
-
-	tp = &himax_tx_buf;
-	rp = &himax_rx_buf;
-	
-	mipi_dsi_buf_init(rp);
-	mipi_dsi_buf_init(tp);
-
-	down(&gmfd->dma->mutex);
-	mipi_set_tx_power_mode(1);
-	mipi_dsi_cmds_tx(gmfd, tp, &dsi_tear_off_cmd, 1);	
-	retVal = mipi_dsi_cmds_rx(gmfd, tp, rp, &himax_read_cabc_min_brightness_cmds, 1);
-	mipi_dsi_cmds_tx(gmfd, tp, &dsi_tear_on_cmd, 1);
-	up(&gmfd->dma->mutex);
-
-	retData = *((char *) rp->data);
-	retVal = snprintf(buf, PAGE_SIZE, "0x%02x\n", retData);
-	
-	printk(KERN_ALERT "-%s: %x\r\n", __func__, retData);
-
-	return retVal;
-}
-
-static ssize_t himax_write_cabc_min_brightness(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	ssize_t ret = strnlen(buf, PAGE_SIZE);
-	int cmd;
-
-	if ((!display_initialize) || (gmfd == NULL))
-    	return -1;
-        
-	sscanf(buf, "%x", &cmd);
-	himax_WriteCABCMinBrightness[1] = cmd;
-
-	down(&gmfd->dma->mutex);
-	mipi_set_tx_power_mode(0);
-	mipi_dsi_cmds_tx(gmfd, &himax_tx_buf, himax_write_cabc_min_brightness_cmds,
-			ARRAY_SIZE(himax_write_cabc_min_brightness_cmds));
-	mipi_set_tx_power_mode(1);
-	up(&gmfd->dma->mutex);
-
-	printk(KERN_ALERT "-%s: %x\r\n", __func__ , cmd);
-
-	return ret;
-}
-
-static ssize_t himax_read_cabc_brightness(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	int retVal = 0;
-	char retData = 0;
-	struct dsi_buf *rp, *tp;
-
-	if ((!display_initialize) || (gmfd == NULL))
-		return -1;
-
-	tp = &himax_tx_buf;
-	rp = &himax_rx_buf;
-	
-	mipi_dsi_buf_init(rp);
-	mipi_dsi_buf_init(tp);
-
-	down(&gmfd->dma->mutex);
-	mipi_set_tx_power_mode(1);
-	mipi_dsi_cmds_tx(gmfd, tp, &dsi_tear_off_cmd, 1);	
-	retVal = mipi_dsi_cmds_rx(gmfd, tp, rp, &himax_read_cabc_brightness_cmds, 1);
-	mipi_dsi_cmds_tx(gmfd, tp, &dsi_tear_on_cmd, 1);
-	up(&gmfd->dma->mutex);
-
-	retData = *((char *) rp->data);
-	retVal = snprintf(buf, PAGE_SIZE, "0x%02x\n", retData);
-	
-	printk(KERN_ALERT "%s: %x\r\n", __func__, retData);
-
-	return retVal;
-}
-
-/* FIH-SW-MM-VH-DISPLAY-15*[ */
-static ssize_t himax_write_cabc_brightness(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	ssize_t ret = strnlen(buf, PAGE_SIZE);
-	int cmd;
-
-	if ((!display_initialize) || (gmfd == NULL))
-		return -1;
-
-	sscanf(buf, "%x", &cmd);
-	himax_WriteCABCBrightness[1] = cmd;
-
-	down(&gmfd->dma->mutex);
-	mipi_set_tx_power_mode(0);
-	mipi_dsi_cmds_tx(gmfd, &himax_tx_buf, himax_write_cabc_brightness_cmds,
-			ARRAY_SIZE(himax_write_cabc_brightness_cmds));
-	mipi_set_tx_power_mode(1);
-	up(&gmfd->dma->mutex);
-
-	printk(KERN_ALERT "%s: %x\r\n", __func__ , cmd);
-
-	return ret;
-}
-/* FIH-SW-MM-VH-DISPLAY-15*] */
-static ssize_t himax_read_gDeltaMinBrightness(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	int retVal = 0;
-
-	retVal = snprintf(buf, PAGE_SIZE, "0x%02x\n", gDeltaMinBrightness);
-	
-	printk(KERN_ALERT "%s: %x\r\n", __func__, gDeltaMinBrightness);
-
-	return retVal;
-}
-
-static ssize_t himax_write_gDeltaMinBrightness(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	ssize_t ret = strnlen(buf, PAGE_SIZE);
-	int cmd;
-
-	sscanf(buf, "%x", &cmd);
-	gDeltaMinBrightness = cmd;
-
-
-	printk(KERN_ALERT "%s: %x\r\n", __func__ , cmd);
-
-	return ret;
-}
-static ssize_t himax_read_gMinBrightness(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	int retVal = 0;
-
-	retVal = snprintf(buf, PAGE_SIZE, "0x%02x\n", gMinBrightness);
-	
-	printk(KERN_ALERT "%s: %x\r\n", __func__, gDeltaMinBrightness);
-
-	return retVal;
-}
-
-static ssize_t himax_write_gMinBrightness(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	ssize_t ret = strnlen(buf, PAGE_SIZE);
-	int cmd;
-
-	sscanf(buf, "%x", &cmd);
-	gMinBrightness = cmd;
-
-
-	printk(KERN_ALERT "%s: %x\r\n", __func__ , cmd);
-
-	return ret;
-}
-/* FIH-SW-MM-VH-DISPLAY-15+[ */
-static ssize_t himax_flicker_write(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t size)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = NULL;
-	struct msm_fb_panel_data *pdata = NULL;
-	char *tok, str[80], *tmp;
-	int interval = 0;
-    int command = 0;
-
-	mfd = (struct msm_fb_data_type *)fbi->par;
-	pdata = (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
-
-	printk(KERN_ERR "[DISPLAY] +%s\n", __func__);
-
-	strncpy(str, buf, 80);
-	tmp = str;
-	tok = strsep(&tmp, " ,.");
-
-	if(tok == NULL)
-		return -1;
-	
-	/* Use %3d to limit size to avoid overflow */
-	sscanf(tok, "%3d", &interval);
-
-	printk(KERN_ERR "[DISPLAY] INTERVAL = %d\n", interval);
-	while(1) {
-		tok = strsep(&tmp, " ,.");
-		if(tok == NULL)
-			break;
-
-		/* Use %3d to limit size to avoid overflow */
-		sscanf(tok, "%x", &command);
-
-		himax_WriteCABCBrightness[1] = command;
-		
-		down(&gmfd->dma->mutex);
-		mipi_set_tx_power_mode(0);
-		mipi_dsi_cmds_tx(gmfd, &himax_tx_buf, himax_write_cabc_brightness_cmds,
-				ARRAY_SIZE(himax_write_cabc_brightness_cmds));
-		mipi_set_tx_power_mode(1);
-		up(&gmfd->dma->mutex);
-
-		hr_msleep(interval);
-	}
-	
-    return size;
-}
-static DEVICE_ATTR(CABCFlicker, 0644, NULL, himax_flicker_write);
-/* FIH-SW-MM-VH-DISPLAY-15+] */
-static DEVICE_ATTR(CABCMode, 0600, himax_read_cabc_mode,
-	himax_write_cabc_mode);
-static DEVICE_ATTR(CABCMinBrightness, 0600, himax_read_cabc_min_brightness,
-	himax_write_cabc_min_brightness); 
-static DEVICE_ATTR(CABCBrightness, 0600, himax_read_cabc_brightness,
-	himax_write_cabc_brightness); 
-static DEVICE_ATTR(CABCgMinBrightness,0600, himax_read_gMinBrightness,
-	himax_write_gMinBrightness); 
-static DEVICE_ATTR(CABCgDeltaMinBrightness, 0600, himax_read_gDeltaMinBrightness,
-	himax_write_gDeltaMinBrightness); 
-
-#endif
-
 static int __devinit mipi_himax_lcd_probe(struct platform_device *pdev)
 {
 	int retVal = 0;
@@ -1149,42 +761,7 @@ static int __devinit mipi_himax_lcd_probe(struct platform_device *pdev)
 	}
 
 	msm_fb_add_device(pdev);
-	/* FIH-SW-MM-VH-DISPLAY-21* */
-	#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-	retVal = device_create_file(&pdev->dev, &dev_attr_CABCMode);
-	if (retVal) {
-		dev_err(&pdev->dev,
-			"%s: ddev_attr_cabc_mode failed\n", __func__);
-	}  
-	retVal = device_create_file(&pdev->dev, &dev_attr_CABCMinBrightness);
-	if (retVal) {
-		dev_err(&pdev->dev,
-			"%s: dev_attr_cabc_min_brightness failed\n", __func__);
-	}
-	retVal = device_create_file(&pdev->dev, &dev_attr_CABCBrightness);
-	if (retVal) {
-		dev_err(&pdev->dev,
-			"%s: dev_attr_cabc_min_brightness failed\n", __func__);
-	}
-	retVal = device_create_file(&pdev->dev, &dev_attr_CABCgMinBrightness);
-	if (retVal) {
-		dev_err(&pdev->dev,
-			"%s: dev_attr_cabc_min_brightness failed\n", __func__);
-	}
-	retVal = device_create_file(&pdev->dev, &dev_attr_CABCgDeltaMinBrightness);
-	if (retVal) {
-		dev_err(&pdev->dev,
-			"%s: dev_attr_cabc_min_brightness failed\n", __func__);
-	}
-	/* FIH-SW-MM-VH-DISPLAY-15+[ */
-	retVal = device_create_file(&pdev->dev, &dev_attr_CABCFlicker);
-	if (retVal) {
-		dev_err(&pdev->dev,
-			"%s: dev_attr_CABCFlicker failed\n", __func__);
-	/* FIH-SW-MM-VH-DISPLAY-15+] */
-	}
 
-	#endif
 	retVal = device_create_file(&pdev->dev, &dev_attr_idDA);
 	if (retVal) {
 		dev_err(&pdev->dev,
@@ -1222,11 +799,6 @@ static struct msm_fb_panel_data himax_panel_data = {
 	.on		= mipi_himax_lcd_on,
 	.off	= mipi_himax_lcd_off,
 	.set_backlight = mipi_himax_lcd_backlight,
-/* FIH-SW-MM-VH-DISPLAY-18+[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-	.set_cabc_mode = mipi_himax_set_cabc_mode,
-#endif
-/* FIH-SW-MM-VH-DISPLAY-18+] */
 /* FIH-SW-MM-VH-DISPLAY-21+[ */
 #ifdef CONFIG_FIH_SW_DISPLAY_LCM_DIMMING
 	.set_dimming = mipi_himax_set_dimming,

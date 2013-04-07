@@ -1767,41 +1767,6 @@ static struct platform_device ram_console_device = {
         .resource       = ram_console_resources,
 };
 
-#ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG
-static struct resource alog_ram_console_resources[4] = {
-        [0] = {
-        .name = "alog_main_buffer",
-                .start  = ALOG_RAM_CONSOLE_PHYS_MAIN,
-                .end    = ALOG_RAM_CONSOLE_PHYS_MAIN + ALOG_RAM_CONSOLE_SIZE_MAIN - 1,
-                .flags  = IORESOURCE_MEM,
-        },
-        [1] = {
-            .name = "alog_radio_buffer",
-                .start  = ALOG_RAM_CONSOLE_PHYS_RADIO,
-                .end    = ALOG_RAM_CONSOLE_PHYS_RADIO + ALOG_RAM_CONSOLE_SIZE_RADIO - 1,
-                .flags  = IORESOURCE_MEM,
-        },
-        [2] = {
-        .name = "alog_events_buffer",
-                .start  = ALOG_RAM_CONSOLE_PHYS_EVENTS,
-                .end    = ALOG_RAM_CONSOLE_PHYS_EVENTS + ALOG_RAM_CONSOLE_SIZE_EVENTS - 1,
-                .flags  = IORESOURCE_MEM,
-        },
-        [3] = {
-		.name = "alog_system_buffer",
-                .start  = ALOG_RAM_CONSOLE_PHYS_SYSTEM,
-                .end    = ALOG_RAM_CONSOLE_PHYS_SYSTEM + ALOG_RAM_CONSOLE_SIZE_SYSTEM - 1,
-                .flags  = IORESOURCE_MEM,
-        },
-};
-
-static struct platform_device alog_ram_console_device = {
-        .name   = "alog_ram_console",
-        .id     = 0,
-        .num_resources  = ARRAY_SIZE(alog_ram_console_resources),
-        .resource       = alog_ram_console_resources,
-};
-#endif /* end of #ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG */
 #endif /* end of #ifdef CONFIG_ANDROID_RAM_CONSOLE */
 /* FIH-SW3-KERNEL-TH-add_last_alog-00+] */
 
@@ -1949,9 +1914,6 @@ static void __init msm7x2x_init(void)
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
 	platform_device_register(&ram_console_device);
-#ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG
-	platform_device_register(&alog_ram_console_device);
-#endif
 #endif
 	msm7x25a_kgsl_3d0_init();
 	msm8x25_kgsl_3d0_init();
