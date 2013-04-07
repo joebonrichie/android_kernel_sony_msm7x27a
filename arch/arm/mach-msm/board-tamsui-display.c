@@ -835,14 +835,13 @@ enum {
 
 static int msm_fb_get_lane_config(void)
 {
-	/* For MSM7627A SURF/FFA and QRD */
+#ifndef CONFIG_FIH_PROJECT_JLO
+	int rc = DSI_SINGLE_LANE;
+	pr_info("DSI_SINGLE_LANES\n");
+#else
 	int rc = DSI_TWO_LANES;
-	if (machine_is_msm7625a_surf() || machine_is_msm7625a_ffa()) {
-		rc = DSI_SINGLE_LANE;
-		pr_info("DSI_SINGLE_LANES\n");
-	} else {
-		pr_info("DSI_TWO_LANES\n");
-	}
+	pr_info("DSI_TWO_LANES\n");
+#endif
 	return rc;
 }
 /* FIH-SW-MM-VH-DISPLAY-JB00*[ */
