@@ -18,30 +18,5 @@
 #include <asm/mach-types.h>
 #include <mach/dbgcfgtool.h>
 
-#ifdef CONFIG_FEATURE_FIH_SW3_REMOVE_SERIAL_DYNAMICALLY
-extern int cached_read_fihdbg( unsigned char* fih_debug );
-
-unsigned int fih_read_uart_switch_from_nv(void)
-{
-    int ret = 0;
-    
-    char tempcfg[16] = {0};
-    
-    ret = cached_read_fihdbg(tempcfg);
-
-    if( ret < 0 )/* fail here */
-	{
-        /* if we fail, we don't open UART*/
-        ret = 0;
-    }
-    else
-    {
-    	ret = tempcfg[DEBUG_UART_GROUP] & (1 << (DEBUG_UARTMSG_CFG % GROUP_SIZE));
-    }
-
-	return ret;
-}
-#endif
-
 
 

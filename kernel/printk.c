@@ -1151,14 +1151,7 @@ int update_console_cmdline(char *name, int idx, char *name_new, int idx_new, cha
 	return -1;
 }
 
-/* FIH-SW3-KERNEL-TH-dynamically_disable_UART-00*[ */ 
-#ifdef CONFIG_FEATURE_FIH_SW3_BUILDTYPE_DEBUG
-/* FIH-SW3-KERNEL-TH-temp_enable_console_suspend-01* */ 
-int console_suspend_enabled = 0;
-#else
 int console_suspend_enabled = 1;
-#endif
-/* FIH-SW3-KERNEL-TH-dynamically_disable_UART-00*[ */ 
 
 EXPORT_SYMBOL(console_suspend_enabled);
 

@@ -112,22 +112,6 @@ if FIH_CONFIG_GROUP
             help
                 turn on the power on reason detection for battery driver
         # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+]
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+]
-
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+[
-
-        config FEATURE_FIH_SW3_BUILDTYPE_DEBUG
-            bool "enable debug mode for printk"
-            default n
-            help
-                if build debug, printk will not lost log when resume
-
-        config FEATURE_FIH_SW3_REMOVE_SERIAL_DYNAMICALLY
-            bool "turn off serial port dynamically"
-            default n
-            help
-                turn off serial port dynamically
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+]
 
         # FIH-SW1-PERIPHERAL-FG-SENSOR-00*[
         config FIH_SENSOR
@@ -431,22 +415,7 @@ if FIH_CONFIG_GROUP
             help
                 turn on the power on reason detection for battery driver
         # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+]  
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+]
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+[
 
-        config FEATURE_FIH_SW3_BUILDTYPE_DEBUG
-            bool "enable debug mode for printk"
-            default n
-            help
-                if build debug, printk will not lost log when resume
-
-        config FEATURE_FIH_SW3_REMOVE_SERIAL_DYNAMICALLY
-            bool "turn off serial port dynamically"
-            default n
-            help
-                turn off serial port dynamically
-
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+]
         # FIH-SW1-PERIPHERAL-FG-SENSOR-00*[
         config FIH_SENSOR
             bool "FIH Sensors"
@@ -762,22 +731,7 @@ if FIH_CONFIG_GROUP
             help
                 turn on the power on reason detection for battery driver
         # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+]  
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+]
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+[
 
-        config FEATURE_FIH_SW3_BUILDTYPE_DEBUG
-            bool "enable debug mode for printk"
-            default n
-            help
-                if build debug, printk will not lost log when resume
-
-        config FEATURE_FIH_SW3_REMOVE_SERIAL_DYNAMICALLY
-            bool "turn off serial port dynamically"
-            default n
-            help
-                turn off serial port dynamically
-
-        # FIH-SW3-KERNEL-EL-dynamically_disable_UART-00+]
         # FIH-SW1-PERIPHERAL-FG-SENSOR-00*[
         config FIH_SENSOR
             bool "FIH Sensors"
