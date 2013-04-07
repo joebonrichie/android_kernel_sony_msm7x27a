@@ -338,9 +338,6 @@ obj-y +=fih_proc_fs.o
 
 # FIH-SW3-KERNEL-TH-porting_dbgcfgtool-00+
 obj-y += dbgcfgtool.o
-# FIH-SW3-KERNEL-TH-add_last_alog-00+
-obj-$(CONFIG_FEATURE_FIH_SW3_LAST_ALOG) += alog_ram_console.o
-# MTD-SW3-KERNEL-MP-RPC_Read_NV-00+
 obj-y += rpc_nv.o
 
 obj-y += board-sisi-wifi.o

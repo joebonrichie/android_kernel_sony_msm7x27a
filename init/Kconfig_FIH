@@ -148,14 +148,6 @@ if FIH_CONFIG_GROUP
                 Provide more efficient sleep function.
         #FIH-KERNEL-SC-sleep-func-00+]
         
-        
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+[
-        config FEATURE_FIH_SW3_LAST_ALOG
-            bool "RAM console for last alog"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable RAM console for last alog
 
         # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+[
         config FIH_SW3_POWER_ON_REASON
@@ -520,13 +512,6 @@ if FIH_CONFIG_GROUP
         #FIH-SW3-KERNEL-VH-CHARGING-11*]
         
         
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+[
-        config FEATURE_FIH_SW3_LAST_ALOG
-            bool "RAM console for last alog"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable RAM console for last alog
         # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+[
         config FIH_SW3_POWER_ON_REASON
             bool "turn on the power on reason detection for battery driver"
@@ -920,14 +905,6 @@ if FIH_CONFIG_GROUP
         #FIH-SW3-KERNEL-VH-CHARGING-21*]
         #FIH-SW3-KERNEL-VH-CHARGING-11*]
         
-        
-        # FIH-SW3-KERNEL-EL-add_last_alog-00+[
-        config FEATURE_FIH_SW3_LAST_ALOG
-            bool "RAM console for last alog"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable RAM console for last alog
         # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+[
         config FIH_SW3_POWER_ON_REASON
             bool "turn on the power on reason detection for battery driver"

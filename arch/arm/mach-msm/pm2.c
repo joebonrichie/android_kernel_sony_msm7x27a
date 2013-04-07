@@ -64,11 +64,6 @@
 #include "spm.h"
 #include "sirc.h"
 #include "pm-boot.h"
-/* FIH-SW3-KERNEL-TH-add_last_alog-00+[ */
-#ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG
-#include "mach/alog_ram_console.h"
-#endif 
-/* FIH-SW3-KERNEL-TH-add_last_alog-00+] */
 
 /* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+[ */
 #ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
@@ -1951,12 +1946,6 @@ static void msm_pm_restart(char str, const char *cmd)
 	uint32_t smem_response = 0;
 
     printk(KERN_ERR "msm_pm_restart with reason %08x\n", restart_reason);
-
-	/* FIH-SW3-KERNEL-TH-add_last_alog-00+[ */
-#ifdef CONFIG_FEATURE_FIH_SW3_LAST_ALOG 
-	     alog_ram_console_sync_time(LOG_TYPE_ALL, SYNC_BEFORE);
-#endif  
-	/* FIH-SW3-KERNEL-TH-add_last_alog-00+] */
 
 	msm_rpcrouter_close();
 
