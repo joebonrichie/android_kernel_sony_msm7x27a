@@ -1775,7 +1775,6 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 		printk(KERN_ERR "[DISPLAY] %s: create dev_attr_display_battery failed\n",
 				__func__);
 	}
-#endif
 #ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 	ret = device_create_file(fbi->dev, &dev_attr_dim);
 	if (ret) {
@@ -1783,10 +1782,12 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 				__func__);
 	}
 #endif
-	ret = 0;
 #else
 	if (!load_565rle_image(INIT_IMAGE_FILE, bf_supported));
+#endif
+#endif
 	ret = 0;
+#ifdef CONFIG_FIH_PROJECT_NAN
 	if(logo_init == 0){
 		msm_fb_resume_sw_refresher(mfd);
 		mdp_set_dma_pan_info(fbi, NULL, TRUE);
@@ -2132,10 +2133,9 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 		LCM_flag = 0;
 	}
 	/*-- Tracy - 20121003 Modify for using --*/
-
 #endif
-	++mfd->panel_info.frame_count;
 
+	++mfd->panel_info.frame_count;
 	return 0;
 }
 
@@ -3717,9 +3717,11 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 	case MSMFB_VSYNC_CTRL:
 	case MSMFB_OVERLAY_VSYNC_CTRL:
 		down(&msm_fb_ioctl_ppp_sem);
+#ifdef CONFIG_FB_MSM_OVERLAY
 		if (mdp_rev >= MDP_REV_40)
 			ret = msmfb_overlay_vsync_ctrl(info, argp);
 		else
+#endif
 			ret = msmfb_vsync_ctrl(info, argp);
 		up(&msm_fb_ioctl_ppp_sem);
 		break;
