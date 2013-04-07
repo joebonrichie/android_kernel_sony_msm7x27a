@@ -35,13 +35,7 @@ enum {
 	DEBUG_PMS_WAKE_LOCK = 1U << 6,  //MTD-kernel-BH-PMSWakelockInfo-00+
 };
 
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_DUMP_WAKELOCK
-  static int debug_mask = DEBUG_EXIT_SUSPEND | DEBUG_WAKEUP | DEBUG_SUSPEND | DEBUG_POLLING_DUMP_WAKELOCK;
-#else
-  static int debug_mask = DEBUG_EXIT_SUSPEND | DEBUG_WAKEUP;
-#endif /* CONFIG_FIH_DUMP_WAKELOCK */
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
+static int debug_mask = DEBUG_EXIT_SUSPEND | DEBUG_WAKEUP;
 
 module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
 
@@ -56,12 +50,6 @@ module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
 /*FIH-SW3-KERNEL-JC-Porting-02+] */
 static DEFINE_SPINLOCK(list_lock);
 static LIST_HEAD(inactive_locks);
-//MTD-kernel-BH-PMSWakelockInfo-00+[
-#ifdef CONFIG_FIH_DUMP_WAKELOCK
-static DEFINE_SPINLOCK(pms_list_lock);
-static LIST_HEAD(pms_locks);
-#endif
-//MTD-kernel-BH-PMSWakelockInfo-00+]
 static struct list_head active_wake_locks[WAKE_LOCK_TYPE_COUNT];
 static int current_event_num;
 static int suspend_sys_sync_count;
@@ -70,11 +58,6 @@ static struct workqueue_struct *suspend_sys_sync_work_queue;
 static DECLARE_COMPLETION(suspend_sys_sync_comp);
 struct workqueue_struct *suspend_work_queue;
 struct wake_lock main_wake_lock;
-/*FIH-SW3-KERNEL-JC-Porting-01+[ */
-#ifdef CONFIG_FIH_DISABLE_SUSPEND
-struct wake_lock avoidsuspend;
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-01+] */
 suspend_state_t requested_suspend_state = PM_SUSPEND_MEM;
 static struct wake_lock unknown_wakeup;
 static struct wake_lock suspend_backoff_lock;
@@ -88,113 +71,6 @@ static unsigned suspend_short_count;
 static struct wake_lock deleted_wake_locks;
 static ktime_t last_sleep_time_update;
 static int wait_for_wakeup;
-
- //MTD-kernel-BH-PMSWakelockInfo-00+[
- #ifdef CONFIG_FIH_DUMP_WAKELOCK
- void add_pms_wakelock_info(char *pid, char *tag, char * cmdline) 
-{
-	unsigned long irqflags;
-	struct pms_wake_lock *lock;
-	int pid_len,tag_len,cmdline_len;
-
-	if (!*pid) {
-		pr_err("[PMSWL]add_pms_wakelock_info: pid is empty\n");
-		return;
-	}
-	if (!*cmdline) {
-		pr_err("[PMSWL]add_pms_wakelock_info: cmdline is empty\n");
-		return;
-	}
-	if (!*tag) {
-		pr_err("[PMSWL]add_pms_wakelock_info: tag is empty\n");
-		return;
-	}
-	
-	spin_lock_irqsave(&pms_list_lock, irqflags);	
-	list_for_each_entry(lock, &pms_locks, link) {
-		if (!strcmp(lock->tag,tag) && !strcmp(lock->pid,pid))
-		{
-			lock->acquire_time = ktime_get();
-			if (debug_mask & (DEBUG_PMS_WAKE_LOCK)) //MTD-kernel-BH-PMSWakelockInfo-01+
-				pr_info("[PMSWL]pms wakelock info is already exist: %s %s %s\n", pid, cmdline, tag); 
-			goto exit_add;
-		}
-	}
-
-	lock = kzalloc(sizeof(lock), GFP_ATOMIC);
-	if (!lock) {
-		pr_err("[PMSWL]no memory to allocate pms_lock size:%d\n",sizeof(lock));
-		goto exit_add;
-	}
-	pid_len=strlen(pid)+1;
-	lock->pid = kzalloc(pid_len, GFP_ATOMIC);
-	if (!lock->pid) {
-		pr_err("[PMSWL]no memory to allocate pms_lock->pid size:%d\n", sizeof(pid));
-		kfree(lock);
-		goto exit_add;
-	}
-	strncpy(lock->pid,pid,pid_len);
-	
-	cmdline_len=strlen(cmdline)+1;
-	lock->cmdline = kzalloc(cmdline_len, GFP_ATOMIC);
-	if (!lock->cmdline) {
-		pr_err("[PMSWL]no memory to allocate pms_lock->cmdline size:%d\n", sizeof(cmdline));
-		kfree(lock->pid);
-		kfree(lock);
-		goto exit_add;
-	}	
-	strncpy(lock->cmdline,cmdline,cmdline_len);
-
-	tag_len=strlen(tag)+1;
-	lock->tag = kzalloc(tag_len, GFP_ATOMIC);
-	if (!lock->tag) {
-		pr_err("[PMSWL]no memory to allocate pms_lock->tag size:%d\n", sizeof(tag));
-		kfree(lock->pid);
-		kfree(lock->cmdline);
-		kfree(lock);
-		goto exit_add;
-	}	
-	strncpy(lock->tag,tag,tag_len);
-
-	lock->acquire_time = ktime_get();
-	list_add(&lock->link,&pms_locks);
-	if (debug_mask & (DEBUG_PMS_WAKE_LOCK))	
-		pr_info("[PMSWL]add pms wakelock info: %s %s %s\n", pid, cmdline, tag);
-
-exit_add:	
-	spin_unlock_irqrestore(&pms_list_lock, irqflags);	
-}
- EXPORT_SYMBOL(add_pms_wakelock_info);
-
- void remove_pms_wakelock_info(char *pid, char * tag)
-{
-	unsigned long irqflags;
-	
-	struct pms_wake_lock *lock;
-	
-	spin_lock_irqsave(&pms_list_lock, irqflags);
-	list_for_each_entry(lock, &pms_locks, link) {
-		if (!strcmp(lock->tag,tag) && !strcmp(lock->pid,pid))
-		{
-			list_del(&lock->link);
-			if (debug_mask & (DEBUG_PMS_WAKE_LOCK))
-				pr_info("[PMSWL]del pms wakelock info: %s %s %s\n", pid, lock->cmdline, tag);
-			kfree(lock->pid);
-			kfree(lock->cmdline);
-			kfree(lock->tag);
-			kfree(lock);
-			goto remove_done;
-		}
-	}
-	if (debug_mask & (DEBUG_PMS_WAKE_LOCK)) //MTD-kernel-BH-PMSWakelockInfo-01+
-		pr_info("[PMSWL]fail to remove pms wakelock info: %s %s\n", pid, tag);
-
-remove_done:	
-	spin_unlock_irqrestore(&pms_list_lock, irqflags);
-}
- #endif
-  EXPORT_SYMBOL(remove_pms_wakelock_info);
- //MTD-kernel-BH-PMSWakelockInfo-00+]
 
 int get_expired_time(struct wake_lock *lock, ktime_t *expire_time)
 {
@@ -343,24 +219,6 @@ static void expire_wake_lock(struct wake_lock *lock)
 		pr_info("expired wake lock %s\n", lock->name);
 }
 
-//MTD-kernel-BH-PMSWakelockInfo-00+[
-#ifdef CONFIG_FIH_DUMP_WAKELOCK
- static void print_active_pms_locks(void)
-{
-	struct pms_wake_lock *lock;
-
-	list_for_each_entry(lock, &pms_locks, link) {
-		ktime_t now = ktime_get();
-		ktime_t active_time = ktime_sub(now, lock->acquire_time);
-		s64 ns = ktime_to_ns(active_time);
-		s64 s = ns;			
-		ns = do_div(s, NSEC_PER_SEC);
-		pr_info("[PMSWL]active PMS wake lock: %s %s %s %lld.%lld secs\n", lock->pid, lock->cmdline, lock->tag, s, ns);
-	}
-}
-#endif /* CONFIG_FIH_DUMP_WAKELOCK */
-//MTD-kernel-BH-PMSWakelockInfo-00+]
-
 /* Caller must acquire the list_lock spinlock */
 static void print_active_locks(int type)
 {
@@ -377,28 +235,11 @@ static void print_active_locks(int type)
 			else if (print_expired)
 				pr_info("wake lock[%d] %s, expired\n", type, lock->name);
 		} else {
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_DUMP_WAKELOCK
-			ktime_t now = ktime_get();
-			ktime_t active_time = ktime_sub(now, lock->stat.last_time);
-			s64 ns = ktime_to_ns(active_time);
-			s64 s = ns;			
-			ns = do_div(s, NSEC_PER_SEC);
-			pr_info("[PM]active wake lock[%d] %s %lld.%lld secs\n", type, lock->name, s, ns);
-#else
 			pr_info("active wake lock[%d] %s\n", type, lock->name);
-#endif /* CONFIG_FIH_DUMP_WAKELOCK */
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 			if (!(debug_mask & DEBUG_EXPIRE))
 				print_expired = false;
 		}
 	}
-	//MTD-kernel-BH-PMSWakelockInfo-00+[
-	#ifdef CONFIG_FIH_DUMP_WAKELOCK
-	if (type == WAKE_LOCK_SUSPEND)
-		print_active_pms_locks();
-	#endif
-	//MTD-kernel-BH-PMSWakelockInfo-00+]
 }
 
 static long has_wake_lock_locked(int type)
@@ -446,27 +287,6 @@ long has_wake_lock(int type)
 	spin_unlock_irqrestore(&list_lock, irqflags);
 	return ret;
 }
-
-#ifdef CONFIG_FIH_DUMP_WAKELOCK
-static void dump_wakelocks(unsigned long data);
-static DEFINE_TIMER(dump_wakelock_timer, dump_wakelocks, 0, 0);
-
-static void dump_wakelocks(unsigned long data)
-{
-	unsigned long irqflags;
-
-	if (debug_mask & DEBUG_POLLING_DUMP_WAKELOCK) {
-		pr_info("[PM]--- dump_wakelocks ---\n");
-
-		spin_lock_irqsave(&list_lock, irqflags);
-			print_active_locks(WAKE_LOCK_SUSPEND);
-		spin_unlock_irqrestore(&list_lock, irqflags);
-	}
-
-	mod_timer(&dump_wakelock_timer, jiffies + POLLING_DUMP_WAKELOCK_SECS*HZ);
-}
-#endif /* CONFIG_FIH_DUMP_WAKELOCK */
-/*FIH-SW3-KERNEL-JC-Porting-01+] */
 
 static void suspend_sys_sync(struct work_struct *work)
 {
@@ -549,13 +369,6 @@ static void suspend(struct work_struct *work)
 		if (debug_mask & DEBUG_SUSPEND)
 			pr_info("suspend: abort suspend\n");
 			
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_DUMP_WAKELOCK
-		pr_info("[PM]requested_suspend_state = %d\n", requested_suspend_state);
-		if (requested_suspend_state != PM_SUSPEND_ON)
-			mod_timer(&dump_wakelock_timer, jiffies + POLLING_DUMP_WAKELOCK_SECS*HZ);
-#endif /* CONFIG_FIH_DUMP_WAKELOCK */
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 		return;
 	}
 
@@ -564,12 +377,6 @@ static void suspend(struct work_struct *work)
 	if (debug_mask & DEBUG_SUSPEND)
 		pr_info("suspend: enter suspend\n");
 	getnstimeofday(&ts_entry);
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_DUMP_WAKELOCK
-	if (del_timer(&dump_wakelock_timer))
-		pr_info("suspend: del dump_wakelock_timer\n");
-#endif /* CONFIG_FIH_DUMP_WAKELOCK */
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 	ret = pm_suspend(requested_suspend_state);
 	getnstimeofday(&ts_exit);
 
@@ -746,14 +553,6 @@ static void wake_lock_internal(
 	}
 	if (type == WAKE_LOCK_SUSPEND) {
 		current_event_num++;
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_DUMP_WAKELOCK
-		if (lock == &main_wake_lock) {
-			if (del_timer(&dump_wakelock_timer))
-				pr_info("[PM]main_wake_lock: del dump_wakelock_timer\n");
-		}
-#endif /* CONFIG_FIH_DUMP_WAKELOCK */
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 #ifdef CONFIG_WAKELOCK_STAT
 		if (lock == &main_wake_lock)
 			update_sleep_wait_stats_locked(1);
@@ -826,14 +625,6 @@ void wake_unlock(struct wake_lock *lock)
 			if (debug_mask & DEBUG_SUSPEND)
 				print_active_locks(WAKE_LOCK_SUSPEND);
 			
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_DUMP_WAKELOCK
-			if (has_lock){
-				pr_info("[PM]but still have lock.\n");
-				mod_timer(&dump_wakelock_timer, jiffies + POLLING_DUMP_WAKELOCK_SECS*HZ);
-			}
-#endif /* CONFIG_FIH_DUMP_WAKELOCK */
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 #ifdef CONFIG_WAKELOCK_STAT
 			update_sleep_wait_stats_locked(0);
 #endif
@@ -879,13 +670,6 @@ static int __init wakelocks_init(void)
 	wake_lock_init(&unknown_wakeup, WAKE_LOCK_SUSPEND, "unknown_wakeups");
 	wake_lock_init(&suspend_backoff_lock, WAKE_LOCK_SUSPEND,
 		       "suspend_backoff");
-/*FIH-SW3-KERNEL-JC-Porting-01+[ */
-#ifdef CONFIG_FIH_DISABLE_SUSPEND
-    pr_err("avoidsuspend: avoid suspend\n");
-	wake_lock_init(&avoidsuspend, WAKE_LOCK_SUSPEND, "avoidsuspend");
-	wake_lock(&avoidsuspend); 
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-01+] */
 
 	ret = platform_device_register(&power_device);
 	if (ret) {
@@ -927,11 +711,6 @@ err_platform_device_register:
 	wake_lock_destroy(&suspend_backoff_lock);
 	wake_lock_destroy(&unknown_wakeup);
 	wake_lock_destroy(&main_wake_lock);
-    /*FIH-SW3-KERNEL-JC-Porting-01+[ */
-	#ifdef CONFIG_FIH_DISABLE_SUSPEND
-    wake_lock_destroy(&avoidsuspend);
-	#endif
-	/*FIH-SW3-KERNEL-JC-Porting-01+] */
 #ifdef CONFIG_WAKELOCK_STAT
 	wake_lock_destroy(&deleted_wake_locks);
 #endif
@@ -950,11 +729,6 @@ static void  __exit wakelocks_exit(void)
 	wake_lock_destroy(&suspend_backoff_lock);
 	wake_lock_destroy(&unknown_wakeup);
 	wake_lock_destroy(&main_wake_lock);
-	/*FIH-SW3-KERNEL-JC-Porting-01+[ */
-	#ifdef CONFIG_FIH_DISABLE_SUSPEND
-    wake_lock_destroy(&avoidsuspend);
-	#endif
-	/*FIH-SW3-KERNEL-JC-Porting-01+] */
 #ifdef CONFIG_WAKELOCK_STAT
 	wake_lock_destroy(&deleted_wake_locks);
 #endif

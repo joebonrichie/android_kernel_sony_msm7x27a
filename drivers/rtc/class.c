@@ -56,12 +56,6 @@ static int rtc_suspend(struct device *dev, pm_message_t mesg)
 	struct rtc_time		tm;
 	struct timespec		delta, delta_delta;
 
-/*FIH-SW3-KERNEL-JC-Porting-02+]*/
-#ifdef CONFIG_FIH_SUSPEND_RESUME_LOG
-    printk(KERN_INFO "[PM]rtc_suspend(): %s, dev_name = %s\n", rtc->name, dev_name(&rtc->dev));
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-02+]*/
-
 /* FIH-SW3-KERNEL-TH-add_last_alog-00+[ */
 #ifdef CONFIG_FIH_LAST_ALOG
 	alog_ram_console_sync_time(LOG_TYPE_ALL, SYNC_BEFORE);

@@ -549,11 +549,6 @@ static int device_resume(struct device *dev, pm_message_t state, bool async)
 		} else if (dev->class->resume) {
 			pm_dev_dbg(dev, state, "legacy class ");
 
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_SUSPEND_RESUME_LOG
-            print_symbol("[PM]class resume: %s\n", (unsigned long)dev->class->resume);
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 			error = legacy_resume(dev, dev->class->resume);
 			goto End;
 		}
@@ -922,11 +917,6 @@ static int __device_suspend(struct device *dev, pm_message_t state, bool async)
 		} else if (dev->class->suspend) {
 			pm_dev_dbg(dev, state, "legacy class ");
 
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_SUSPEND_RESUME_LOG
-            print_symbol("[PM]class suspend: %s\n", (unsigned long)dev->class->suspend);
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 			error = legacy_suspend(dev, state, dev->class->suspend);
 			goto End;
 		}

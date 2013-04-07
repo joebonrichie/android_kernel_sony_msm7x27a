@@ -21,14 +21,6 @@
 #include <linux/wakelock.h>
 #include <linux/workqueue.h>
 
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_SUSPEND_RESUME_LOG
-#include <linux/syscalls.h> /* sys_sync */
-#include <linux/ktime.h>
-#include <linux/hrtimer.h>
-#include <linux/kallsyms.h>
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 #include "power.h"
 
 enum {
@@ -37,13 +29,7 @@ enum {
 	DEBUG_VERBOSE = 1U << 3,
 };
 
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_MODEM_SUSPEND_LOG
-  static int debug_mask = DEBUG_USER_STATE | DEBUG_SUSPEND;
-#else
   static int debug_mask = DEBUG_USER_STATE;
-#endif /* CONFIG_FIH_MODEM_SUSPEND_LOG */
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 
 //MTD-kernel-BH-PowerKeySuspendLock-00+[
 atomic_t gKeySuspendLock= ATOMIC_INIT(0); 
@@ -99,13 +85,6 @@ static void early_suspend(struct work_struct *work)
 	unsigned long irqflags;
 	int abort = 0;
 
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_SUSPEND_RESUME_LOG
-    ktime_t calltime, delta, rettime;
-    unsigned long long duration;
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
-
 	atomic_set(&gKeySuspendLock,1); //MTD-kernel-BH-PowerKeySuspendLock-00+
 
 	mutex_lock(&early_suspend_lock);
@@ -126,45 +105,18 @@ static void early_suspend(struct work_struct *work)
 	if (debug_mask & DEBUG_SUSPEND)
 		pr_info("early_suspend: call handlers\n");
 	list_for_each_entry(pos, &early_suspend_handlers, link) {
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_SUSPEND_RESUME_LOG
-		if (pos->suspend != NULL) {
-            calltime = ktime_get();
-            pr_info("[PM]early suspend function: %pf\n", pos->suspend);
-
-			pos->suspend(pos);
-
-            rettime = ktime_get();
-            delta = ktime_sub(rettime, calltime);
-            duration = (unsigned long long) ktime_to_ns(delta) >> 10;
-            pr_info("[PM]takes %Ld usecs\n", duration);
-        }
-#else
 		if (pos->suspend != NULL) {
 			if (debug_mask & DEBUG_VERBOSE)
 				pr_info("early_suspend: calling %pf\n", pos->suspend);
 			pos->suspend(pos);
 		}
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 	}
 	mutex_unlock(&early_suspend_lock);
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
 	if (debug_mask & DEBUG_SUSPEND)
 		pr_info("[PM]early_suspend: sync\n");
 if (state & SUSPEND_REQUESTED) {
-#ifdef CONFIG_FIH_SUSPEND_RESUME_LOG
-	calltime = ktime_get();
 	suspend_sys_sync_queue();
-	rettime = ktime_get();
-	delta = ktime_sub(rettime, calltime);
-	duration = (unsigned long long) ktime_to_ns(delta) >> 10;
-	pr_info("[PM]early suspend sync: takes %Ld usecs\n", duration);
-#else
-	suspend_sys_sync_queue();
-#endif
 	}
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 abort:
 	spin_lock_irqsave(&state_lock, irqflags);
 	if (state == SUSPEND_REQUESTED_AND_SUSPENDED)
@@ -181,12 +133,6 @@ static void late_resume(struct work_struct *work)
 	struct early_suspend *pos;
 	unsigned long irqflags;
 	int abort = 0;
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_SUSPEND_RESUME_LOG
-    ktime_t calltime, delta, rettime;
-    unsigned long long duration;
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 
 	atomic_set(&gKeySuspendLock,1); //MTD-kernel-BH-PowerKeySuspendLock-00+
 
@@ -206,28 +152,12 @@ static void late_resume(struct work_struct *work)
 	if (debug_mask & DEBUG_SUSPEND)
 		pr_info("late_resume: call handlers\n");
 	list_for_each_entry_reverse(pos, &early_suspend_handlers, link) {
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_SUSPEND_RESUME_LOG
-		if (pos->resume != NULL) {
-            calltime = ktime_get();
-            pr_info("[PM]late_resume function: %pf\n", pos->resume);
-
-			pos->resume(pos);
-
-            rettime = ktime_get();
-            delta = ktime_sub(rettime, calltime);
-            duration = (unsigned long long) ktime_to_ns(delta) >> 10;
-            pr_info("[PM]takes %Ld usecs\n", duration);
-        }
-#else
 		if (pos->resume != NULL) {
 			if (debug_mask & DEBUG_VERBOSE)
 				pr_info("late_resume: calling %pf\n", pos->resume);
 
 			pos->resume(pos);
 		}
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-02+] */	
 	}
 	if (debug_mask & DEBUG_SUSPEND)
 		pr_info("late_resume: done\n");
@@ -267,15 +197,6 @@ void request_suspend_state(suspend_state_t new_state)
 		wake_lock(&main_wake_lock);
 		queue_work(suspend_work_queue, &late_resume_work);
 	}
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_MODEM_SUSPEND_LOG
-	else
-	{
-		pr_info("[PM]request_suspend_state failed: old_sleep = %d, new_state = %d\n",
-			old_sleep, new_state);
-	}
-#endif /* CONFIG_FIH_MODEM_SUSPEND_LOG */
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
 	requested_suspend_state = new_state;
 	spin_unlock_irqrestore(&state_lock, irqflags);
 }

@@ -54,31 +54,14 @@ int syscore_suspend(void)
 
 	/* Return error code if there are any wakeup interrupts pending. */
 	ret = check_wakeup_irqs();
-    /*FIH-SW3-KERNEL-JC-PM_Debug-02+[ */
-    #ifdef CONFIG_FIH_SUSPEND_RESUME_LOG
 	if (ret)
-    {
-        pr_info("[PM]check_wakeup_irqs retune 1. \n");
-		return ret;
-    }
-    else
-        pr_info("[PM]check_wakeup_irqs retune 0. \n");
-    #else
-    if (ret)
-        return ret;
-    #endif
-    /*FIH-SW3-KERNEL-JC-PM_Debug-02+] */
-    
+	    return ret;
 	WARN_ONCE(!irqs_disabled(),
 		"Interrupts enabled before system core suspend.\n");
 
 	list_for_each_entry_reverse(ops, &syscore_ops_list, node)
 		if (ops->suspend) {
-        /*FIH-SW3-KERNEL-JC-Porting-02+[ */
-        #ifndef CONFIG_FIH_SUSPEND_RESUME_LOG
 			if (initcall_debug)
-        #endif
-        /*FIH-SW3-KERNEL-JC-Porting-02+] */
 				pr_info("PM: Calling %pF\n", ops->suspend);
 			ret = ops->suspend();
 			if (ret)
@@ -114,11 +97,7 @@ void syscore_resume(void)
 
 	list_for_each_entry(ops, &syscore_ops_list, node)
 		if (ops->resume) {
-        /*FIH-SW3-KERNEL-JC-Porting-02+[ */
-        #ifndef CONFIG_FIH_SUSPEND_RESUME_LOG
 			if (initcall_debug)
-        #endif
-        /*FIH-SW3-KERNEL-JC-Porting-02+] */
 				pr_info("PM: Calling %pF\n", ops->resume);
 			ops->resume();
 			WARN_ONCE(!irqs_disabled(),
@@ -139,11 +118,7 @@ void syscore_shutdown(void)
 
 	list_for_each_entry_reverse(ops, &syscore_ops_list, node)
 		if (ops->shutdown) {
-        /*FIH-SW3-KERNEL-JC-Porting-02+[ */
-        #ifndef CONFIG_FIH_SUSPEND_RESUME_LOG
 			if (initcall_debug)
-        #endif
-        /*FIH-SW3-KERNEL-JC-Porting-02+] */
 				pr_info("PM: Calling %pF\n", ops->shutdown);
 			ops->shutdown();
 		}

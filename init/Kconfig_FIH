@@ -179,54 +179,6 @@ if FIH_CONFIG_GROUP
             help
                 Enable camera zoom in/out when recording.  
         # /*SW2D2-MM-MC-Camera-EnableZoomWhileVideoRecording-01+{ */
-    
-        # /*FIH-SW3-KERNEL-JC-Porting-01+[ */
-        config FIH_SUSPEND_RESUME_LOG
-            bool "FIH LOG about SUSPEND/RESUME"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable suspend and resume log support
-        
-        config FIH_MODEM_SUSPEND_LOG
-            bool "FIH MODEM SUSPEND LOG"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable to show the suspend log at modem of last suspend event.
-
-        config FIH_DUMP_WAKELOCK
-            bool "FIH DUMP WAKELOCK"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable to dump wakelock if it active.  
-        
-        config FIH_DISABLE_SUSPEND
-            bool "FIH DISABLE SUSPEND"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Disable suspend by wakelock.           
-        # /*FIH-SW3-KERNEL-JC-Porting-01+] */ 
-
-        # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+[
-        config FIH_MODEM_CRASH_LOG
-            bool "FIH MODEM CRASH LOG"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable modem crash log if it active. 
-        # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+]
-
-        # FIH-SW3-KERNEL-PK-INPUT_SAMPLING_DOWN_FACTOR-00+[
-        config FIH_INCREASE_CPU_FREQ_WHEN_INPUT_EVENT
-            bool "FIH INCREASE CPU FREQ WHEN INPUT EVENT"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable this feauture to adjust cpufreq settings.
-        # FIH-SW3-KERNEL-PK-INPUT_SAMPLING_DOWN_FACTOR-00+]
 
         # MTD-Conn-JC-BTSleep-00+[
         config BROADCOM_BCM4330_BTFM
@@ -507,54 +459,6 @@ if FIH_CONFIG_GROUP
             default y
             help
                 Enable camera scene mode setting.
-    
-        # /*FIH-SW3-KERNEL-JC-Porting-01+[ */
-        config FIH_SUSPEND_RESUME_LOG
-            bool "FIH LOG about SUSPEND/RESUME"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable suspend and resume log support
-        
-        config FIH_MODEM_SUSPEND_LOG
-            bool "FIH MODEM SUSPEND LOG"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable to show the suspend log at modem of last suspend event.
-
-        config FIH_DUMP_WAKELOCK
-            bool "FIH DUMP WAKELOCK"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable to dump wakelock if it active.  
-        
-        config FIH_DISABLE_SUSPEND
-            bool "FIH DISABLE SUSPEND"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Disable suspend by wakelock.
-        # /*FIH-SW3-KERNEL-JC-Porting-01+] */ 
-
-        # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+[
-        config FIH_MODEM_CRASH_LOG
-            bool "FIH MODEM CRASH LOG"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable modem crash log if it active. 
-        # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+]
-
-        # FIH-SW3-KERNEL-PK-INPUT_SAMPLING_DOWN_FACTOR-00+[
-        config FIH_INCREASE_CPU_FREQ_WHEN_INPUT_EVENT
-            bool "FIH INCREASE CPU FREQ WHEN INPUT EVENT"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable this feauture to adjust cpufreq settings.
-        # FIH-SW3-KERNEL-PK-INPUT_SAMPLING_DOWN_FACTOR-00+]
 
         # MTD-Conn-JC-BTSleep-00+[
         config BROADCOM_BCM4330_BTFM
@@ -823,54 +727,6 @@ if FIH_CONFIG_GROUP
             default y
             help
                 Enable camera scene mode setting.
-    
-        # /*FIH-SW3-KERNEL-JC-Porting-01+[ */
-        config FIH_SUSPEND_RESUME_LOG
-            bool "FIH LOG about SUSPEND/RESUME"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable suspend and resume log support
-        
-        config FIH_MODEM_SUSPEND_LOG
-            bool "FIH MODEM SUSPEND LOG"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable to show the suspend log at modem of last suspend event.
-
-        config FIH_DUMP_WAKELOCK
-            bool "FIH DUMP WAKELOCK"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable to dump wakelock if it active.  
-        
-        config FIH_DISABLE_SUSPEND
-            bool "FIH DISABLE SUSPEND"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Disable suspend by wakelock.
-        # /*FIH-SW3-KERNEL-JC-Porting-01+] */ 
-
-        # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+[
-        config FIH_MODEM_CRASH_LOG
-            bool "FIH MODEM CRASH LOG"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable modem crash log if it active. 
-        # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+]
-
-        # FIH-SW3-KERNEL-PK-INPUT_SAMPLING_DOWN_FACTOR-00+[
-        config FIH_INCREASE_CPU_FREQ_WHEN_INPUT_EVENT
-            bool "FIH INCREASE CPU FREQ WHEN INPUT EVENT"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable this feauture to adjust cpufreq settings.
-        # FIH-SW3-KERNEL-PK-INPUT_SAMPLING_DOWN_FACTOR-00+]
 
         # MTD-Conn-JC-BTSleep-00+[
         config BROADCOM_BCM4330_BTFM

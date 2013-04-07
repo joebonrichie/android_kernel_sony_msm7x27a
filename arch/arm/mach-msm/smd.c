@@ -44,14 +44,6 @@
 #include "proc_comm.h"
 #include "modem_notifier.h"
 
-
-/*FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_MODEM_SUSPEND_LOG
-  #include "clock.h"
-  #include "../../../include/linux/bitops.h"
-#endif
-/*FIH-SW3-KERNEL-JC-Porting-02+] */
-
 #if defined(CONFIG_ARCH_QSD8X50) || defined(CONFIG_ARCH_MSM8X60) \
 	|| defined(CONFIG_ARCH_MSM8960) || defined(CONFIG_ARCH_FSM9XXX) \
 	|| defined(CONFIG_ARCH_MSM9615)	|| defined(CONFIG_ARCH_APQ8064)
@@ -366,45 +358,6 @@ static DECLARE_WORK(smsm_cb_work, notify_smsm_cb_clients_worker);
 static DEFINE_MUTEX(smsm_lock);
 static struct smsm_state_info *smsm_states;
 static int spinlocks_initialized;
-
-/* FIH-SW3-KERNEL-JC-Porting-02+[ */
-#ifdef CONFIG_FIH_MODEM_SUSPEND_LOG
-void show_smem_sleep_info (void)
-{
-	static struct smem_oem_info *gsmem_oem_info = NULL;
-
-	if (gsmem_oem_info==NULL)
-	{
-		unsigned int bsize;
-		gsmem_oem_info = (struct smem_oem_info *)smem_get_entry(SMEM_ID_VENDOR0, &bsize);
-		if (gsmem_oem_info==NULL)
-		{
-			printk(KERN_EMERG "[PM] Cannot get smem sleep info !!!\n");
-		}
-	}
-	if (gsmem_oem_info!=NULL)
-	{
-        printk(KERN_EMERG "[PM]NMPM:0x%08X, OKTS:%08X, %08X, AR:%08x, PC:%u, MPM:%u, %u, MAOINT:%08X\n", 
-                            gsmem_oem_info->not_mpm_reason, 
-                            gsmem_oem_info->curr_not_okts_mask1,
-                            gsmem_oem_info->curr_not_okts_mask0,
-                            gsmem_oem_info->acquired_resources,
-                            gsmem_oem_info->powercollapse_time>>5,
-                            gsmem_oem_info->tcxo_off_time>>5,
-                            gsmem_oem_info->tcxo_off_count,
-                            gsmem_oem_info->mao_int_pendding);
-        if(gsmem_oem_info->curr_not_okts_mask0 & 0x01) /*clkrgm*/
-        {   
-            printk(KERN_EMERG "[PM]CLK:%08X, %08X, %08X, %08X\n",
-                            gsmem_oem_info->against_clock[3], gsmem_oem_info->against_clock[2], 
-                            gsmem_oem_info->against_clock[1], gsmem_oem_info->against_clock[0]);
-            memset(gsmem_oem_info->against_clock,0,sizeof(gsmem_oem_info->against_clock));
-        }
-	}
-}
-EXPORT_SYMBOL(show_smem_sleep_info);
-#endif /* CONFIG_FIH_MODEM_SUSPEND_LOG */
-/* FIH-SW3-KERNEL-JC-Porting-02+] */
 
 static inline void smd_write_intr(unsigned int val,
 				const void __iomem *addr)
