@@ -353,6 +353,50 @@ static struct msm_fb_platform_data *msm_fb_pdata;
 unsigned char hdmi_prim_display;
 unsigned char hdmi_prim_resolution;
 
+#if defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
+enum {
+	LCM_ID_DA_MES_CMI_DP = 0x0A,
+	LCM_ID_DA_MES_AUO_0B = 0x0B,
+	LCM_ID_DA_MES_AUO_0D = 0x0D,
+	LCM_ID_DA_MES_CMI_TP = 0x0C,
+	LCM_ID_DA_JLO_AUO = 0x42,
+	LCM_ID_DA_JLO_CMI = 0x43,
+	LCM_ID_DA_TAP_CMI = 0x54,
+};
+
+int msm_fb_check_lcm_healthy(struct msm_fb_data_type *mfd, struct fb_info *fbi)
+{
+	int retVal = 0;
+
+	int duration = 0;
+	struct timespec cur_time = {0, 0};
+	static struct timespec pre_time = {0, 0};
+
+	struct msm_fb_panel_data *pdata =
+		(struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
+
+	if((mfd->panel_info.lcm_model == (__u32)LCM_ID_DA_MES_AUO_0B) ||
+		(mfd->panel_info.lcm_model == (__u32)LCM_ID_DA_MES_AUO_0D))
+	{
+		cur_time = current_kernel_time();
+		duration = cur_time.tv_sec - pre_time.tv_sec;
+
+		if (duration < 2)
+			return 0;
+		else
+			pre_time = cur_time;
+
+		down(&mfd->sem);
+		if(pdata->get_healthy != NULL) {
+			retVal = pdata->get_healthy(mfd);
+		}
+		up(&mfd->sem);
+	}
+
+	return retVal;
+}
+#endif
+
 int msm_fb_detect_client(const char *name)
 {
 	int ret = 0;
@@ -735,6 +779,9 @@ static int msm_fb_resume_sub(struct msm_fb_data_type *mfd)
 {
 	int ret = 0;
 	struct msm_fb_panel_data *pdata = NULL;
+#ifdef CONFIG_FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
+	int retry = 0;
+#endif
 
 	if ((!mfd) || (mfd->key != MFD_KEY))
 		return 0;
@@ -753,8 +800,20 @@ static int msm_fb_resume_sub(struct msm_fb_data_type *mfd)
 		ret =
 		     msm_fb_blank_sub(FB_BLANK_UNBLANK, mfd->fbi,
 				      mfd->op_enable);
+#ifdef CONFIG_FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
+		while ((retry < 5) && (ret != 0)) {
+			printk(KERN_ERR "msm_fb_open: can't turn on display! retry = %d\n", retry);
+
+			mfd->panel_power_on = TRUE;
+			msm_fb_blank_sub(FB_BLANK_POWERDOWN, mfd->fbi, mfd->op_enable);
+			mdelay(100);
+			ret = msm_fb_blank_sub(FB_BLANK_UNBLANK, mfd->fbi, mfd->op_enable);
+			retry++;
+		}
+#else
 		if (ret)
 			MSM_FB_INFO("msm_fb_resume: can't turn on display!\n");
+#endif
 	}
 
 #ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
@@ -1939,6 +1998,9 @@ static int msm_fb_open(struct fb_info *info, int user)
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
 	int result;
+#ifdef CONFIG_FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
+	int retry = 0;
+#endif
 
 	result = pm_runtime_get_sync(info->dev);
 
@@ -1959,10 +2021,23 @@ static int msm_fb_open(struct fb_info *info, int user)
 			pr_debug("%s:%d no mdp_set_dma_pan_info %d\n",
 				__func__, __LINE__, info->node);
 
-		if (msm_fb_blank_sub(FB_BLANK_UNBLANK, info, mfd->op_enable)) {
+		result = msm_fb_blank_sub(FB_BLANK_UNBLANK, info, mfd->op_enable);
+#ifdef CONFIG_FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
+		while ((retry < 5) && (result != 0)) {
+			printk(KERN_ERR "msm_fb_open: can't turn on display! retry = %d\n", retry);
+
+			mfd->panel_power_on = TRUE;
+			msm_fb_blank_sub(FB_BLANK_POWERDOWN, info, mfd->op_enable);
+			mdelay(100);
+			result = msm_fb_blank_sub(FB_BLANK_UNBLANK, info, mfd->op_enable);
+			retry++;
+		}
+#else
+		if (result != 0) {
 			printk(KERN_ERR "msm_fb_open: can't turn on display!\n");
 			return -1;
 		}
+#endif
 	}
 
 	mfd->ref_cnt++;
@@ -2003,7 +2078,7 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 	struct mdp_dirty_region dirty;
 	struct mdp_dirty_region *dirtyPtr = NULL;
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
-#ifndef CONFIG_FIH_PROJECT_NAN
+#if !defined(CONFIG_FIH_PROJECT_NAN) || defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
 	struct msm_fb_panel_data *pdata = NULL;
 #endif
 	/*
@@ -2133,6 +2208,53 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 		LCM_flag = 0;
 	}
 	/*-- Tracy - 20121003 Modify for using --*/
+#endif
+
+#if defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
+	if (mfd->bl_level > 0){
+		if (msm_fb_check_lcm_healthy(mfd, info) < 0) {
+			printk(KERN_ERR "[DISPLAY] %s, panel crash detected at pan display, reset panel\n", __func__);
+			msm_fb_blank_sub(FB_BLANK_POWERDOWN, info, mfd->op_enable);
+			mdelay(5);
+			msm_fb_blank_sub(FB_BLANK_UNBLANK, info, mfd->op_enable);
+			mdelay(50);
+
+			down(&msm_fb_pan_sem);
+			mdp_set_dma_pan_info(info, dirtyPtr,
+				(var->activate == FB_ACTIVATE_VBL));
+			mdp_dma_pan_update(info);
+			up(&msm_fb_pan_sem);
+
+			mdelay(50);
+			pdata = (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
+			pdata->set_backlight(mfd);
+			mdelay(50);
+			down(&msm_fb_pan_sem);
+			mdp_set_dma_pan_info(info, dirtyPtr,
+				(var->activate == FB_ACTIVATE_VBL));
+			mdp_dma_pan_update(info);
+			up(&msm_fb_pan_sem);
+			mdelay(50);
+			pdata->set_backlight(mfd);
+			mdelay(50);
+			down(&msm_fb_pan_sem);
+			mdp_set_dma_pan_info(info, dirtyPtr,
+				(var->activate == FB_ACTIVATE_VBL));
+			mdp_dma_pan_update(info);
+			up(&msm_fb_pan_sem);
+			mdelay(50);
+			pdata->set_backlight(mfd);
+			mdelay(50);
+
+			down(&msm_fb_pan_sem);
+			mdp_set_dma_pan_info(info, dirtyPtr,
+				(var->activate == FB_ACTIVATE_VBL));
+			mdp_dma_pan_update(info);
+			up(&msm_fb_pan_sem);
+			mdelay(50);
+			pdata->set_backlight(mfd);
+		}
+	}
 #endif
 
 	++mfd->panel_info.frame_count;

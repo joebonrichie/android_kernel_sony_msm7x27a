@@ -204,6 +204,9 @@ struct msm_fb_panel_data {
 	int (*power_ctrl) (boolean enable);
 	struct platform_device *next;
 	int (*clk_func) (int enable);
+#ifdef CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK
+	int (*get_healthy) (struct msm_fb_data_type *);
+#endif
 };
 
 /*===========================================================================
