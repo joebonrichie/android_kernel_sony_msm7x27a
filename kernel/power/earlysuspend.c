@@ -31,16 +31,6 @@
 /*FIH-SW3-KERNEL-JC-Porting-02+] */
 #include "power.h"
 
-
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+[*/
-#ifdef CONFIG_FIH_SUSPEND_HANG_TIMER
-#include <linux/timer.h>
-extern struct timer_list suspend_hang_timer;
-extern pid_t pid_suspend;
-extern int suspend_dump_counter;
-#endif
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+]*/
-
 enum {
 	DEBUG_USER_STATE = 1U << 0,
 	DEBUG_SUSPEND = 1U << 2,
@@ -116,16 +106,6 @@ static void early_suspend(struct work_struct *work)
 #endif
 /*FIH-SW3-KERNEL-JC-Porting-02+] */
 
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+[*/
-#ifdef CONFIG_FIH_SUSPEND_HANG_TIMER
-	pr_info("early_suspend: add suspend_hang_timer\n");
-	pid_suspend = (pid_t) current->pid;
-	suspend_dump_counter = 0;
-	suspend_hang_timer.data = EARLY_SUSPEND_HANG;
-	mod_timer(&suspend_hang_timer, (jiffies + (POLLING_DUMP_SUSPEND_HANG_SECS*HZ)));
-#endif
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+]*/
-
 	atomic_set(&gKeySuspendLock,1); //MTD-kernel-BH-PowerKeySuspendLock-00+
 
 	mutex_lock(&early_suspend_lock);
@@ -193,12 +173,6 @@ abort:
 
 	atomic_set(&gKeySuspendLock,0); //MTD-kernel-BH-PowerKeySuspendLock-00+
 	check_power_key_skip_count();   //MTD-kernel-BH-PowerKeySuspendLock-01+
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+[*/
-#ifdef CONFIG_FIH_SUSPEND_HANG_TIMER
-	pr_info("early_suspend: del suspend_hang_timer\n");
-	del_timer(&suspend_hang_timer);
-#endif
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+]*/
 
 }
 
@@ -213,16 +187,6 @@ static void late_resume(struct work_struct *work)
     unsigned long long duration;
 #endif
 /*FIH-SW3-KERNEL-JC-Porting-02+] */
-
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+[*/
-#ifdef CONFIG_FIH_SUSPEND_HANG_TIMER
-	pr_info("late_resume: add suspend_hang_timer\n");
-	pid_suspend = (pid_t) current->pid;
-	suspend_dump_counter = 0;
-	suspend_hang_timer.data = LATE_RESUME_HANG;
-	mod_timer(&suspend_hang_timer, (jiffies + (POLLING_DUMP_SUSPEND_HANG_SECS*HZ)));
-#endif
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+]*/
 
 	atomic_set(&gKeySuspendLock,1); //MTD-kernel-BH-PowerKeySuspendLock-00+
 
@@ -273,12 +237,6 @@ abort:
 	atomic_set(&gKeySuspendLock,0); //MTD-kernel-BH-PowerKeySuspendLock-00+
 	check_power_key_skip_count();   //MTD-kernel-BH-PowerKeySuspendLock-01+
 	
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+[*/
-#ifdef CONFIG_FIH_SUSPEND_HANG_TIMER
-	pr_info("late_resume: del suspend_hang_timer\n");
-	del_timer(&suspend_hang_timer);
-#endif
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+]*/
 }
 
 void request_suspend_state(suspend_state_t new_state)

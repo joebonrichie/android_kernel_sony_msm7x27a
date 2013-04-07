@@ -89,46 +89,6 @@ static struct wake_lock deleted_wake_locks;
 static ktime_t last_sleep_time_update;
 static int wait_for_wakeup;
 
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+[*/
-#ifdef CONFIG_FIH_SUSPEND_HANG_TIMER
-void dump_suspend_info(unsigned long data);
-DEFINE_TIMER(suspend_hang_timer, dump_suspend_info, 0, 0);
-int suspend_dump_counter = 0;
-EXPORT_SYMBOL(suspend_dump_counter);
-
-pid_t pid_suspend = 0;
-EXPORT_SYMBOL(pid_suspend);
-
-const char *suspend_hang_state_list[] = {
-	"SUSPEND_HANG",
-	"EARLY_SUSPEND_HANG",
-	"LATE_RESUME_HANG"
-};
-
-void dump_suspend_info(unsigned long data)
-{
-	struct task_struct *p;
-	
-	pr_err("%s: Dump the call stack of suspend thread:\n", suspend_hang_state_list[data]);
-	p = find_task_by_pid_ns(pid_suspend, &init_pid_ns);
-	sched_show_task(p);
-	mod_timer(&suspend_hang_timer, (jiffies + (POLLING_DUMP_SUSPEND_HANG_SECS*HZ)));
-
-	suspend_dump_counter ++;
-	
-	if(suspend_dump_counter >= DUMP_SUSPEND_HANG_LIMIT)
-	{
-		pr_err("[%s]the suspend/resume thread is blocked over %d times, Trigger Kernel Panic!!(%s)\n", 
-				__func__,
-				DUMP_SUSPEND_HANG_LIMIT,
-				suspend_hang_state_list[data]);
-		
-		panic("suspend/resume hang! Force to panic kernel!\n");
-	}
-}
-#endif
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+]*/
-
  //MTD-kernel-BH-PMSWakelockInfo-00+[
  #ifdef CONFIG_FIH_DUMP_WAKELOCK
  void add_pms_wakelock_info(char *pid, char *tag, char * cmdline) 
@@ -599,16 +559,6 @@ static void suspend(struct work_struct *work)
 		return;
 	}
 
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+[*/
-#ifdef CONFIG_FIH_SUSPEND_HANG_TIMER
-	pr_info("suspend: add suspend_hang_timer\n");
-	pid_suspend = (pid_t) current->pid;
-	suspend_dump_counter = 0;
-	suspend_hang_timer.data = SUSPEND_HANG;
-	mod_timer(&suspend_hang_timer, (jiffies + (POLLING_DUMP_SUSPEND_HANG_SECS*HZ)));
-#endif
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+]*/
-
 	entry_event_num = current_event_num;
 	suspend_sys_sync_queue();
 	if (debug_mask & DEBUG_SUSPEND)
@@ -648,13 +598,6 @@ static void suspend(struct work_struct *work)
 			pr_info("suspend: pm_suspend returned with no event\n");
 		wake_lock_timeout(&unknown_wakeup, HZ / 2);
 	}
-	
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+[*/
-#ifdef CONFIG_FIH_SUSPEND_HANG_TIMER
-	pr_info("suspend: del suspend_hang_timer\n");
-	del_timer(&suspend_hang_timer);
-#endif
-/*FIH-KERNEL-SC-Suspend_Hang_Timer-00+]*/
 	
 }
 static DECLARE_WORK(suspend_work, suspend);

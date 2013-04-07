@@ -104,15 +104,6 @@ if FIH_CONFIG_GROUP
                 Enable the patch which get battery temperature from PMIC.
         #FIH-SW3-KERNEL-VH-CHARGING-21*]
         #FIH-SW3-KERNEL-VH-CHARGING-11*]
-        
-        #FIH-KERNEL-SC-Suspend_Hang_Timer-00+[
-        config FIH_SUSPEND_HANG_TIMER
-            bool "FIH SUSPEND HANG TIMER"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable to dump suspend information while suspend hang.
-        #FIH-KERNEL-SC-Suspend_Hang_Timer-00+]
 
         # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+[
         config FIH_SW3_POWER_ON_REASON
@@ -578,15 +569,6 @@ if FIH_CONFIG_GROUP
                 Disable suspend by wakelock.
         # /*FIH-SW3-KERNEL-JC-Porting-01+] */ 
 
-        #FIH-KERNEL-SC-Suspend_Hang_Timer-00+[
-        config FIH_SUSPEND_HANG_TIMER
-            bool "FIH SUSPEND HANG TIMER"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable to dump suspend information while suspend hang.
-        #FIH-KERNEL-SC-Suspend_Hang_Timer-00+]
-
         # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+[
         config FIH_MODEM_CRASH_LOG
             bool "FIH MODEM CRASH LOG"
@@ -917,15 +899,6 @@ if FIH_CONFIG_GROUP
             help
                 Disable suspend by wakelock.
         # /*FIH-SW3-KERNEL-JC-Porting-01+] */ 
-
-        #FIH-KERNEL-SC-Suspend_Hang_Timer-00+[
-        config FIH_SUSPEND_HANG_TIMER
-            bool "FIH SUSPEND HANG TIMER"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Enable to dump suspend information while suspend hang.
-        #FIH-KERNEL-SC-Suspend_Hang_Timer-00+]
 
         # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+[
         config FIH_MODEM_CRASH_LOG
