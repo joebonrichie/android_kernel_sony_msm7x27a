@@ -65,11 +65,6 @@
 #include "sirc.h"
 #include "pm-boot.h"
 
-/* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+[ */
-#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-extern unsigned int fih_get_tcxo_sd_during_display_on(void);
-#endif
-/* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+] */
 /* Kernel-JC-suspendsetfreq-00+[ */
 /*#define CONFIG_SET_MAX_CPUFREQ_BEFORE_SUSPEND*//*Kernel-SC-cpuFreq-none-sync-01-*/
 /*#define CPUFREQ_BEFORE_SUSPEND 600000*/ /*Kernel-SC-suspendsetfreq-00-*/
@@ -1685,12 +1680,7 @@ void arch_idle(void)
 		if (sleep_delay == 0) /* 0 would mean infinite time */
 			sleep_delay = 1;
         /* FIH-SW3-KERNEL-JC-Porting-02+[ */
-		#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-		if (!allow[MSM_PM_SLEEP_MODE_POWER_COLLAPSE] || 
-				((fih_get_tcxo_sd_during_display_on()==1) && has_wake_lock(WAKE_LOCK_TCXO)))
-		#else
 		if (!allow[MSM_PM_SLEEP_MODE_POWER_COLLAPSE])
-		#endif
 		{
 			sleep_limit = SLEEP_LIMIT_NO_TCXO_SHUTDOWN;
 		}

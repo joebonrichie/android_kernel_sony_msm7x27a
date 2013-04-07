@@ -44,11 +44,6 @@ enum {
 enum {
 	WAKE_LOCK_SUSPEND, /* Prevent suspend */
 	WAKE_LOCK_IDLE,    /* Prevent low power idle */
-	/* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+[ */
-	#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-	WAKE_LOCK_TCXO,
-	#endif
-	/* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+] */
 	WAKE_LOCK_TYPE_COUNT
 };
 

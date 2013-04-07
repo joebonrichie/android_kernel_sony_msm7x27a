@@ -367,39 +367,6 @@ static DEFINE_MUTEX(smsm_lock);
 static struct smsm_state_info *smsm_states;
 static int spinlocks_initialized;
 
-/* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+[ */
-#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-static unsigned int fih_tcxo_sd_during_display_on = 0;
-
-unsigned int fih_get_tcxo_sd_during_display_on(void)
-{
-	return fih_tcxo_sd_during_display_on;
-}
-EXPORT_SYMBOL(fih_get_tcxo_sd_during_display_on);
-
-unsigned int fih_set_tcxo_sd_during_display_on(unsigned int flag)
-{
-	static struct smem_oem_info *gsmem_oem_info = NULL;
-
-	if (gsmem_oem_info==NULL)
-	{
-		unsigned int bsize;
-		gsmem_oem_info = (struct smem_oem_info *)smem_get_entry(SMEM_ID_VENDOR0, &bsize);
-		if (gsmem_oem_info==NULL)
-		{
-			pr_err("[PM] Cannot get smem sleep info !!!\n");
-			return -1;
-		}
-	}
-	gsmem_oem_info->tcxo_sd_during_display_on = flag;
-	fih_tcxo_sd_during_display_on = flag;
-	pr_info("fih_tcxo_sd_during_display_on = %d", fih_tcxo_sd_during_display_on);
-	return 0;
-}
-EXPORT_SYMBOL(fih_set_tcxo_sd_during_display_on);
-#endif
-/* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+] */
-
 /* FIH-SW3-KERNEL-JC-Porting-02+[ */
 #ifdef CONFIG_FIH_MODEM_SUSPEND_LOG
 void show_smem_sleep_info (void)

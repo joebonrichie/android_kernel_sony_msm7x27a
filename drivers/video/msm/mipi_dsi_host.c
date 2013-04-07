@@ -35,11 +35,6 @@
 #include <mach/gpio.h>
 #include <mach/clk.h>
 #include <mach/dma.h>
-/* FIH-SW-MM-VH-DISPLAY-00+[ */
-#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-#include <linux/wakelock.h>
-#endif
-/* FIH-SW-MM-VH-DISPLAY-00+] */
 
 #include "msm_fb.h"
 #include "mipi_dsi.h"
@@ -56,12 +51,6 @@ static int dsi_mdp_busy;
 
 static struct list_head pre_kickoff_list;
 static struct list_head post_kickoff_list;
-
-/* FIH-SW-MM-VH-DISPLAY-00+[ */
-#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-static struct wake_lock idle_lock;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-00+] */
 
 enum {
 	STAT_DSI_START,
@@ -108,11 +97,6 @@ void mipi_dsi_init(void)
 
 	INIT_LIST_HEAD(&pre_kickoff_list);
 	INIT_LIST_HEAD(&post_kickoff_list);
-	/* FIH-SW-MM-VH-DISPLAY-00+[ */
-	#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-	wake_lock_init(&idle_lock, WAKE_LOCK_TCXO, "mipi_dsi_host");
-	#endif
-	/* FIH-SW-MM-VH-DISPLAY-00+] */
 }
 
 void mipi_dsi_enable_irq(void)
@@ -1382,12 +1366,6 @@ int mipi_dsi_cmd_dma_tx(struct dsi_buf *tp)
 	pr_debug("\n");
 #endif
 
-	/* FIH-SW-MM-VH-DISPLAY-00+[ */
-	#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-	wake_lock(&idle_lock);
-	#endif
-	/* FIH-SW-MM-VH-DISPLAY-00+] */
-
 	len = tp->len;
 	len += 3;
 	len &= ~0x03;	/* multipled by 4 */
@@ -1417,11 +1395,6 @@ int mipi_dsi_cmd_dma_tx(struct dsi_buf *tp)
 
 	dma_unmap_single(&dsi_dev, tp->dmap, len, DMA_TO_DEVICE);
 	tp->dmap = 0;
-	/* FIH-SW-MM-VH-DISPLAY-00+[ */
-	#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-	wake_unlock(&idle_lock);
-	#endif
-	/* FIH-SW-MM-VH-DISPLAY-00+] */
 /* FIH-SW3-MM-NC-LCM-00-[+ */
 /*	return tp->len; */
 	return (ret == 0) ? tp->len : ret;
@@ -1432,11 +1405,6 @@ int mipi_dsi_cmd_dma_rx(struct dsi_buf *rp, int rlen)
 {
 	uint32 *lp, data;
 	int i, off, cnt;
-	/* FIH-SW-MM-VH-DISPLAY-00+[ */
-	#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-	wake_lock(&idle_lock);
-	#endif
-	/* FIH-SW-MM-VH-DISPLAY-00+] */
 
 	lp = (uint32 *)rp->data;
 	cnt = rlen;
@@ -1457,11 +1425,6 @@ int mipi_dsi_cmd_dma_rx(struct dsi_buf *rp, int rlen)
 		rp->len += sizeof(*lp);
 	}
 
-	/* FIH-SW-MM-VH-DISPLAY-00+[ */
-	#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-	wake_unlock(&idle_lock);
-	#endif
-	/* FIH-SW-MM-VH-DISPLAY-00+] */
 	return rlen;
 }
 

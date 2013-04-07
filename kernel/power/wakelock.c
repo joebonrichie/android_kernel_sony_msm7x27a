@@ -53,9 +53,6 @@ module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
 /*FIH-SW3-KERNEL-JC-Porting-02+[ */
 #define POLLING_DUMP_WAKELOCK_SECS	(45)   /* FIH-SW3-KERNEL-JC-dumpwakelock */
 #define IDLE_DUMP_WAKELOCK_COUNT (40)
-#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-	#define TCXO_DUMP_WAKELOCK_COUNT (10)
-#endif
 /*FIH-SW3-KERNEL-JC-Porting-02+] */
 static DEFINE_SPINLOCK(list_lock);
 static LIST_HEAD(inactive_locks);
@@ -469,19 +466,11 @@ long has_wake_lock(int type)
 	long ret;
 	unsigned long irqflags;
     static int idle_msg_count = 0;
-	#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-    static int tcxo_msg_count = 0;
-	#endif
 	spin_lock_irqsave(&list_lock, irqflags);
 	ret = has_wake_lock_locked(type);
     
 	if((type == WAKE_LOCK_IDLE) && (ret != 0))
 		idle_msg_count ++;
-
-	#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-	if((type == WAKE_LOCK_TCXO) && (ret != 0))
-		tcxo_msg_count ++;
-	#endif
 
 	if (ret && (debug_mask & DEBUG_SUSPEND) && (type == WAKE_LOCK_SUSPEND))
 	{   
@@ -493,13 +482,6 @@ long has_wake_lock(int type)
 		print_active_locks(type);
 		idle_msg_count = 0; 
 	}
-	#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-	if((tcxo_msg_count > TCXO_DUMP_WAKELOCK_COUNT) && (type == WAKE_LOCK_TCXO))
-	{
-		print_active_locks(type);
-		tcxo_msg_count = 0; 
-	}
-	#endif
 	
 	spin_unlock_irqrestore(&list_lock, irqflags);
 	return ret;

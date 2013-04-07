@@ -35,12 +35,6 @@
 
 /* #define DEBUG */
 
-/* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+[ */
-#ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-extern unsigned int fih_set_tcxo_sd_during_display_on(unsigned int flag);
-#endif
-/* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+] */
-
 static char* write_buf;
 #define DBGCFG_COMMAND_BUFFER_SIZE 128
 #define TEMP_BUF_SIZE 10
@@ -535,26 +529,6 @@ long dbgcfgtool_ioctl(struct file *filp, unsigned int cmd, unsigned long arg){
                 pr_err("dbgcfgtool_ioctl: Fail to call DbgCfgGetErrorAction(), ret=%d.\n",ret);
             }
             break;
-        /* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+[ */
-        #ifdef CONFIG_FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-        case DBG_IOCTL_CMD_SET_TCXOSD_DISPLAY_ON:
-            if (copy_from_user(&DbgArg, (void*)pDbgArg, sizeof(dbgcfg_ioctl_arg)))
-            {
-                ret = -EINVAL;
-                pr_err("[dbgcfgtool] %s() LINE:%d, copy_from_user failed in DBG_IOCTL_CMD_SET_DBGCFG_GROUP.(ret: %d)\n", __func__, __LINE__, ret);
-            }
-
-
-            ret = fih_set_tcxo_sd_during_display_on(DbgArg.value);
-
-            if( ret != 0 )
-            {
-                pr_err("dbgcfgtool_ioctl: Fail to call DbgCfgSetByGroup(), ret=%d.\n",ret);
-            }
-
-            break;
-        #endif
-        /* FIH-SW-KERNEL-HC-TCXO_SD_DURING_DISPLAY_ON-01+] */
         default:
             pr_err("[dbgcfgtool_ioctl] Unknown IOCTL(Line: %d).\n", __LINE__);
             ret = -EINVAL;

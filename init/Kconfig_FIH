@@ -288,12 +288,6 @@ if FIH_CONFIG_GROUP
             default n
             help
 	            Enable show power off charging pictures.
-        config FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-            depends on FIH_SW_DISPLAY
-            bool "Make SOC TCXO shutdown while screen on"
-            default n
-            help
-                Make SOC TCXO shutdown while screen on.
         config FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
             depends on FIH_SW_DISPLAY
             bool "Enable backlight command queue"
@@ -658,12 +652,6 @@ if FIH_CONFIG_GROUP
             default n
             help
 	            Enable show power off charging pictures.
-        config FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-            depends on FIH_SW_DISPLAY
-            bool "Make SOC TCXO shutdown while screen on"
-            default n
-            help
-                Make SOC TCXO shutdown while screen on.
         config FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
             depends on FIH_SW_DISPLAY
             bool "Enable backlight command queue"
@@ -1016,12 +1004,6 @@ if FIH_CONFIG_GROUP
             default n
             help
 	            Enable show power off charging pictures.
-        config FIH_SW_TCXO_SD_DURING_DISPLAY_ON
-            depends on FIH_SW_DISPLAY
-            bool "Make SOC TCXO shutdown while screen on"
-            default n
-            help
-                Make SOC TCXO shutdown while screen on.
         config FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
             depends on FIH_SW_DISPLAY
             bool "Enable backlight command queue"
