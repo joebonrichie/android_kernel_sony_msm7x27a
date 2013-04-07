@@ -3404,27 +3404,14 @@ static int msm_fb_dsi_client_reset(int hold)
 		gpio_direction_output(gpio_lcm_reset, 0);
 	}
 	else {
-#ifdef CONFIG_FIH_HR_MSLEEP
-		hr_msleep(2);  /* FIH-SW3-MM-NC-DEC_TIME-00 */
-		rc = gpio_direction_output(gpio_lcm_reset, 1);
-		hr_msleep(2);  /* FIH-SW3-MM-NC-DEC_TIME-00 */
-		rc |= gpio_direction_output(gpio_lcm_reset, 0);
-		hr_msleep(2);  /* FIH-SW3-MM-NC-DEC_TIME-00 */
-		rc |= gpio_direction_output(gpio_lcm_reset, 1);
-#else
 		msleep(2);
 		rc = gpio_direction_output(gpio_lcm_reset, 1);
 		msleep(2);
 		rc |= gpio_direction_output(gpio_lcm_reset, 0);
 		msleep(2);
 		rc |= gpio_direction_output(gpio_lcm_reset, 1);
-#endif
 	}
-#ifdef CONFIG_FIH_HR_MSLEEP
-	hr_msleep(150);
-#else
 	msleep(150);
-#endif
 	if (rc < 0) {
 		pr_err("[DISPLAY] %s: Failed LCD reset enable\n", __func__);
 		return rc;

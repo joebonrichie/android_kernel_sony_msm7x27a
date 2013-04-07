@@ -18,11 +18,7 @@
 #include <mach/camera.h>
 #include <linux/regulator/consumer.h>//For regulator API
 
-#ifdef CONFIG_FIH_HR_MSLEEP
-#define cam_msleep hr_msleep
-#else
 #define cam_msleep msleep
-#endif
 
 #define HIGH 1
 #define LOW  0

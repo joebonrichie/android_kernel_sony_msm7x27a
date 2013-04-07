@@ -113,16 +113,6 @@ if FIH_CONFIG_GROUP
             help
                 Enable to dump suspend information while suspend hang.
         #FIH-KERNEL-SC-Suspend_Hang_Timer-00+]
-    
-        #FIH-KERNEL-SC-sleep-func-00+[
-        config FIH_HR_MSLEEP
-            bool "FIH_HR_MSLEEP"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Provide more efficient sleep function.
-        #FIH-KERNEL-SC-sleep-func-00+]
-        
 
         # FIH-SW3-KERNEL-EL-add_flag_for_battery_power_on_reason+[
         config FIH_SW3_POWER_ON_REASON
@@ -614,15 +604,6 @@ if FIH_CONFIG_GROUP
             help
                 Enable to dump suspend information while suspend hang.
         #FIH-KERNEL-SC-Suspend_Hang_Timer-00+]
-    
-        #FIH-KERNEL-SC-sleep-func-00+[
-        config FIH_HR_MSLEEP
-            bool "FIH_HR_MSLEEP"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Provide more efficient sleep function.
-        #FIH-KERNEL-SC-sleep-func-00+]
 
         # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+[
         config FIH_MODEM_CRASH_LOG
@@ -981,15 +962,6 @@ if FIH_CONFIG_GROUP
             help
                 Enable to dump suspend information while suspend hang.
         #FIH-KERNEL-SC-Suspend_Hang_Timer-00+]
-    
-        #FIH-KERNEL-SC-sleep-func-00+[
-        config FIH_HR_MSLEEP
-            bool "FIH_HR_MSLEEP"
-            depends on FIH_CONFIG_GROUP
-            default n
-            help
-                Provide more efficient sleep function.
-        #FIH-KERNEL-SC-sleep-func-00+]
 
         # FIH-SW1-KERNEL-HC-Modem_Crash_Log-00+[
         config FIH_MODEM_CRASH_LOG

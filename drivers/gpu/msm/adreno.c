@@ -561,13 +561,7 @@ static int adreno_start(struct kgsl_device *device, unsigned int init_ram)
 	/* The core is in an indeterminate state until the reset completes
 	 * after 30ms.
 	 */
-	/* FIH-SW2-MM-KW-Use_hr_msleep-00+{ */
-	#ifdef CONFIG_FIH_HR_MSLEEP
-	hr_msleep(30);
-	#else
 	msleep(30);
-	#endif
-	/* FIH-SW2-MM-KW-Use_hr_msleep-00-} */
 	adreno_regwrite(device, REG_RBBM_SOFT_RESET, 0x00000000);
 	/* FIH-SW2-MM-KW-Useless_codes-00+{ */
 	#if 0

@@ -1193,14 +1193,8 @@ int mipi_dsi_cmds_tx(struct msm_fb_data_type *mfd,
 			break;
 		}
 /* FIH-SW3-MM-NC-LCM-03-]- */
-/* FIH-SW3-MM-NC-DEC_TIME-00-[+ */
 		if (cm->wait)
-#ifdef CONFIG_FIH_HR_MSLEEP
-			hr_msleep(cm->wait);
-#else
 			msleep(cm->wait);
-#endif
-/* FIH-SW3-MM-NC-DEC_TIME-00-]- */
 		cm++;
 	}
 

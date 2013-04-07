@@ -360,13 +360,7 @@ void kgsl_pwrctrl_clk(struct kgsl_device *device, int state,
 			device->ftbl->regwrite(device, REG_CP_DEBUG, orig_REG_CP_DEBUG | (1 << 27));
 			device->ftbl->regwrite(device, REG_RBBM_PM_OVERRIDE1, orig_REG_RBBM_PM_OVERRIDE1 | 0xfffffffe);
 			device->ftbl->regwrite(device, REG_RBBM_PM_OVERRIDE2, orig_REG_RBBM_PM_OVERRIDE2 | 0xffffffff);
-			/* FIH-SW2-MM-KW-Use_hr_msleep-00+{ */
-			#ifdef CONFIG_FIH_HR_MSLEEP
-			hr_msleep(1);
-			#else
 			msleep(1);
-			#endif
-			/* FIH-SW2-MM-KW-Use_hr_msleep-00-} */
 /*MTD-MM-CL-GpuHang_PATCH-01+} */
 			trace_kgsl_clk(device, state);
 			for (i = KGSL_MAX_CLKS - 1; i > 0; i--)
@@ -398,13 +392,7 @@ void kgsl_pwrctrl_clk(struct kgsl_device *device, int state,
 /*MTD-MM-CL-GpuHang_PATCH-01+{ */
 			/* if backup available, overrides have been disabled. Wait for sometime & use restore overrides */
 			if(0 != orig_REG_CP_DEBUG) {
-				/* FIH-SW2-MM-KW-Use_hr_msleep-00+{ */
-				#ifdef CONFIG_FIH_HR_MSLEEP
-				hr_msleep(2);
-				#else
 				msleep(2);
-				#endif
-				/* FIH-SW2-MM-KW-Use_hr_msleep-00-} */
 				device->ftbl->regwrite(device, REG_CP_DEBUG, orig_REG_CP_DEBUG);
 				device->ftbl->regwrite(device, REG_RBBM_PM_OVERRIDE1, orig_REG_RBBM_PM_OVERRIDE1);
 				device->ftbl->regwrite(device, REG_RBBM_PM_OVERRIDE2, orig_REG_RBBM_PM_OVERRIDE2);
