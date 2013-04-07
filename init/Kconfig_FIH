@@ -63,8 +63,7 @@ if FIH_CONFIG_GROUP
             default y
             help
                 Select if the touch panel is attached.
-        
-        # FIH-SW3-PERIPHERAL-AH-Touch_Porting-00
+
         if FIH_TOUCHSCREEN
         config FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
             bool "Cypress TTSP based touchscreens TMA340"
@@ -74,7 +73,6 @@ if FIH_CONFIG_GROUP
                 Select if the Cypress TMA340 touch panel is attached.
         endif
 
-        #FIH-SW3-KERNEL-VH-CHARGING-11*[
         config FIH_SW3_BATTERY
             bool "FIH battery driver"
             default y
@@ -100,24 +98,25 @@ if FIH_CONFIG_GROUP
             default y
             help
                 Enable power off charging mode.
-        #FIH-SW3-KERNEL-VH-CHARGING-21*[
         config FIH_SW1_FEATURE_BATTERY_THERMAL_VIA_PMIC
             bool "Enable get battery thermal from PMIC. "
             depends on FIH_SW3_BATTERY
             default n
             help
                 Enable the patch which get battery temperature from PMIC.
-        #FIH-SW3-KERNEL-VH-CHARGING-21*]
-        #FIH-SW3-KERNEL-VH-CHARGING-11*]
-    
-        # FIH-SW2-PERIPHERAL-FG-SENSOR-00*[
+
         config FIH_SENSOR
             bool "FIH Sensors"
             depends on FIH_CONFIG_GROUP
             default y
             help
                 Say Y here if you want to support FIH senosrs.
-
+        config FIH_MSENSOR_AKM8975
+            bool "Magnetic Sensor: AK8975B"
+            depends on I2C && FIH_SENSOR
+            default n
+            help
+                Support for Asahi Kasei's magnetic/orientation sensor AK8975.
         config FIH_ASENSOR_BMA250
             bool "Acceleration Sensor: BMA250"
             depends on I2C && FIH_SENSOR
@@ -134,15 +133,12 @@ if FIH_CONFIG_GROUP
                 Say Y here if you want to support AVAGO's
                 proximity sensor QPDS-S702.
 
-        # FIH-SW1-PERIPHERAL-AC-PSENSOR_SENSITIVITY-01+[
         config PROXIMITY_SENSOR_CALIBRATON_REPLACE
             bool "Proximity Sensor calibration replace"
             depends on FIH_PSENSOR_QPDSS702
             default n
             help
                 Support for proximity sensor calibration data replace from nv
-        # FIH-SW1-PERIPHERAL-AC-PSENSOR_SENSITIVITY-01+]
-        # FIH-SW2-PERIPHERAL-FG-SENSOR-00*]
 
         config FIH_BRIGHTNESS
             bool "Support camera brightness setting"
@@ -175,7 +171,6 @@ if FIH_CONFIG_GROUP
                 Enable camera zoom in/out when recording.  
         # /*SW2D2-MM-MC-Camera-EnableZoomWhileVideoRecording-01+{ */
 
-        # MTD-Conn-JC-BTSleep-00+[
         config BROADCOM_BCM4330_BTFM
             tristate "Broadcom BCM4330 is used"
             default y
@@ -189,16 +184,12 @@ if FIH_CONFIG_GROUP
             depends on FIH_CONFIG_GROUP && BROADCOM_BCM4330_BTFM
             help
                 If you say yes here you get support for broadcom BCM4330 Sleep mode.
-        # MTD-Conn-JC-BTSleep-00+] 
 
-        # FIH-SW3-CONN-MW-USB_Charging-00+[
         config FIH_USB_CHARGING_WHEN_CONNECT_TO_PC_WHICH_UNDER_STANDBY_MODE
             bool "USB CHARGING WHEN CONNECT TO PC WHICH UNDER STANDBY MODE"
             default y
             help
                 Select if you want CHARGING_WHEN_CONNECT_TO_PC_WHICH_UNDER_STANDBY_MODE.
-        # FIH-SW3-CONN-MW-USB_Charging-00+]
-        # FIH-SW-MM-VH-DISPLAY-21*[
         config FIH_SW_DISPLAY
             bool "FIH display driver"
             default n
@@ -216,20 +207,24 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Queuing backlight commands before pan display, and send after pan display.
-#FIH-SW-MM-VH-DISPLAY-40*[
         config FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable CMI LCM healthy check"
             default n
             help
                 Enable MIPI healthy check, retry initial sequence once panel crashed.
+        config FIH_SW_DISPLAY_LCM_ID_CHECK
+            depends on FIH_SW_DISPLAY && FIH_PROJECT_TAP
+            bool "Enable LCM id check"
+            default n
+            help
+                Enable LCM id check.
         config FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable AUO LCM healthy check"
             default n
             help
                 Enable AUO LCM healthy check.
-#FIH-SW-MM-VH-DISPLAY-40*]
         config FIH_SW_FWVGA_LOGO
             depends on FIH_SW_DISPLAY && FIH_PROJECT_JLO
             bool "Sony FWVGA Logo"
@@ -268,7 +263,6 @@ if FIH_CONFIG_GROUP
             ---help---
               Sony 5M SOC Sensor 
 
-# FIH-SW-MM-VH-DISPLAY-21*]
     endmenu
     # --- FIH_PROJECT_TAP}-------------------------------------------------- END
 
@@ -305,7 +299,6 @@ if FIH_CONFIG_GROUP
             help
                 Select if the touch panel is attached.
 
-        # FIH-SW3-PERIPHERAL-AH-Touch_Porting-00
         if FIH_TOUCHSCREEN
         menuconfig FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
             bool "Cypress TTSP based touchscreens TMA340"
@@ -314,7 +307,7 @@ if FIH_CONFIG_GROUP
             help
                 Select if the Cypress TMA340 touch panel is attached.
 
-	if FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
+		if FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
         config FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340_ESD
             bool "Cypress TMA340 Touchscreen ESD workaround"
             depends on I2C && FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
@@ -322,11 +315,9 @@ if FIH_CONFIG_GROUP
             help
                 Select if the Cypress TMA340 Touchscreen ESD workaround needed.
 
-	endif
+		endif
         endif
 
-
-        #FIH-SW3-KERNEL-VH-CHARGING-11*[
         config FIH_SW3_BATTERY
             bool "FIH battery driver"
             default y
@@ -352,16 +343,13 @@ if FIH_CONFIG_GROUP
             default y
             help
                 Enable power off charging mode.
-        #FIH-SW3-KERNEL-VH-CHARGING-21*[
         config FIH_SW1_FEATURE_BATTERY_THERMAL_VIA_PMIC
             bool "Enable get battery thermal from PMIC. "
             depends on FIH_SW3_BATTERY
             default n
             help
                 Enable the patch which get battery temperature from PMIC.
-        #FIH-SW3-KERNEL-VH-CHARGING-21*]
-        #FIH-SW3-KERNEL-VH-CHARGING-11*]
-        # FIH-SW2-PERIPHERAL-FG-SENSOR-00*[
+
         config FIH_SENSOR
             bool "FIH Sensors"
             depends on FIH_CONFIG_GROUP
@@ -393,15 +381,12 @@ if FIH_CONFIG_GROUP
                 Say Y here if you want to support AVAGO's
                 proximity sensor QPDS-S702.
 
-        # FIH-SW1-PERIPHERAL-AC-PSENSOR_SENSITIVITY-01+[
         config PROXIMITY_SENSOR_CALIBRATON_REPLACE
             bool "Proximity Sensor calibration replace"
             depends on FIH_PSENSOR_QPDSS702
             default n
             help
                 Support for proximity sensor calibration data replace from nv
-        # FIH-SW1-PERIPHERAL-AC-PSENSOR_SENSITIVITY-01+]
-        # FIH-SW2-PERIPHERAL-FG-SENSOR-00*]
 
         #SW2D2-MM-MC-Camera-BringUpL03561LedDriverIC-00+[
         config FIH_CAMERA
@@ -471,16 +456,12 @@ if FIH_CONFIG_GROUP
             depends on FIH_CONFIG_GROUP && BROADCOM_BCM4330_BTFM
             help
                 If you say yes here you get support for broadcom BCM4330 Sleep mode.
-        # MTD-Conn-JC-BTSleep-00+] 
 
-        # FIH-SW3-CONN-MW-USB_Charging-00+[
         config FIH_USB_CHARGING_WHEN_CONNECT_TO_PC_WHICH_UNDER_STANDBY_MODE
             bool "USB CHARGING WHEN CONNECT TO PC WHICH UNDER STANDBY MODE"
             default y
             help
                 Select if you want CHARGING_WHEN_CONNECT_TO_PC_WHICH_UNDER_STANDBY_MODE.
-        # FIH-SW3-CONN-MW-USB_Charging-00+]
-        # FIH-SW-MM-VH-DISPLAY-21*[
         config FIH_SW_DISPLAY
             bool "FIH display driver"
             default n
@@ -498,20 +479,24 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Queuing backlight commands before pan display, and send after pan display.
-#FIH-SW-MM-VH-DISPLAY-40*[
         config FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable CMI LCM healthy check"
             default n
             help
                 Enable MIPI healthy check, retry initial sequence once panel crashed.
+        config FIH_SW_DISPLAY_LCM_ID_CHECK
+            depends on FIH_SW_DISPLAY && FIH_PROJECT_TAP
+            bool "Enable LCM id check"
+            default n
+            help
+                Enable LCM id check.
         config FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable AUO LCM healthy check"
             default n
             help
                 Enable AUO LCM healthy check.
-#FIH-SW-MM-VH-DISPLAY-40*]
         config FIH_SW_FWVGA_LOGO
             depends on FIH_SW_DISPLAY && FIH_PROJECT_JLO
             bool "Sony FWVGA Logo"
@@ -550,7 +535,6 @@ if FIH_CONFIG_GROUP
             ---help---
               Sony 5M SOC Sensor 
 
-# FIH-SW-MM-VH-DISPLAY-21*]
     endmenu
     # --- FIH_PROJECT_MES}-------------------------------------------------- END
     # --- FIH_PROJECT_JLO{-------------------------------------------------- START
@@ -586,7 +570,6 @@ if FIH_CONFIG_GROUP
             help
                 Select if the touch panel is attached.
 
-        # FIH-SW3-PERIPHERAL-AH-Touch_Porting-00
         if FIH_TOUCHSCREEN
         config FIH_TOUCHSCREEN_CYTTSP_I2C_TMA340
             bool "Cypress TTSP based touchscreens TMA340"
@@ -596,8 +579,6 @@ if FIH_CONFIG_GROUP
                 Select if the Cypress TMA340 touch panel is attached.
         endif
 
-
-        #FIH-SW3-KERNEL-VH-CHARGING-11*[
         config FIH_SW3_BATTERY
             bool "FIH battery driver"
             default y
@@ -623,27 +604,19 @@ if FIH_CONFIG_GROUP
             default y
             help
                 Enable power off charging mode.
-                
-        # FIH-SW3-KERNEL-EL-GAUGE_DISABLE_SLEEP_PLUS-00+[
         config FIH_GAUGE_DISABLE_SLEEP_PLUS
             bool "DISABLE GAUGE SLEEP PLUS"
             depends on FIH_SW3_BATTERY
             default n
             help
                 Disable gauge sleep plus function
-        # FIH-SW3-KERNEL-EL-GAUGE_DISABLE_SLEEP_PLUS-00+]
-                
-        #FIH-SW3-KERNEL-VH-CHARGING-21*[
         config FIH_SW1_FEATURE_BATTERY_THERMAL_VIA_PMIC
             bool "Enable get battery thermal from PMIC. "
             depends on FIH_SW3_BATTERY
             default n
             help
                 Enable the patch which get battery temperature from PMIC.
-        #FIH-SW3-KERNEL-VH-CHARGING-21*]
-        #FIH-SW3-KERNEL-VH-CHARGING-11*]
 
-        # FIH-SW2-PERIPHERAL-FG-SENSOR-00*[
         config FIH_SENSOR
             bool "FIH Sensors"
             depends on FIH_CONFIG_GROUP
@@ -675,17 +648,12 @@ if FIH_CONFIG_GROUP
                 Say Y here if you want to support AVAGO's
                 proximity sensor QPDS-S702.
 
-        # FIH-SW1-PERIPHERAL-AC-PSENSOR_SENSITIVITY-01+[
         config PROXIMITY_SENSOR_CALIBRATON_REPLACE
             bool "Proximity Sensor calibration replace"
             depends on FIH_PSENSOR_QPDSS702
             default n
             help
                 Support for proximity sensor calibration data replace from nv
-        # FIH-SW1-PERIPHERAL-AC-PSENSOR_SENSITIVITY-01+]
-        # FIH-SW2-PERIPHERAL-FG-SENSOR-00*]
-
-        #SW2D2-MM-MC-Camera-BringUpL03561LedDriverIC-00+[
         config FIH_CAMERA
             bool "Enable Camera for FIH project"
             depends on MSM_CAMERA
@@ -739,7 +707,6 @@ if FIH_CONFIG_GROUP
             help
                 Enable camera scene mode setting.
 
-        # MTD-Conn-JC-BTSleep-00+[
         config BROADCOM_BCM4330_BTFM
             tristate "Broadcom BCM4330 is used"
             default y
@@ -753,16 +720,12 @@ if FIH_CONFIG_GROUP
             depends on FIH_CONFIG_GROUP && BROADCOM_BCM4330_BTFM
             help
                 If you say yes here you get support for broadcom BCM4330 Sleep mode.
-        # MTD-Conn-JC-BTSleep-00+] 
 
-        # FIH-SW3-CONN-MW-USB_Charging-00+[
         config FIH_USB_CHARGING_WHEN_CONNECT_TO_PC_WHICH_UNDER_STANDBY_MODE
             bool "USB CHARGING WHEN CONNECT TO PC WHICH UNDER STANDBY MODE"
             default y
             help
                 Select if you want CHARGING_WHEN_CONNECT_TO_PC_WHICH_UNDER_STANDBY_MODE.
-        # FIH-SW3-CONN-MW-USB_Charging-00+]
-        # FIH-SW-MM-VH-DISPLAY-21*[
         config FIH_SW_DISPLAY
             bool "FIH display driver"
             default n
@@ -780,20 +743,24 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Queuing backlight commands before pan display, and send after pan display.
-#FIH-SW-MM-VH-DISPLAY-40*[
         config FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable CMI LCM healthy check"
             default n
             help
                 Enable MIPI healthy check, retry initial sequence once panel crashed.
+        config FIH_SW_DISPLAY_LCM_ID_CHECK
+            depends on FIH_SW_DISPLAY && FIH_PROJECT_TAP
+            bool "Enable LCM id check"
+            default n
+            help
+                Enable LCM id check.
         config FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable AUO LCM healthy check"
             default n
             help
                 Enable AUO LCM healthy check.
-#FIH-SW-MM-VH-DISPLAY-40*]
         config FIH_SW_FWVGA_LOGO
             depends on FIH_SW_DISPLAY && FIH_PROJECT_JLO
             bool "Sony FWVGA Logo"
@@ -818,15 +785,6 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Set DD of 0x53
-# FIH-SW-MM-VH-DISPLAY-21*]
-# MM-VH-DISPLAY-JB04+[
-        config FIH_UI_KPI_METER
-            depends on FIH_SW_DISPLAY
-            bool "Enable FIH UI KPI METER"
-            default n
-            help
-                Enable FIH UI KPI METER
-# MM-VH-DISPLAY-JB04+]
     endmenu
     # --- FIH_PROJECT_JLO}-------------------------------------------------- END
     # --- FIH_PROJECT_NAN{-------------------------------------------------- START
