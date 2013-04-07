@@ -106,19 +106,6 @@ u32 msm_fb_msg_level = 7;
 /* Setting mddi_msg_level to 8 prints out ALL messages */
 u32 mddi_msg_level = 5;
 
-/* FIH-SW-MM-VH-DISPLAY-18+[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#define FPS_POLLING_INTERVAL (20)
-#define CABC_CRITERIA (20)
-#define FPS_POLLING_INTERVAL_HZ ((HZ)*FPS_POLLING_INTERVAL)
-static int fps_polling_interval =  FPS_POLLING_INTERVAL_HZ;
-struct delayed_work	FPSpoller;
-static unsigned int frame_count = 0;
-/* FIH-SW-MM-VH-DISPLAY-21*] */
-struct msm_fb_data_type *gmfd = NULL;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-18+] */
 /* FIH-SW-MM-VH-DISPLAY-20* */
 static int isDim = 0;
 
@@ -132,11 +119,6 @@ extern unsigned long mdp_timer_duration;
 static int msm_fb_register(struct msm_fb_data_type *mfd);
 static int msm_fb_open(struct fb_info *info, int user);
 static int msm_fb_release(struct fb_info *info, int user);
-/* FIH-SW-MM-VH-DISPLAY-21* */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-static int pattern_pan_display(struct fb_var_screeninfo *var,
-								struct fb_info *info);
-#endif
 /* FIH-SW-MM-VH-DISPLAY-09*] */
 static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 			      struct fb_info *info);
@@ -176,21 +158,6 @@ static struct msm_fb_data_type *late_resume_mfd = NULL;
 static void msmfb_early_resume_work_func(struct work_struct *work);
 #endif
 /* FIH-SW3-MM-NC-DEC_TIME-00-]- */
-
-/* FIH-SW-MM-VH-DISPLAY-40*[ */
-#if defined(CONFIG_FIH_SW_DISPLAY_CABC)
-static struct msm_fb_panel_data *gmsm_fb_panel_data;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-40*] */
-
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-static int TestPattern = 0;
-#endif
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-static int isEnableCABC = 0;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
 
 DEFINE_MUTEX(msm_fb_notify_update_sem);
 void msmfb_no_update_notify_timer_cb(unsigned long data)
@@ -442,387 +409,6 @@ void draw_battery(int start_x, int start_y, char *Bitmap, struct fb_info *fbi)
 	}
 }
 #endif/*MTD-MM-CL-DrawLogo-00-]*/
-/* FIH-SW-MM-VH-DISPLAY-21* */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-void draw_pattern(int start_x, int start_y, int pattern, struct fb_info *fbi)
-{
-	int i = 0, width_count = 0, bpp = 0;
-	unsigned long int location = 0;
-	int x_position = 0, y_position = 0;
-	int screensize = 0, imageSize = 0;
-	int rc = 0;
-	byte Red24 = 0; // 8-bit red
-	byte Green24 = 0; // 8-bit green
-	byte Blue24 = 0; // 8-bit blue
-	byte Red16 = 0; // 5-bit red
-	byte Green16 = 0; // 6-bit green
-	byte Blue16 = 0; // 5-bit blue
-	word RGB2Bytes = 0;
-	int RMax = 0, GMax = 0, BMax = 0;
-	struct msm_fb_data_type *mfd = NULL;
-	struct msm_fb_panel_data *pdata = NULL;
-
-	mfd = (struct msm_fb_data_type *)fbi->par;
-	pdata = (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
-	
-	width_count = 0;
-	x_position = start_x;
-	y_position = start_y;
-	bpp = fbi->var.bits_per_pixel / 8;
-	screensize = fbi->var.xres * fbi->var.yres * bpp;
-	location = 0;
-
-	printk("[DISPLAY] %s: %d %d %d, bpp=%d, screensize=%d\r\n", __func__, start_x, start_y, pattern, bpp, screensize);
-	
-	memset(fbi->screen_base, 0x00, screensize);
-	switch(bpp)
-	{
-		case 16:
-			RMax = 31;
-			GMax = 63;
-			BMax = 31;
-		break;
-		case 18:
-			RMax = 63;
-			GMax = 63;
-			BMax = 63;
-		break;
-		case 24:
-		case 32:
-		default:
-			
-			RMax = 255;
-			GMax = 255;
-			BMax = 255;
-		break;
-	}
-
-	imageSize = 460800;
-	
-	for(i = 0; i < imageSize / 3; i ++)
-	{
-		location = (x_position + width_count) * bpp
-					+ y_position * (fbi->var.xres * bpp);			
-		
-		switch(pattern)	{
-			case FB_PATTERN_GAMMA:
-				if(y_position < (fbi->var.yres /4)) {
-					Red24 = (byte)((width_count*RMax)/fbi->var.xres);
-					Green24 =0;
-					Blue24=0;
-				}
-				else if(y_position < (fbi->var.yres /4)*2) {
-					Red24 =0;
-					Green24= (byte)((width_count*RMax)/fbi->var.xres);
-					Blue24=0;
-				}
-				else if(y_position < (fbi->var.yres /4)*3) {
-					Red24 = 0;
-					Green24 =0;
-					Blue24 = (byte)((width_count*RMax)/fbi->var.xres);
-				}
-				else {
-					Red24 = (byte)((width_count*RMax)/fbi->var.xres);
-					Green24 = Red24;
-					Blue24 = Red24;
-				}
-				break;
-			case FB_PATTERN_R:
-				Red24 = 0xFF;
-				Green24= 0;
-				Blue24= 0;
-				break;
-			case FB_PATTERN_G:
-				Red24 = 0;
-				Green24= 0xFF;
-				Blue24= 0;
-				break;
-			case FB_PATTERN_B:
-				Red24 = 0;
-				Green24= 0;
-				Blue24= 0xFF;
-				break;
-			case FB_PATTERN_WHITE:
-			case FB_PATTERN_GRAYFF:
-				Red24 = 0xFF;
-				Green24= 0xFF;
-				Blue24= 0xFF;
-				break;
-			case FB_PATTERN_GRAYEF:
-				Red24 = 0xEF;
-				Green24= 0xEF;
-				Blue24= 0xEF;
-				break;	
-			case FB_PATTERN_GRAYDF:
-				Red24 = 0xDF;
-				Green24= 0xDF;
-				Blue24= 0xDF;
-				break;					
-			
-			case FB_PATTERN_GRAYCF:
-				Red24 = 0xCF;
-				Green24= 0xCF;
-				Blue24= 0xCF;
-				break;	
-			case FB_PATTERN_GRAYBF:
-				Red24 = 0xBF;
-				Green24= 0xBF;
-				Blue24= 0xBF;
-				break;	
-			case FB_PATTERN_GRAYAF:
-				Red24 = 0xAF;
-				Green24= 0xAF;
-				Blue24= 0xAF;
-				break;	
-			case FB_PATTERN_GRAY9F:
-				Red24 = 0x9F;
-				Green24= 0x9F;
-				Blue24= 0x9F;
-				break;	
-			case FB_PATTERN_GRAY8F:
-				Red24 = 0x8F;
-				Green24= 0x8F;
-				Blue24= 0x8F;
-				break;			
-			case FB_PATTERN_GRAY:
-			case FB_PATTERN_GRAY7F:
-				Red24 = 0x7F;
-				Green24= 0x7F;
-				Blue24= 0x7F;
-				break;
-			case FB_PATTERN_GRAY6F:
-				Red24 = 0x6F;
-				Green24= 0x6F;
-				Blue24= 0x6F;
-				break;
-			case FB_PATTERN_GRAY5F:
-				Red24 = 0x5F;
-				Green24= 0x5F;
-				Blue24= 0x5F;
-				break;
-			case FB_PATTERN_GRAY4F:
-				Red24 = 0x4F;
-				Green24= 0x4F;
-				Blue24= 0x4F;
-				break;
-			case FB_PATTERN_GRAY3F:
-				Red24 = 0x3F;
-				Green24= 0x3F;
-				Blue24= 0x3F;
-				break;
-			case FB_PATTERN_GRAY2F:
-				Red24 = 0x2F;
-				Green24= 0x2F;
-				Blue24= 0x2F;
-				break;
-			case FB_PATTERN_GRAY1F:
-				Red24 = 0x1F;
-				Green24= 0x1F;
-				Blue24= 0x1F;
-				break;
-			case FB_PATTERN_GRAY0F:
-				Red24 = 0x0F;
-				Green24= 0x0F;
-				Blue24= 0x0F;
-				break;
-			case FB_PATTERN_BLACK:
-			case FB_PATTERN_GRAY00:
-					Red24 = 0;
-					Green24= 0;
-					Blue24= 0;
-				break;
-			case FB_PATTERN_RGB:
-				if(y_position < (fbi->var.yres /3)) {
-					Red24 = 0xFF;
-					Green24 =0;
-					Blue24=0;
-				}
-				else if(y_position < (fbi->var.yres /3)*2) {
-					Red24 =0;
-					Green24= 0xFF;
-					Blue24=0;
-				}
-				else {
-					Red24 = 0;
-					Green24 = 0;
-					Blue24 = 0xFF;
-				}
-
-				break;
-			default:
-				break;
-		}
-		
-		if(mfd->fb_imgType == MDP_RGBA_8888)
-		{
-			*(unsigned char *)(fbi->screen_base + location) 	= Red24;
-			*(unsigned char *)(fbi->screen_base + location + 1) = Green24;
-			*(unsigned char *)(fbi->screen_base + location + 2) = Blue24;
-			*(unsigned char *)(fbi->screen_base + location + 3) = 0xFF;
-			*(unsigned char *)(fbi->screen_base + screensize + location) 	= Red24;
-			*(unsigned char *)(fbi->screen_base + screensize + location + 1) = Green24;
-			*(unsigned char *)(fbi->screen_base + screensize + location + 2) = Blue24;
-			*(unsigned char *)(fbi->screen_base + screensize + location + 3) = 0xFF;
-			*(unsigned char *)(fbi->screen_base + screensize + screensize + location) 	= Red24;
-			*(unsigned char *)(fbi->screen_base + screensize + screensize + location + 1) = Green24;
-			*(unsigned char *)(fbi->screen_base + screensize + screensize + location + 2) = Blue24;
-			*(unsigned char *)(fbi->screen_base + screensize + screensize + location + 3) = 0xFF;
-
-		}
-		else if(mfd->fb_imgType == MDP_RGB_565)//MSMFB_DEFAULT_TYPE== MDP_RGB_565 
-		{
-			Red16 = Red24 >> 3; // 5-bit red
-			Green16 = Green24 >> 2; // 6-bit green
-			Blue16 = Blue24 >> 3; // 5-bit blue
-
-			RGB2Bytes = Blue16 + (Green16<<5) + (Red16<<(5+6));
-			
-			*(unsigned char *)(fbi->screen_base + location) 	=  (char)(LOBYTE(RGB2Bytes));
-			*(unsigned char *)(fbi->screen_base + location + 1) =  (char)(HIBYTE(RGB2Bytes));
-			*(unsigned char *)(fbi->screen_base + screensize + location) 	=  (char)(LOBYTE(RGB2Bytes));
-			*(unsigned char *)(fbi->screen_base + screensize + location + 1) =  (char)(HIBYTE(RGB2Bytes));
-			*(unsigned char *)(fbi->screen_base + screensize + screensize + location) 	=  (char)(LOBYTE(RGB2Bytes));
-			*(unsigned char *)(fbi->screen_base + screensize + screensize + location + 1) =  (char)(HIBYTE(RGB2Bytes));
-		}
-		else // RGB888
-		{
-			*(unsigned char *)(fbi->screen_base + location) 	= Red24;
-			*(unsigned char *)(fbi->screen_base + location + 1) = Green24;
-			*(unsigned char *)(fbi->screen_base + location + 2) = Blue24;
-			*(unsigned char *)(fbi->screen_base + screensize + location) 	= Red24;
-			*(unsigned char *)(fbi->screen_base + screensize + location + 1) = Green24;
-			*(unsigned char *)(fbi->screen_base + screensize + location + 2) = Blue24;
-			*(unsigned char *)(fbi->screen_base + screensize + screensize + location) 	= Red24;
-			*(unsigned char *)(fbi->screen_base + screensize + screensize + location + 1) = Green24;
-			*(unsigned char *)(fbi->screen_base + screensize + screensize + location + 2) = Blue24;
-		}
-
-		width_count += 1;
-
-		if (width_count == fbi->var.xres) {
-			y_position += 1;
-			width_count = 0;
-		}
-	}
-
-	rc = pattern_pan_display(&fbi->var, fbi);
-	if (rc < 0) {
-		printk(KERN_ERR "[DISPLAY] %s, Write file error (%d)\n", __func__, rc);
-	}
-	
-	mfd->bl_level = 10;
-	pdata->set_backlight(mfd);
-	
-}
-
-/* FIH-SW-MM-VH-DISPLAY-15*[ */
-static ssize_t fb_pattern_read(struct device *dev,
-        struct device_attribute *attr, char *buf)
-{
-	return snprintf(buf, PAGE_SIZE, "%d\n", TestPattern);
-}
-
-static ssize_t fb_pattern_write(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t size)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = NULL;
-	struct msm_fb_panel_data *pdata = NULL;
-	char *tok, str[80], *tmp;
-	int interval = 0;
-    int command = 0;
-	int start_x = 0;
-	int start_y = 0;
-
-	mfd = (struct msm_fb_data_type *)fbi->par;
-	pdata = (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
-
-	printk(KERN_ERR "[DISPLAY] +%s\n", __func__);
-
-	strncpy(str, buf, 80);
-	tmp = str;
-	tok = strsep(&tmp, " ,.");
-
-	if(tok == NULL)
-		return -1;
-	
-	/* Use %3d to limit size to avoid overflow */
-	sscanf(tok, "%3d", &interval);
-
-	printk(KERN_ERR "[DISPLAY] INTERVAL = %d\n", interval);
-
-	start_x = 0;
-	start_y = 0;
-	while(1) {
-		tok = strsep(&tmp, " ,.");
-		if(tok == NULL)
-			break;
-
-		/* Use %3d to limit size to avoid overflow */
-		sscanf(tok, "%3d", &command);
-
-		switch (command)
-		{
-			case FB_PATTERN_DISABLE:
-				break;
-			default:
-				draw_pattern(start_x, start_y, command,  fbi);
-				break;
-		}
-		TestPattern = command;
-		hr_msleep(interval);
-	}
-	
-    return size;
-}
-static DEVICE_ATTR(TestPattern, 0644, fb_pattern_read, fb_pattern_write);
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-static ssize_t fb_isEnableCABC_read(struct device *dev,
-        struct device_attribute *attr, char *buf)
-{
-	return snprintf(buf, PAGE_SIZE, "%d\n", isEnableCABC);
-}
-
-static ssize_t fb_isEnableCABC_write(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t size)
-{
-
-	ssize_t ret = strnlen(buf, PAGE_SIZE);
-	int cmd;
-
-	sscanf(buf, "%x", &cmd);
-
-	if(cmd == 0){
-		if(isEnableCABC!=0){
-			cancel_delayed_work(&FPSpoller);
-			down(&gmfd->sem);
-			if(gmsm_fb_panel_data->set_cabc_mode != NULL){
-				gmsm_fb_panel_data->set_cabc_mode(0);
-			}
-			up(&gmfd->sem);
-		}
-	}else{
-		if(isEnableCABC==0){
-			schedule_delayed_work(&FPSpoller, fps_polling_interval);
-			down(&gmfd->sem);
-			if(gmsm_fb_panel_data->set_cabc_mode != NULL){
-				gmsm_fb_panel_data->set_cabc_mode(1);
-			}
-			up(&gmfd->sem);
-		}
-	}
-	isEnableCABC = cmd;
-
-    return ret;
-}
-static DEVICE_ATTR(isEnableCABC, 0644, fb_isEnableCABC_read, fb_isEnableCABC_write);
-
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
-/* FIH-SW-MM-VH-DISPLAY-15*] */
-/* FIH-SW-MM-VH-DISPLAY-09*] */
 
 /* FIH-SW-MM-VH-DISPLAY-16+[ */
 static ssize_t fb_dim_read(struct device *dev,
@@ -1171,31 +757,6 @@ static void msm_fb_remove_sysfs(struct platform_device *pdev)
 	sysfs_remove_group(&mfd->fbi->dev->kobj, &msm_fb_attr_group);
 }
 
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-static void fps_poller(struct work_struct *work)
-{
-	int retVal = 0;
-	char mode = 0;
-
-	if(frame_count > FPS_POLLING_INTERVAL * CABC_CRITERIA)
-		mode = FB_CABC_MODE_MOVING_IMAGE;
-	else
-		mode = FB_CABC_MODE_UI;
-		
-	printk("[DISPLAY]FPS = %d, Set CABC mode(%d)\n", frame_count, mode);
-	frame_count = 0;
-
-	down(&gmfd->sem);
-	if(gmsm_fb_panel_data->set_cabc_mode != NULL) {
-		retVal = gmsm_fb_panel_data->set_cabc_mode(mode);
-	}
-	up(&gmfd->sem);
-
-	schedule_delayed_work(&FPSpoller, fps_polling_interval);
-}
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
 static int msm_fb_probe(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd;
@@ -1245,11 +806,6 @@ static int msm_fb_probe(struct platform_device *pdev)
 
 	if (pdev_list_cnt >= MSM_FB_MAX_DEV_LIST)
 		return -ENOMEM;
-/* FIH-SW-MM-VH-DISPLAY-18+[ */
-	#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-	gmfd = mfd;
-	#endif
-/* FIH-SW-MM-VH-DISPLAY-18+] */
 	mfd->panel_info.frame_count = 0;
 /* FIH-SW-MM-VH-DISPLAY-09*[ */
 #ifdef CONFIG_FB_MSM_OVERLAY
@@ -1288,18 +844,6 @@ static int msm_fb_probe(struct platform_device *pdev)
 	pdev_list[pdev_list_cnt++] = pdev;
 	msm_fb_create_sysfs(pdev);
     
-/* FIH-SW-MM-VH-DISPLAY-18*[ */
-/* FIH-SW-MM-VH-DISPLAY-40* */
-#if defined(CONFIG_FIH_SW_DISPLAY_CABC)
-    gmsm_fb_panel_data = (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
-#endif
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-	INIT_DELAYED_WORK(&FPSpoller, fps_poller);
-	/* FIH-SW-MM-VH-DISPLAY-21* */
-	//schedule_delayed_work(&FPSpoller, fps_polling_interval);
-	isEnableCABC = 0;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-18*] */
 	return 0;
 }
 
@@ -1447,13 +991,6 @@ static int msm_fb_suspend_sub(struct msm_fb_data_type *mfd)
 			}
 		}
 	}
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-		if(isEnableCABC != 0){
-			cancel_delayed_work(&FPSpoller);
-		}
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
 	return 0;
 }
 
@@ -1511,13 +1048,6 @@ static int msm_fb_resume_sub(struct msm_fb_data_type *mfd)
 	/* FIH-SW-MM-VH-DISPLAY-16+ */
 	unset_bl_level = 1;
 	
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-	if(isEnableCABC != 0){
-		schedule_delayed_work(&FPSpoller, fps_polling_interval);
-	}
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
 	return ret;
 }
 #endif
@@ -1690,12 +1220,6 @@ void msm_fb_set_backlight(struct msm_fb_data_type *mfd, __u32 bkl_lvl)
 	struct msm_fb_panel_data *pdata;
 
 	printk("[DISPLAY] %s: bkl_lvl = %d\r\n", __func__, bkl_lvl);
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-		if(TestPattern != 0)
-			return;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
 #ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 	down(&bkl_sem);
 
@@ -1854,13 +1378,6 @@ static void msm_fb_fillrect(struct fb_info *info,
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
 
 /* FIH-SW-MM-VH-DISPLAY-09+[ */
-/* FIH-SW-MM-VH-DISPLAY-21* */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-	if(TestPattern != 0)
-		return;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-09+] */
-
 	cfb_fillrect(info, rect);
 	if (!mfd->hw_refresh && (info->var.yoffset == 0) &&
 		!mfd->sw_currently_refreshing) {
@@ -1881,12 +1398,6 @@ static void msm_fb_copyarea(struct fb_info *info,
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
 	
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-	if(TestPattern != 0)
-		return;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
 
 
 	cfb_copyarea(info, area);
@@ -1907,13 +1418,6 @@ static void msm_fb_copyarea(struct fb_info *info,
 static void msm_fb_imageblit(struct fb_info *info, const struct fb_image *image)
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
-
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-	if(TestPattern != 0)
-		return;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
 
 	cfb_imageblit(info, image);
 	if (!mfd->hw_refresh && (info->var.yoffset == 0) &&
@@ -1959,13 +1463,6 @@ static int msm_fb_mmap(struct fb_info *info, struct vm_area_struct * vma)
 	u32 len = PAGE_ALIGN((start & ~PAGE_MASK) + info->fix.smem_len);
 	unsigned long off = vma->vm_pgoff << PAGE_SHIFT;
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
-
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-	if(TestPattern != 0)
-		return 0;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
 
 	if (off >= len) {
 		/* memory mapped io */
@@ -2374,22 +1871,6 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 #endif
 /* FIH-SW3-MM-NC-LCM-03-]- */
 
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-	ret = device_create_file(fbi->dev, &dev_attr_TestPattern);
-	if (ret) {
-		printk(KERN_ERR "[DISPLAY] %s: create dev_attr_pattern failed\n",
-				__func__);
-	}
-#endif
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-	ret = device_create_file(fbi->dev, &dev_attr_isEnableCABC);
-	if (ret) {
-		printk(KERN_ERR "[DISPLAY] %s: create dev_attr_isEnableCABC failed\n",
-				__func__);
-	}
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
 /* FIH-SW-MM-VH-DISPLAY-16+[ */
 	ret = device_create_file(fbi->dev, &dev_attr_dim);
 	if (ret) {
@@ -2620,85 +2101,6 @@ static int msm_fb_release(struct fb_info *info, int user)
 
 DEFINE_SEMAPHORE(msm_fb_pan_sem);
 /* FIH-SW-MM-VH-DISPLAY-09+[ */
-/* FIH-SW-MM-VH-DISPLAY-21* */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-static int pattern_pan_display(struct fb_var_screeninfo *var,
-				struct fb_info *info)
-{
-	struct mdp_dirty_region dirty;
-	struct mdp_dirty_region *dirtyPtr = NULL;
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
-
-	if (info->node != 0 || mfd->cont_splash_done)	/* primary */
-		if ((!mfd->op_enable) || (!mfd->panel_power_on))
-			return -EPERM;
-
-	if (var->xoffset > (info->var.xres_virtual - info->var.xres))
-		return -EINVAL;
-
-	if (var->yoffset > (info->var.yres_virtual - info->var.yres))
-		return -EINVAL;
-
-	if (info->fix.xpanstep)
-		info->var.xoffset =
-			(var->xoffset / info->fix.xpanstep) * info->fix.xpanstep;
-
-	if (info->fix.ypanstep)
-		info->var.yoffset =
-			(var->yoffset / info->fix.ypanstep) * info->fix.ypanstep;
-
-	/* "UPDT" */
-	if (var->reserved[0] == 0x54445055) {
-		dirty.xoffset = var->reserved[1] & 0xffff;
-		dirty.yoffset = (var->reserved[1] >> 16) & 0xffff;
-
-		if ((var->reserved[2] & 0xffff) <= dirty.xoffset)
-			return -EINVAL;
-		if (((var->reserved[2] >> 16) & 0xffff) <= dirty.yoffset)
-			return -EINVAL;
-
-		dirty.width = (var->reserved[2] & 0xffff) - dirty.xoffset;
-		dirty.height =
-		    ((var->reserved[2] >> 16) & 0xffff) - dirty.yoffset;
-		info->var.yoffset = var->yoffset;
-
-		if (dirty.xoffset < 0)
-			return -EINVAL;
-
-		if (dirty.yoffset < 0)
-			return -EINVAL;
-
-		if ((dirty.xoffset + dirty.width) > info->var.xres)
-			return -EINVAL;
-
-		if ((dirty.yoffset + dirty.height) > info->var.yres)
-			return -EINVAL;
-
-		if ((dirty.width <= 0) || (dirty.height <= 0))
-			return -EINVAL;
-
-		dirtyPtr = &dirty;
-	}
-	complete(&mfd->msmfb_update_notify);
-	mutex_lock(&msm_fb_notify_update_sem);
-	if (mfd->msmfb_no_update_notify_timer.function)
-		del_timer(&mfd->msmfb_no_update_notify_timer);
-
-	mfd->msmfb_no_update_notify_timer.expires =
-				jiffies + ((1000 * HZ) / 1000);
-	add_timer(&mfd->msmfb_no_update_notify_timer);
-	mutex_unlock(&msm_fb_notify_update_sem);
-	
-	down(&msm_fb_pan_sem);
-	mdp_set_dma_pan_info(info, dirtyPtr,
-						(var->activate == FB_ACTIVATE_VBL));
-	mdp_dma_pan_update(info);
-	up(&msm_fb_pan_sem);
-
-	++mfd->panel_info.frame_count;
-	return 0;
-}
-#endif
 
 static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 			      struct fb_info *info)
@@ -2723,12 +2125,6 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 
 	if (var->yoffset > (info->var.yres_virtual - info->var.yres))
 		return -EINVAL;
-/* FIH-SW-MM-VH-DISPLAY-21* */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-	if(TestPattern != 0) {
-		return 0;
-	}
-#endif
 	if (info->fix.xpanstep)
 		info->var.xoffset =
 		    (var->xoffset / info->fix.xpanstep) * info->fix.xpanstep;
@@ -2874,11 +2270,6 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 #endif
 
 	++mfd->panel_info.frame_count;
-/* FIH-SW-MM-VH-DISPLAY-18+[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-	frame_count++;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-18+] */
 	return 0;
 }
 /* FIH-SW-MM-VH-DISPLAY-09*] */
@@ -4374,13 +3765,6 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 	struct mdp_page_protection fb_page_protection;
 	struct msmfb_mdp_pp mdp_pp;
 	int ret = 0;
-
-/* FIH-SW-MM-VH-DISPLAY-21*[ */
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC_TOOLBOX
-	if(TestPattern != 0)
-		return 0;
-#endif
-/* FIH-SW-MM-VH-DISPLAY-21*] */
 
 	switch (cmd) {
 #ifdef CONFIG_FB_MSM_OVERLAY

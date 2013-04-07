@@ -192,10 +192,6 @@ struct msm_fb_panel_data {
 	int (*get_id) (struct msm_fb_data_type *);
 #endif
 
-#ifdef CONFIG_FIH_SW_DISPLAY_CABC
-	int (*set_cabc_mode) (char mode);
-#endif
-
 #ifdef CONFIG_FIH_SW_DISPLAY_LCM_DIMMING
 	int (*set_dimming) (char enable);
 #endif
