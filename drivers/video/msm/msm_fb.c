@@ -353,7 +353,7 @@ static struct msm_fb_platform_data *msm_fb_pdata;
 unsigned char hdmi_prim_display;
 unsigned char hdmi_prim_resolution;
 
-#if defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
+#if (defined(CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK) || defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK))
 enum {
 	LCM_ID_DA_MES_CMI_DP = 0x0A,
 	LCM_ID_DA_MES_AUO_0B = 0x0B,
@@ -375,6 +375,25 @@ int msm_fb_check_lcm_healthy(struct msm_fb_data_type *mfd, struct fb_info *fbi)
 	struct msm_fb_panel_data *pdata =
 		(struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
 
+#if defined(CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK)
+	if(mfd->panel_info.lcm_model == (__u32)LCM_ID_DA_TAP_CMI){
+		cur_time = current_kernel_time();
+		duration = cur_time.tv_sec - pre_time.tv_sec;
+
+		if (duration < 2)
+			return 0;
+		else
+			pre_time = cur_time;
+
+		down(&mfd->sem);
+		if(pdata->get_id != NULL) {
+			retVal = pdata->get_id(mfd);
+		}
+		up(&mfd->sem);
+
+	}
+#endif
+#if defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
 	if((mfd->panel_info.lcm_model == (__u32)LCM_ID_DA_MES_AUO_0B) ||
 		(mfd->panel_info.lcm_model == (__u32)LCM_ID_DA_MES_AUO_0D))
 	{
@@ -392,6 +411,7 @@ int msm_fb_check_lcm_healthy(struct msm_fb_data_type *mfd, struct fb_info *fbi)
 		}
 		up(&mfd->sem);
 	}
+#endif
 
 	return retVal;
 }
@@ -2078,7 +2098,7 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 	struct mdp_dirty_region dirty;
 	struct mdp_dirty_region *dirtyPtr = NULL;
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
-#if !defined(CONFIG_FIH_PROJECT_NAN) || defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
+#if !defined(CONFIG_FIH_PROJECT_NAN) || defined(CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK) || defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
 	struct msm_fb_panel_data *pdata = NULL;
 #endif
 	/*
@@ -2210,7 +2230,7 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 	/*-- Tracy - 20121003 Modify for using --*/
 #endif
 
-#if defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
+#if defined(CONFIG_FIH_SW_DISPLAY_LCM_ID_CHECK) || defined(CONFIG_FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK)
 	if (mfd->bl_level > 0){
 		if (msm_fb_check_lcm_healthy(mfd, info) < 0) {
 			printk(KERN_ERR "[DISPLAY] %s, panel crash detected at pan display, reset panel\n", __func__);
