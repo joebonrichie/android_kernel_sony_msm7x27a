@@ -306,7 +306,6 @@ static ssize_t display_show_battery(struct device *dev,
 		case BATTERY_FULL:
 	
 			fih_load_565rle_image(rlefile);
-			fih_load_565rle_image(rlefile);
 
 			msm_fb_pan_display(&fbi->var, fbi);
 			break;
