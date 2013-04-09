@@ -334,7 +334,7 @@ static ssize_t display_show_battery(struct device *dev,
 	case BATTERY_FULL:
 /* FIH-SW2-MM-KW-RGBA8888-00+{ */
 #if defined(CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888)
-        fih_load_565rle_image_to_RGBA8888(rlefile);
+		fih_load_565rle_image_to_RGBA8888(rlefile);
 #else
 		fih_load_565rle_image(rlefile);
 #endif
@@ -363,11 +363,6 @@ static ssize_t display_show_battery(struct device *dev,
 #endif
 /* FIH-SW-MM-VH-DISPLAY-18*] */
 		break;
-/* FIH-SW3-MM-NC-LCM-09-[+ */
-	case DISP_LOGO:
-		draw_logo(fbi);
-		break;
-/* FIH-SW3-MM-NC-LCM-09-]- */
 
 	default:
 		printk(KERN_ERR "[DISPLAY] Invalid battery state\n");
@@ -1721,7 +1716,13 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	}
 /* FIH-SW-MM-VH-DISPLAY-16+] */
 #if defined(CONFIG_FB_MSM_LOGO) && defined(CONFIG_FB_MSM_DEFAULT_DEPTH_RGB565)
-	if (!load_565rle_image(INIT_IMAGE_FILE)) ;	/* Flip buffer *//*MTD-MM-CL-DrawLogo-00- */
+	draw_logo(fbi);
+
+	mdp_set_dma_pan_info(fbi, NULL, TRUE);
+	msm_fb_blank_sub(FB_BLANK_UNBLANK, fbi, mfd->op_enable);
+	mdp_dma_pan_update(fbi);
+	msm_fb_set_backlight(mfd, 9);
+
 #endif
 	ret = 0;
 
