@@ -221,6 +221,12 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Queuing backlight commands before pan display, and send after pan display.
+        config FIH_BACKLIGHT
+            depends on FIH_SW_DISPLAY
+            bool "Enable backlight control"
+            default n
+            help
+                Enable backlight control.
 #FIH-SW-MM-VH-DISPLAY-40*[
         config FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
@@ -501,6 +507,13 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Queuing backlight commands before pan display, and send after pan display.
+        config FIH_BACKLIGHT
+            depends on FIH_SW_DISPLAY
+            bool "Enable backlight control"
+            default n
+            help
+                Enable backlight control.
+
 #FIH-SW-MM-VH-DISPLAY-40*[
         config FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
@@ -769,6 +782,12 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Queuing backlight commands before pan display, and send after pan display.
+        config FIH_BACKLIGHT
+            depends on FIH_SW_DISPLAY
+            bool "Enable backlight control"
+            default n
+            help
+                Enable backlight control.
 #FIH-SW-MM-VH-DISPLAY-40*[
         config FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
