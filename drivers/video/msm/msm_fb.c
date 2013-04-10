@@ -49,24 +49,12 @@
 #include "tvenc.h"
 #include "mdp.h"
 #include "mdp4.h"
-/* FIH-SW3-MM-NC-LCM-03-[+ */
-#ifdef CONFIG_FIH_FB_MSM_POWER_OFF_CHARGING_ANIMATION
-#include "FIH_BatteryIcon.h"
-#endif
-/* FIH-SW3-MM-NC-LCM-03-]- */
 
 #ifdef CONFIG_FB_MSM_LOGO
-/* FIH-SW-MM-VH-DISPLAY-05* */
 
 #define INIT_IMAGE_FILE "/logo.rle" /* FIH-SW2-MM-KW-CDF_logo-00+ */
-/* FIH-SW2-MM-KW-RGBA8888-00+{ */
-#if defined(CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888)
-extern int fih_load_565rle_image_to_RGBA8888(char *filename);
-#else
+
 extern int load_565rle_image(char *filename);
-extern int fih_load_565rle_image(char *filename);/*MTD-MM-CL-DrawLogo-00+ */
-#endif
-/* FIH-SW2-MM-KW-RGBA8888-00-} */
 #endif
 
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
@@ -306,16 +294,10 @@ static ssize_t display_show_battery(struct device *dev,
 	struct msm_fb_panel_data *pdata = NULL;
 	int last_bl_level = 0;
 	/* FIH-SW-MM-VH-DISPLAY-18*] */
-    int battery_state = 0;
-	int start_x = 0;
-	int start_y = 0;
+	int battery_state = 0;
 	char rlefile[50];/*MTD-MM-CL-DrawLogo-00+ */
 
 	printk(KERN_ERR "[DISPLAY] Enter %s\n", __func__);
-
-/* FIH-SW3-MM-NC-POWEROFF_CHARGING-00-[+ */
-	start_x = BATTERY_X_POSITION;
-	start_y = BATTERY_Y_POSITION;
 
 /* FIH-SW3-MM-NC-COVERITY_CID#16190-01-[+ */
 	/* Use %3d to limit size to avoid overflow */

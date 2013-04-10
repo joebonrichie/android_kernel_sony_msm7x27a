@@ -703,7 +703,7 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 
 /* FIH-SW-MM-VH-DISPLAY-27*+[ */
 #define VIC_REG(off) (MSM_VIC_BASE + (off))
-#define MSM_VIC_BASE        IOMEM(0xFA000000)
+//#define MSM_VIC_BASE        IOMEM(0xFA100000)
 #define VIC_INT_SELECT0     VIC_REG(0x0000)  /* 1: FIQ, 0: IRQ */
 #define VIC_INT_SELECT1     VIC_REG(0x0004)  /* 1: FIQ, 0: IRQ */
 #define VIC_INT_EN0         VIC_REG(0x0010)
