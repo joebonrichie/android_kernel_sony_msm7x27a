@@ -21,12 +21,6 @@
 
 #include "rtc-core.h"
 
-/* FIH-SW3-KERNEL-TH-add_last_alog-00+[ */
-#ifdef CONFIG_FIH_LAST_ALOG
-#include "mach/alog_ram_console.h"
-#endif
-/* FIH-SW3-KERNEL-TH-add_last_alog-00+] */
-
 static DEFINE_IDR(rtc_idr);
 static DEFINE_MUTEX(idr_lock);
 struct class *rtc_class;
