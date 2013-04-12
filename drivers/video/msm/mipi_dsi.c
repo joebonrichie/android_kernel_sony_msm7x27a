@@ -306,6 +306,8 @@ static int mipi_dsi_on(struct platform_device *pdev)
 				}
 			}
 			mipi_dsi_set_tear_on(mfd);
+			/* Tracy moify-20120829 Enable Tearing function for sometimes TE disable */
+			gpio_tlmm_config(GPIO_CFG(97, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),GPIO_CFG_ENABLE);
 		}
 	}
 

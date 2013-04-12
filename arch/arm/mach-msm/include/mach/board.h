@@ -235,6 +235,9 @@ struct msm_camera_i2c_conf {
 
 struct msm_camera_sensor_platform_info {
 	int mount_angle;
+	//Flea++
+       int hw_version;
+	//Flea--
 	int sensor_reset;
 	struct camera_vreg_t *cam_vreg;
 	int num_vreg;

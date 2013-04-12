@@ -63,6 +63,7 @@ int32_t msm_camera_i2c_write(struct msm_camera_i2c_client *client,
 	int32_t rc = -EFAULT;
 	unsigned char buf[client->addr_type+data_type];
 	uint8_t len = 0;
+	//printk("Peter:msm_camera_i2c_write()addr:%x data:%x",addr,data);
 	if ((client->addr_type != MSM_CAMERA_I2C_BYTE_ADDR
 		&& client->addr_type != MSM_CAMERA_I2C_WORD_ADDR)
 		|| (data_type != MSM_CAMERA_I2C_BYTE_DATA

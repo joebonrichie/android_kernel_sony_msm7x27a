@@ -60,3 +60,13 @@ obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o
 obj-$(CONFIG_PMIC8058_OTHC)             += pmic8058-othc.o
 obj-$(CONFIG_INPUT_PMIC8058_VIBRA_MEMLESS) += pmic8058-vib-memless.o
 obj-$(CONFIG_BOSCH_BMA150)              += bma150.o
+# /*++ Huize - 20121107 Accelerometer sensor ++*/
+obj-$(CONFIG_INPUT_LIS3DF)		+= lis3df.o
+obj-$(CONFIG_INPUT_BMA250)		+= bma250.o
+obj-$(CONFIG_INPUT_BMA250E)		+= bma250e.o
+obj-$(CONFIG_INPUT_KXTJ9)		+= kxtj9.o
+# /*-- Huize - 20121107 Accelerometer sensor--*/
+# /*++ Huize - 20121107 Proximity sensor ++*/
+obj-$(CONFIG_INPUT_ISL29021)		+= isl29021.o
+obj-$(CONFIG_INPUT_EPL6803)		+= epl6803.o
+# /*-- Huize - 20121107 Proximity sensor --*/

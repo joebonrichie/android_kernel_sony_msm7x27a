@@ -102,6 +102,16 @@ do { \
 #define preempt_enable_no_resched_notrace()	do { } while (0)
 #define preempt_enable_notrace()		do { } while (0)
 
+//20130122-JordanChen
+#define add_preempt_count_notrace(val)			do { } while (0)
+#define sub_preempt_count_notrace(val)			do { } while (0)
+#define inc_preempt_count_notrace()             do { } while (0)
+#define dec_preempt_count_notrace()             do { } while (0)
+#define inc_preempt_count()                     do { } while (0)
+#define dec_preempt_count()                     do { } while (0)
+
+//20130122-JordanChen
+
 #endif /* CONFIG_PREEMPT_COUNT */
 
 #ifdef CONFIG_PREEMPT_NOTIFIERS

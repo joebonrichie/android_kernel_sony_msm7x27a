@@ -2323,6 +2323,10 @@ static long msm_ioctl_server(struct file *file, void *fh,
 				g_server_dev.camera_info.is_internal_cam[i];
 			temp_cam_info.s_mount_angle[i] =
 				g_server_dev.camera_info.s_mount_angle[i];
+			//Flea++
+                     temp_cam_info.hw_version[i] =
+				g_server_dev.camera_info.hw_version[i];
+			//Flea--
 			temp_cam_info.sensor_type[i] =
 				g_server_dev.camera_info.sensor_type[i];
 
@@ -3434,7 +3438,11 @@ int msm_sensor_register(struct v4l2_subdev *sensor_sd)
 	g_server_dev.camera_info.s_mount_angle
 	[g_server_dev.camera_info.num_cameras]
 	= sdata->sensor_platform_info->mount_angle;
-
+//Flea++ 
+       g_server_dev.camera_info.hw_version
+	[g_server_dev.camera_info.num_cameras]
+	= sdata->sensor_platform_info->hw_version;
+//Flea--
 	g_server_dev.camera_info.is_internal_cam
 	[g_server_dev.camera_info.num_cameras]
 	= sdata->camera_type;
@@ -3453,8 +3461,9 @@ int msm_sensor_register(struct v4l2_subdev *sensor_sd)
 	  device info*/
 	snprintf(pcam->media_dev.serial,
 			sizeof(pcam->media_dev.serial),
-			"%s-%d-%d", QCAMERA_NAME,
+			"%s-%d-%d-%d", QCAMERA_NAME,
 			sdata->sensor_platform_info->mount_angle,
+			sdata->sensor_platform_info->hw_version,
 			sdata->camera_type);
 
 	g_server_dev.camera_info.num_cameras++;

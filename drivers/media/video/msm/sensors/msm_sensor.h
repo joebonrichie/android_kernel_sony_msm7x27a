@@ -24,7 +24,7 @@
 #include <linux/types.h>
 #include <linux/uaccess.h>
 #include <mach/camera.h>
-#include <mach/gpio.h>
+#include <linux/gpio.h>
 #include <media/msm_camera.h>
 #include <media/v4l2-subdev.h>
 #include "msm_camera_i2c.h"
@@ -84,6 +84,10 @@ struct msm_sensor_reg_t {
 	uint8_t group_hold_off_conf_size;
 	struct msm_camera_i2c_conf_array *init_settings;
 	uint8_t init_size;
+//Flea++
+       struct msm_camera_i2c_conf_array *init_settings_1;
+	uint8_t init_size_1;
+//Flea--
 	struct msm_camera_i2c_conf_array *mode_settings;
 	struct msm_camera_i2c_conf_array *no_effect_settings;
 	struct msm_sensor_output_info_t *output_settings;
@@ -140,6 +144,10 @@ struct msm_sensor_fn_t {
 		(struct msm_sensor_ctrl_t *s_ctrl, uint16_t res);
 	int32_t (*sensor_get_csi_params)(struct msm_sensor_ctrl_t *,
 		struct csi_lane_params_t *);
+	//Flea++  1011-API implement
+	int (*sensor_config_brithness) (struct msm_sensor_ctrl_t *,  void __user * );
+	int32_t (*sensor_set_special_effect) (struct msm_sensor_ctrl_t *, uint32_t );
+	//Flea -- 1011-API implement
 };
 
 struct msm_sensor_csi_info {
@@ -265,4 +273,8 @@ struct msm_sensor_ctrl_t *get_sctrl(struct v4l2_subdev *sd);
 #define VIDIOC_MSM_SENSOR_CSID_INFO\
 	_IOWR('V', BASE_VIDIOC_PRIVATE + 12, struct msm_sensor_csi_info *)
 
+//Flea++  1011-API implement	
+#define VIDIOC_MSM_SENSOR_CFG_BRITHNESS \
+	_IOWR('V', BASE_VIDIOC_PRIVATE + 13, void __user *)
+//Flea--  1011-API implement		
 #endif

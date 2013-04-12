@@ -25,6 +25,15 @@
 
 #include <mach/msm_rpcrouter.h>
 
+//[Arima Edison] add exception for charger usage++
+#include <linux/delay.h>
+//[Arima Edison] add exception for charger usage--
+
+/*++ Kevin Shiu - 20121003 Save intensity using liked list ++*/ 
+#include <linux/list.h> 
+#include <linux/slab.h>
+/*-- Kevin Shiu - 20121003 Save intensity using liked list --*/ 
+
 #define PM_LIBPROG      0x30000061
 #if (CONFIG_MSM_AMSS_VERSION == 6220) || (CONFIG_MSM_AMSS_VERSION == 6225)
 #define PM_LIBVERS      0xfb837d0b
@@ -35,14 +44,29 @@
 #define HTC_PROCEDURE_SET_VIB_ON_OFF	21
 #define PMIC_VIBRATOR_LEVEL	(3000)
 
+/*++ Huize - 20121003 Add for improving performance and controling intensity ++*/
+static struct workqueue_struct *vibrator_workqueue;
+/*-- Huize - 20121003 Add for improving performance and controling intensity --*/
+
 static struct work_struct work_vibrator_on;
 static struct work_struct work_vibrator_off;
 static struct hrtimer vibe_timer;
+
+/*++ Kevin Shiu - 20121003 Save intensity using liked list ++*/
+typedef struct{
+	int vibrator_level;
+	struct list_head list;
+}vibrator_list;
+struct list_head vibrator_list_head;
+/*-- Kevin Shiu - 20121003 Save intensity using liked list --*/
 
 #ifdef CONFIG_PM8XXX_RPC_VIBRATOR
 static void set_pmic_vibrator(int on)
 {
 	int rc;
+	/*++ Kevin Shiu - 20121003 Save intensity using liked list ++*/
+	vibrator_list *vibrator = NULL;
+	/*-- Kevin Shiu - 20121003 Save intensity using liked list --*/
 
 	rc = pmic_vib_mot_set_mode(PM_VIB_MOT_MODE__MANUAL);
 	if (rc) {
@@ -50,10 +74,31 @@ static void set_pmic_vibrator(int on)
 		return;
 	}
 
-	if (on)
-		rc = pmic_vib_mot_set_volt(PMIC_VIBRATOR_LEVEL);
-	else
+	/*++ Kevin Shiu - 20121003 Save intensity using liked list ++*/
+	if(on && (vibrator_list_head.next == &vibrator_list_head)){
+		pr_err("%s: list_head is invalid", __func__);
+		return;
+	}
+
+	if(on){
+		//get vibrator_list pointer
+		vibrator = list_entry(vibrator_list_head.next , vibrator_list , list);
+		rc = pmic_vib_mot_set_volt(vibrator->vibrator_level);
+
+        //if ture, it means that only creates a structure.
+		if(vibrator->list.next == vibrator->list.prev){
+			list_del_rcu(&vibrator_list_head);
+			INIT_LIST_HEAD(&vibrator_list_head);
+		}else{	
+			list_del_rcu(&vibrator->list);
+		}
+
+		//free
+		kfree(vibrator);
+	}else{
 		rc = pmic_vib_mot_set_volt(0);
+	}
+    /*-- Kevin Shiu - 20121003 Save intensity using liked list --*/
 
 	if (rc)
 		pr_err("%s: Vibrator set voltage level failed", __func__);
@@ -97,15 +142,17 @@ static void pmic_vibrator_off(struct work_struct *work)
 	set_pmic_vibrator(0);
 }
 
+/*++ Huize - 20121003 modified for improving performance ++*/
 static void timed_vibrator_on(struct timed_output_dev *sdev)
 {
-	schedule_work(&work_vibrator_on);
+	queue_work(vibrator_workqueue, &work_vibrator_on);
 }
 
 static void timed_vibrator_off(struct timed_output_dev *sdev)
 {
-	schedule_work(&work_vibrator_off);
+	queue_work(vibrator_workqueue, &work_vibrator_off);
 }
+/*-- Huize - 20121003 Modify for improving performance --*/
 
 static void vibrator_enable(struct timed_output_dev *dev, int value)
 {
@@ -140,6 +187,47 @@ static enum hrtimer_restart vibrator_timer_func(struct hrtimer *timer)
 	return HRTIMER_NORESTART;
 }
 
+//[Arima Edison] add exception for charger usage++
+static ssize_t enable_vibrator(struct device *dev,
+					struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+
+	static unsigned long keep_time_data;
+	int rc;
+
+	if (strict_strtoul(buf, 10, &keep_time_data))
+		return -EINVAL;
+
+	hrtimer_cancel(&vibe_timer);
+
+	keep_time_data = (keep_time_data > 300 ? 300 : keep_time_data);
+	rc = pmic_vib_mot_set_mode(PM_VIB_MOT_MODE__MANUAL);
+
+	if(keep_time_data == 0)
+	{
+		rc = pmic_vib_mot_set_volt(0);
+	}
+	else {
+		rc = pmic_vib_mot_set_volt(3000);
+		mdelay( keep_time_data );
+		rc = pmic_vib_mot_set_volt(0);
+
+	}
+
+	return count;
+}
+
+static DEVICE_ATTR(enable_vibrator , 0644 , NULL , enable_vibrator);
+static struct attribute *vibrator_attributes[] = {
+	&dev_attr_enable_vibrator.attr,
+	NULL
+};
+static struct attribute_group vibrator_attribute_group = {
+	.attrs = vibrator_attributes
+};
+//[Arima Edison] add exception for charger usage--
+
 static struct timed_output_dev pmic_vibrator = {
 	.name = "vibrator",
 	.get_time = vibrator_get_time,
@@ -148,6 +236,15 @@ static struct timed_output_dev pmic_vibrator = {
 
 void __init msm_init_pmic_vibrator(void)
 {
+	//[Arima Edison] add exception for charger usage++
+	int err;
+	//[Arima Edison] add exception for charger usage--
+	/*++ Huize - 20120917 Add for improving performance ++*/
+	vibrator_workqueue = create_singlethread_workqueue("vibrate");
+	/*-- Huize - 20120917 Add for improving performance --*/
+	/*++ Kevin Shiu - 20121003 Save intensity using liked list ++*/
+	INIT_LIST_HEAD(&vibrator_list_head);
+	/*-- Kevin Shiu - 20121003 Save intensity using liked list --*/
 	INIT_WORK(&work_vibrator_on, pmic_vibrator_on);
 	INIT_WORK(&work_vibrator_off, pmic_vibrator_off);
 
@@ -155,6 +252,9 @@ void __init msm_init_pmic_vibrator(void)
 	vibe_timer.function = vibrator_timer_func;
 
 	timed_output_dev_register(&pmic_vibrator);
+	//[Arima Edison] add exception for charger usage++
+	err= sysfs_create_group(&pmic_vibrator.dev->kobj,&vibrator_attribute_group);
+	//[Arima Edison] add exception for charger usage--
 }
 
 MODULE_DESCRIPTION("timed output pmic vibrator device");

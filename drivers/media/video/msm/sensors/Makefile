@@ -16,3 +16,7 @@ obj-$(CONFIG_MT9E013) += mt9e013_v4l2.o
 obj-$(CONFIG_WEBCAM_OV9726) += ov9726_v4l2.o
 obj-$(CONFIG_OV7692) += ov7692_v4l2.o
 obj-$(CONFIG_VX6953) += vx6953.o
+# /*++ Huize - 20121004 Add for using ++*/
+obj-$(CONFIG_S5K5CA_V4L2_BAYER) += s5k5ca_v4l2_bayer.o
+obj-$(CONFIG_S5K5CA_V4L2_YUV) += s5k5ca_v4l2_yuv.o
+# /*-- Huize - 20121004 Add for using --*/

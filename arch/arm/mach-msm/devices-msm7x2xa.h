@@ -19,6 +19,9 @@ void __init msm_common_io_init(void);
 void __init msm_init_pmic_vibrator(void);
 void __init msm7x25a_kgsl_3d0_init(void);
 int __init msm7x2x_misc_init(void);
+/*++ Huize - 20120927 Add by FelexChing ++*/
+int ar600x_wlan_power(bool on);
+/*-- Huize - 20120927 Add by FelexChing --*/
 extern struct platform_device msm7x27a_device_vfe;
 extern struct platform_device msm7x27a_device_csic0;
 extern struct platform_device msm7x27a_device_csic1;

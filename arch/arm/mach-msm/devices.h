@@ -365,7 +365,17 @@ extern struct platform_device msm_etb_device;
 extern struct platform_device msm_tpiu_device;
 extern struct platform_device msm_funnel_device;
 extern struct platform_device msm_etm_device;
+//<<SKIES 2011/10/19, button-backlight
+extern struct platform_device button_led_pdev;
+//>>SKIES 2011/10/19
+
+//Edison add for RGB LED ++
+extern struct platform_device red_led_pdev;
+extern struct platform_device green_led_pdev;
+extern struct platform_device blue_led_pdev;
+//Edison add for RGB LED --
 extern struct platform_device apq8064_etm_device;
+
 #endif
 
 extern struct platform_device msm_bus_8064_apps_fabric;

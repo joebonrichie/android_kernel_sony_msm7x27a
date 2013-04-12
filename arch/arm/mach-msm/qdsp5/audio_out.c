@@ -879,6 +879,7 @@ static long audpp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		uint32_t mbadrc_coeff_buf;
 		prev_state = audio_copp->mbadrc_enable;
 		audio_copp->mbadrc_enable = 0;
+		MM_INFO("Kevin Shiu AUDIO_SET_MBADRC");
 		if (copy_from_user(&audio_copp->mbadrc.num_bands, (void *) arg,
 				sizeof(audio_copp->mbadrc) -
 				(AUDPP_CMD_CFG_OBJECT_PARAMS_COMMON_LEN + 2)))
@@ -950,6 +951,7 @@ static long audpp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			rc = -EFAULT;
 		audio_copp->eq_enable = prev_state;
 		audio_copp->eq_needs_commit = 1;
+		MM_INFO("Kevin Shiu AUDIO_SET_EQ");
 		break;
 
 	case AUDIO_SET_RX_IIR:
@@ -961,6 +963,7 @@ static long audpp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			rc = -EFAULT;
 		audio_copp->rx_iir_enable = prev_state;
 		audio_copp->rx_iir_needs_commit = 1;
+		MM_INFO("Kevin Shiu AUDIO_SET_RX_IIR");
 		break;
 
 	case AUDIO_SET_VOLUME:

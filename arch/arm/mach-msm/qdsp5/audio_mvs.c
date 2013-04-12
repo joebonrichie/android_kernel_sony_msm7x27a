@@ -926,7 +926,12 @@ static void audio_mvs_process_rpc_request(uint32_t procedure,
 
 				MM_DBG("UL AMR frame_type %d\n",
 					 be32_to_cpu(*args));
+#if 0 //QCOM_patch Kevin Shiu, To fix voip sound on Rx path is fuzzy 			
 			} else if (frame_mode == MVS_FRAME_MODE_PCM_UL) {
+#else
+			} else if ((frame_mode == MVS_FRAME_MODE_PCM_UL) ||
+				(frame_mode == MVS_FRAME_MODE_PCM_WB_UL)) {
+#endif //QCOM_patch Kevin Shiu, To fix voip sound on Rx path is fuzzy 
 				/* PCM doesn't have frame_type */
 				buf_node->frame.frame_type = 0;
 			} else if (frame_mode == MVS_FRAME_MODE_VOC_TX) {
@@ -1053,7 +1058,12 @@ static void audio_mvs_process_rpc_request(uint32_t procedure,
 							cpu_to_be32(0x00000001);
 				dl_reply.cdc_param.gnr_arg.pkt_status =
 					cpu_to_be32(AUDIO_MVS_PKT_NORMAL);
+#if 0 //QCOM_patch Kevin Shiu, To fix voip sound on Rx path is fuzzy 			
 			} else if (frame_mode == MVS_FRAME_MODE_PCM_DL) {
+#else
+			} else if ((frame_mode == MVS_FRAME_MODE_PCM_DL) ||
+				(frame_mode == MVS_FRAME_MODE_PCM_WB_DL)) {
+#endif //QCOM_patch Kevin Shiu, To fix voip sound on Rx path is fuzzy 
 				dl_reply.cdc_param.gnr_arg.param1 = 0;
 				dl_reply.cdc_param.gnr_arg.param2 = 0;
 				dl_reply.cdc_param.\

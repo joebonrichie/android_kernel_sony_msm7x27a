@@ -71,3 +71,7 @@ obj-$(CONFIG_MSM_MEMORY_LOW_POWER_MODE_SUSPEND_DEEP_POWER_DOWN) \
 obj-$(CONFIG_PMIC8058_XOADC) += pmic8058-xoadc.o
 obj-$(CONFIG_QSEECOM) += qseecom.o
 obj-$(CONFIG_QFP_FUSE) += qfp_fuse.o
+
+# /*++ Mel - 20121008 Add for using ++*/
+obj-$(CONFIG_SENSORS_AK8963)	+= akm8963.o
+# /*-- Mel - 20121008 Add for using --*/

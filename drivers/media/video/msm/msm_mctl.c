@@ -209,6 +209,12 @@ static int msm_mctl_cmd(struct msm_cam_media_controller *p_mctl,
 			rc = msm_get_sensor_info(p_mctl, argp);
 			break;
 
+	//Flea++  1011-API implement	
+	case MSM_CAM_IOCTL_SENSOR_IO_CFG_BRITHNESS:
+		rc = v4l2_subdev_call(p_mctl->sensor_sdev,
+			core, ioctl, VIDIOC_MSM_SENSOR_CFG_BRITHNESS, argp);
+			break;
+	//Flea--  1011-API implement	
 	case MSM_CAM_IOCTL_SENSOR_IO_CFG:
 		rc = v4l2_subdev_call(p_mctl->sensor_sdev,
 			core, ioctl, VIDIOC_MSM_SENSOR_CFG, argp);

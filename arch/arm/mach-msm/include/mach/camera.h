@@ -279,6 +279,9 @@ struct msm_sensor_ctrl {
 	uint32_t s_mount_angle;
 	enum msm_st_frame_packing s_video_packing;
 	enum msm_st_frame_packing s_snap_packing;
+	/*++ PeterShih - 20120417 for camera HW version ++*/
+	int hw_version;
+	/*-- PeterShih - 20120417 for camera HW version --*/
 };
 
 struct msm_strobe_flash_ctrl {

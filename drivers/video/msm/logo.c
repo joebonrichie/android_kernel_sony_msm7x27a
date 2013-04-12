@@ -20,29 +20,35 @@
 #include <linux/vt_kern.h>
 #include <linux/unistd.h>
 #include <linux/syscalls.h>
-
+#include "mdp.h"
 #include <linux/irq.h>
 #include <asm/system.h>
 
 #define fb_width(fb)	((fb)->var.xres)
 #define fb_height(fb)	((fb)->var.yres)
 #define fb_size(fb)	((fb)->var.xres * (fb)->var.yres * 2)
+#define rgb32_r(rle) (((rle & 0xf800) >> 11) << 3)  
+#define rgb32_g(rle) (((rle & 0x07e0) >> 5 << 2))  
+#define rgb32_b(rle) (((rle & 0x001f) << 3))  
 
-static void memset16(void *_ptr, unsigned short val, unsigned count)
-{
-	unsigned short *ptr = _ptr;
-	count >>= 1;
-	while (count--)
-		*ptr++ = val;
-}
+#define rgb32(rle) (rgb32_r(rle) << 16 | rgb32_g(rle) << 8 | rgb32_b(rle) << 0)   
+static void memset32(void *_ptr, uint32_t val, unsigned count)
+ {
+       uint32_t *ptr = _ptr;
+       count >>= 2;
+         while (count--)
+                 *ptr++ = val;
+ }
 
 /* 565RLE image format: [count(2 bytes), rle(2 bytes)] */
 int load_565rle_image(char *filename, bool bf_supported)
 {
 	struct fb_info *info;
-	int fd, count, err = 0;
+	int fd,count, err = 0;
 	unsigned max;
-	unsigned short *data, *bits, *ptr;
+	unsigned short *data, *ptr ;
+	uint32_t *bits;
+	unsigned int out;
 
 	info = registered_fb[0];
 	if (!info) {
@@ -82,12 +88,14 @@ int load_565rle_image(char *filename, bool bf_supported)
 		       __func__, __LINE__, info->node);
 		goto err_logo_free_data;
 	}
-	bits = (unsigned short *)(info->screen_base);
+	bits = (uint32_t*)(info->screen_base);
 	while (count > 3) {
 		unsigned n = ptr[0];
 		if (n > max)
 			break;
-		memset16(bits, ptr[1], n << 1);
+		out = rgb32(ptr[1]);  
+
+		memset32(bits, out, n << 2);
 		bits += n;
 		max -= n;
 		ptr += 2;

@@ -1,0 +1,43 @@
+menuconfig FIH_CONFIG_GROUP
+    bool "FIH Configurations Group"
+    default y
+    help
+        Turn on this group to enable FIH's configurations menu
+
+if FIH_CONFIG_GROUP
+    comment "FIH Project Flags for FIH_CONFIG_GROUP"
+
+    choice
+        prompt "Select a project name"
+        default FIH_PROJECT_NAN
+
+        config FIH_PROJECT_NAN
+            bool "01. FIH_PROJECT_NAN"
+            help
+                Enable the support for FIH_PROJECT_NANHU flag
+    endchoice
+
+    # --- FIH_PROJECT_NAN{-------------------------------------------------- START
+    # ***********************************************************    
+    # Project configurations for FIH_PROJECT_NAN
+    # ***********************************************************
+    menu "Configurations for FIH_PROJECT_NAN"
+        depends on FIH_PROJECT_NAN
+
+        config FIH_MACH_TAMSUI_NAN
+            bool "FIH_MACH_TAMSUI_NAN"
+            depends on FIH_PROJECT_NAN
+            default y
+            help
+                Enable/Disable the build flag FIH_MACH_TAMSUI_NAN.
+        config SEMC_S1
+            bool "SEMC_S1"
+            depends on FIH_PROJECT_NAN
+            default y
+            help
+                Enable/Disable SEMC S1 boot for NAN.
+
+    endmenu
+    # --- FIH_PROJECT_NAN}-------------------------------------------------- END
+
+endif

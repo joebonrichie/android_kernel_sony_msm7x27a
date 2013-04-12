@@ -14,7 +14,7 @@
 #include "msm.h"
 #include "msm_ispif.h"
 #include "msm_camera_i2c_mux.h"
-
+extern int camera_id;
 /*=============================================================*/
 int32_t msm_sensor_adjust_frame_lines(struct msm_sensor_ctrl_t *s_ctrl,
 	uint16_t res)
@@ -53,10 +53,20 @@ int32_t msm_sensor_adjust_frame_lines(struct msm_sensor_ctrl_t *s_ctrl,
 int32_t msm_sensor_write_init_settings(struct msm_sensor_ctrl_t *s_ctrl)
 {
 	int32_t rc;
+	if(camera_id)
+		{
 	rc = msm_sensor_write_all_conf_array(
 		s_ctrl->sensor_i2c_client,
 		s_ctrl->msm_sensor_reg->init_settings,
 		s_ctrl->msm_sensor_reg->init_size);
+		}
+	else{
+       rc = msm_sensor_write_all_conf_array(
+		s_ctrl->sensor_i2c_client,
+		s_ctrl->msm_sensor_reg->init_settings_1,
+		s_ctrl->msm_sensor_reg->init_size_1);
+
+		}
 	return rc;
 }
 
@@ -98,6 +108,11 @@ int32_t msm_sensor_write_output_settings(struct msm_sensor_ctrl_t *s_ctrl,
 			s_ctrl->msm_sensor_reg->
 			output_settings[res].frame_length_lines},
 	};
+
+	/*++ PeterShih - 20121004 Add for protecting ++*/
+	if(!s_ctrl->sensor_output_reg_addr)
+		return 0;
+	/*-- PeterShih - 20121004 Add for protecting --*/
 
 	rc = msm_camera_i2c_write_tbl(s_ctrl->sensor_i2c_client, dim_settings,
 		ARRAY_SIZE(dim_settings), MSM_CAMERA_I2C_WORD_DATA);
@@ -414,6 +429,18 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 	cdata.cfgtype);
 		switch (cdata.cfgtype) {
 		case CFG_SET_FPS:
+			//Flea++
+			if (s_ctrl->func_tbl->
+			sensor_set_fps == NULL) {
+				rc = -EFAULT;
+				break;
+			}
+			rc = s_ctrl->func_tbl->
+				sensor_set_fps(
+				s_ctrl,
+				&(cdata.cfg.fps));
+			break;
+			//Flea--
 		case CFG_SET_PICT_FPS:
 			if (s_ctrl->func_tbl->
 			sensor_set_fps == NULL) {
@@ -470,7 +497,18 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 			break;
 
 		case CFG_SET_EFFECT:
-			break;
+			//Flea++
+			if (s_ctrl->func_tbl->
+			sensor_set_special_effect == NULL) {
+				rc = -EFAULT;
+				break;
+			}
+			rc = s_ctrl->func_tbl->
+				sensor_set_special_effect(
+				s_ctrl,
+				cdata.cfg.effect);
+			//Flea--
+			break;			
 
 		case CFG_SENSOR_INIT:
 			if (s_ctrl->func_tbl->

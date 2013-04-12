@@ -189,7 +189,7 @@ struct msm_fb_panel_data {
 	void (*set_rect) (int x, int y, int xres, int yres);
 	void (*set_vsync_notifier) (msm_fb_vsync_handler_type, void *arg);
 	void (*set_backlight) (struct msm_fb_data_type *);
-
+	int (*vreg_control) (int on);   //tracy 20121024 fix sleep current
 	/* function entry chain */
 	int (*on) (struct platform_device *pdev);
 	int (*off) (struct platform_device *pdev);

@@ -427,9 +427,16 @@ void mipi_dsi_clk_disable(void)
 	clk_disable(mdp_dsi_pclk);
 	/* DSIPHY_PLL_CTRL_0, disable dsi pll */
 	MIPI_OUTP(MIPI_DSI_BASE + 0x0200, 0x40);
+// <<FerryWu, 2012/03/28, prevent EBI1 clock being disabled when entering sleep mode
+// 20120523-Jordan , Need to remove these codes due to it will cause phone crash when sleep mode and plugin USB 
+/* Improve current consumption. 2012-11-05 */
+#if 1    // Need to disable ebi1_dsi_clk to improve current consumption.
 	if (clk_set_rate(ebi1_dsi_clk, 0))
 		pr_err("%s: ebi1_dsi_clk set rate failed\n", __func__);
 	clk_disable(ebi1_dsi_clk);
+#endif
+/* Improve current consumption. 2012-11-05 */
+// >>FerryWu, 2012/03/28, prevent EBI1 clock being disabled when entering sleep mode
 	mipi_dsi_clk_on = 0;
 }
 

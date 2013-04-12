@@ -11,6 +11,9 @@ obj-y				+= gpio/
 obj-$(CONFIG_PCI)		+= pci/
 obj-$(CONFIG_PARISC)		+= parisc/
 obj-$(CONFIG_RAPIDIO)		+= rapidio/
+#[Arima Edison] modify the init sequence++
+obj-y				+= leds/
+#[Arima Edison] modify the init sequence--
 obj-y				+= video/
 obj-y				+= idle/
 obj-$(CONFIG_ACPI)		+= acpi/
@@ -101,7 +104,9 @@ obj-$(CONFIG_CPU_FREQ)		+= cpufreq/
 obj-$(CONFIG_CPU_IDLE)		+= cpuidle/
 obj-y				+= mmc/
 obj-$(CONFIG_MEMSTICK)		+= memstick/
-obj-y				+= leds/
+#[Arima Edison] modify the init sequence ++
+#obj-y				+= leds/
+#[Arima Edison] modify the init sequence --
 obj-$(CONFIG_SWITCH)		+= switch/
 obj-$(CONFIG_INFINIBAND)	+= infiniband/
 obj-$(CONFIG_SGI_SN)		+= sn/

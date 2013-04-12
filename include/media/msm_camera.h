@@ -193,6 +193,10 @@
 
 #define MSM_CAM_IOCTL_ISPIF_IO_CFG \
 	_IOR(MSM_CAM_IOCTL_MAGIC, 54, struct ispif_cfg_data *)
+//Flea++  1011-API implement
+#define MSM_CAM_IOCTL_SENSOR_IO_CFG_BRITHNESS \
+	_IOW(MSM_CAM_IOCTL_MAGIC, 55, struct sensor_cfg_data *)
+//Flea--  1011-API implement
 
 struct msm_mctl_pp_cmd {
 	int32_t  id;
@@ -816,8 +820,10 @@ struct msm_snapshot_pp_status {
 #define CFG_START_STREAM              44
 #define CFG_STOP_STREAM               45
 #define CFG_GET_CSI_PARAMS            46
-#define CFG_MAX			47
-
+/*++ PeterShih 20120425 add/modify the camera sensor function ++*/
+#define CFG_SET_SCENE                 47
+#define CFG_MAX                       48
+/*-- PeterShih 20120425 add/modify the camera sensor function --*/
 
 #define MOVE_NEAR	0
 #define MOVE_FAR	1
@@ -1017,7 +1023,30 @@ enum msm_v4l2_power_line_frequency {
 	MSM_V4L2_POWER_LINE_50HZ,
 	MSM_V4L2_POWER_LINE_AUTO,
 };
-
+//Flea++
+enum msm_v4l2_best_shot{
+	msm_v4l2_best_shot_normal = 0,
+  msm_v4l2_best_shot_auto = 1,
+  msm_v4l2_best_shot_landscape = 2,
+  msm_v4l2_best_shot_snow,
+  msm_v4l2_best_shot_beach,
+  msm_v4l2_best_shot_sunset,
+  msm_v4l2_best_shot_night,
+  msm_v4l2_best_shot_portrait,
+  msm_v4l2_best_shot_backlight,
+  msm_v4l2_best_shot_sports,
+  msm_v4l2_best_shot_antishake,
+  msm_v4l2_best_shot_flowers,
+  msm_v4l2_best_shot_candlelight,
+  msm_v4l2_best_shot_fireworks,
+  msm_v4l2_best_shot_party,
+  msm_v4l2_best_shot_night_portrait,
+  msm_v4l2_best_shot_theatre,
+  msm_v4l2_best_shot_action,
+  msm_v4l2_best_shot_ar,
+  msm_v4l2_best_shot_max,
+};
+//Flea--
 #define CAMERA_ISO_TYPE_AUTO           0
 #define CAMEAR_ISO_TYPE_HJR            1
 #define CAMEAR_ISO_TYPE_100            2
@@ -1042,6 +1071,7 @@ struct focus_cfg {
 };
 
 struct fps_cfg {
+	uint16_t fps_type;//Flea add for driver.
 	uint16_t f_mult;
 	uint16_t fps_div;
 	uint32_t pict_fps_div;
@@ -1291,6 +1321,7 @@ struct sensor_cfg_data {
 		struct cord aec_cord;
 		int is_autoflash;
 		struct mirror_flip mirror_flip;
+		int8_t iso;//Flea modify 
 	} cfg;
 };
 
@@ -1502,6 +1533,9 @@ struct msm_camera_info {
 	uint32_t s_mount_angle[MSM_MAX_CAMERA_SENSORS];
 	const char *video_dev_name[MSM_MAX_CAMERA_SENSORS];
 	enum sensor_type_t sensor_type[MSM_MAX_CAMERA_SENSORS];
+	/*++ PeterShih - 20120417 for camera HW version ++*/
+	int hw_version[MSM_MAX_CAMERA_SENSORS];
+	/*-- PeterShih - 20120417 for camera HW version --*/
 };
 
 struct msm_cam_config_dev_info {

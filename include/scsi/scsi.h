@@ -77,6 +77,9 @@ struct scsi_cmnd;
 #define READ_FORMAT_CAPACITIES 0x23
 #define SET_WINDOW            0x24
 #define READ_CAPACITY         0x25
+// << FerryWu, 2013/01/16, SoMC SCSI patch for WHQL
+#define READ_CAPACITY_16      0x9e
+// >> FerryWu, 2013/01/16, SoMC SCSI patch for WHQL
 #define READ_10               0x28
 #define WRITE_10              0x2a
 #define SEEK_10               0x2b

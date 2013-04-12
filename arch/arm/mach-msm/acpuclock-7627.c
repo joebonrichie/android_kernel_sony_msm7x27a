@@ -869,6 +869,14 @@ static void __devinit acpuclk_hw_init(void)
 	uint32_t div, sel, reg_clksel;
 	int res;
 
+	// << FerryWu, 2012/06/14, SoMC S1 boot integration
+	#if defined(CONFIG_SEMC_S1)
+	reg_clksel = readl_relaxed(A11S_CLK_SEL_ADDR);
+	reg_clksel |= (0x1 << 11);
+	writel_relaxed(reg_clksel, A11S_CLK_SEL_ADDR);
+	#endif /*  CONFIG_SEMC_S1 */
+	// >> FerryWu, 2012/06/14, SoMC S1 boot integration
+
 	/*
 	 * Prepare all the PLLs because we enable/disable them
 	 * from atomic context and can't always ensure they're

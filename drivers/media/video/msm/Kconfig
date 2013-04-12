@@ -78,6 +78,23 @@ config WEBCAM_OV9726
 	default n
 	---help---
 	  Omni Vision VGA Bayer Sensor.
+
+#++ Peter - 20121004 Add for using
+config S5K5CA_V4L2_BAYER
+	bool "Sensor S5K5CA (3M Bayer)"
+	depends on MSM_CAMERA && ARCH_MSM7X27A
+	default n
+	---help---
+	  Samsung 3MP Bayer Sensor.
+
+config S5K5CA_V4L2_YUV
+	bool "Sensor S5K5CA (3M YUV)"
+	depends on MSM_CAMERA && ARCH_MSM7X27A
+	default n
+	---help---
+	  Samsung 3MP Yuv Sensor.
+#-- Peter - 20121004 Add for using
+
 #	This Senosr is used as a webcam.
 #	This uses the CSI interface.
 config VX6953

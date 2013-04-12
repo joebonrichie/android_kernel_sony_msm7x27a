@@ -350,6 +350,10 @@ static inline void smd_write_intr(unsigned int val,
 #define SMEM_SPINLOCK_SMEM_ALLOC       "S:3"
 static remote_spinlock_t remote_spinlock;
 
+/*Skies-2012/07/18, Keep a copy of SMEM++*/
+static void *radio_log_base = NULL;
+/*Skies-2012/07/18, Keep a copy of SMEM--*/
+
 static LIST_HEAD(smd_ch_list_loopback);
 static void smd_fake_irq_handler(unsigned long arg);
 static void smsm_cb_snapshot(uint32_t use_wakelock);
@@ -569,19 +573,26 @@ static void notify_other_smsm(uint32_t smsm_entry, uint32_t notify_mask)
 void smd_diag(void)
 {
 	char *x;
+/*Skies-2012/07/18, Keep a copy of SMEM++*/
+#if 0
 	int size;
+#endif
+/*Skies-2012/07/18, Keep a copy of SMEM--*/
 
 	x = smem_find(ID_DIAG_ERR_MSG, SZ_DIAG_ERR_MSG);
 	if (x != 0) {
 		x[SZ_DIAG_ERR_MSG - 1] = 0;
 		SMD_INFO("smem: DIAG '%s'\n", x);
 	}
-
+/*Skies-2012/07/18, Keep a copy of SMEM++*/
+#if 0
 	x = smem_get_entry(SMEM_ERR_CRASH_LOG, &size);
 	if (x != 0) {
 		x[size - 1] = 0;
 		pr_err("smem: CRASH LOG\n'%s'\n", x);
 	}
+#endif
+/*Skies-2012/07/18, Keep a copy of SMEM--*/
 }
 
 
@@ -2585,6 +2596,39 @@ restore_snapshot_count:
 	}
 }
 
+/*Skies-2012/07/18, Keep a copy of SMEM++*/
+static struct workqueue_struct *modem_save_log_wq = NULL;
+
+void modem_save_log(struct work_struct *work)
+{
+	char *x;
+	int size = 0;
+	
+	x = smem_get_entry(SMEM_ERR_CRASH_LOG, &size);
+	if (x != 0) {
+		x[size - 1] = 0;
+		pr_err("smem: CRASH LOG\n'%s'\n", x);
+	}
+
+	pr_emerg("smem: copy %d byte to 0x%x\n", size, (unsigned)radio_log_base);
+	if (radio_log_base != NULL)
+		memcpy(radio_log_base, x, size);
+}
+
+static DECLARE_WORK(modem_save_log_work, &modem_save_log);
+
+void modem_queue_start_save_log(void)
+{
+	int ret;
+	
+	if (modem_save_log_wq != NULL) {
+		ret = queue_work(modem_save_log_wq, &modem_save_log_work);
+		if (!ret)
+			pr_err("%s\n", __func__);
+	}
+}
+/*Skies-2012/07/18, Keep a copy of SMEM--*/
+
 static irqreturn_t smsm_irq_handler(int irq, void *data)
 {
 	unsigned long flags;
@@ -2637,6 +2681,11 @@ static irqreturn_t smsm_irq_handler(int irq, void *data)
 				flush_cache_all();
 				outer_flush_all();
 			}
+			
+			/*Skies-2012/07/18, Keep a copy of SMEM++*/
+			modem_queue_start_save_log();
+			/*Skies-2012/07/18, Keep a copy of SMEM--*/
+
 			modem_queue_start_reset_notify();
 
 		} else if (modm & SMSM_INIT) {
@@ -3422,6 +3471,16 @@ static int __devinit msm_smd_probe(struct platform_device *pdev)
 		pr_err("SMD: PDEV not found\n");
 		return -ENODEV;
 	}
+
+	/*Skies-2012/07/18, Keep a copy of SMEM++*/
+	radio_log_base = ioremap(0x2D750000, 0x10000);
+	pr_emerg("smem %s: radio_log_base = 0x%x\n", __func__, (unsigned)radio_log_base);
+	if (radio_log_base == NULL) {
+		printk(KERN_ERR "smem: failed to map memory\n");
+	}
+	modem_save_log_wq = create_singlethread_workqueue("modem_save_log");
+	/*Skies-2012/07/18, Keep a copy of SMEM--*/	
+	
 
 	smd_initialized = 1;
 
