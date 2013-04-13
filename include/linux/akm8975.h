@@ -8,6 +8,11 @@
 
 #define AKM8975_I2C_NAME "akm8975"
 
+#ifndef CONFIG_FIH_PROJECT_NAN
+#include <linux/fih_hw_info.h>	/* FIH-SW2-PERIPHERAL-FG-MSENSOR-00+ */
+#define GPIO_COMPASS_INT (((fih_get_product_id() == Project_MES) && (fih_get_product_phase() < Phase_DP)) ? 114:39)	/* FIH-SW2-PERIPHERAL-FG-MSENSOR-00+ */
+#endif
+
 #define SENSOR_DATA_SIZE	8
 #define YPR_DATA_SIZE		12
 #define RWBUF_SIZE			16
@@ -84,6 +89,9 @@ Defines a read-only address of the fuse ROM of the AK8975.*/
 struct akm8975_platform_data {
 	char layout;
 	int gpio_DRDY;
+#ifndef CONFIG_FIH_PROJECT_NAN
+	int (*gpio_init)(void);	/* FIH-SW2-PERIPHERAL-FG-MSENSOR-00+ */
+#endif
 };
 
 #endif

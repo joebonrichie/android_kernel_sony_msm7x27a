@@ -63,6 +63,9 @@ static struct platform_driver mipi_dsi_driver = {
 
 struct device dsi_dev;
 
+#ifndef CONFIG_FIH_PROJECT_NAN
+static int isMIPIDSIInit = 0;
+#endif
 static int mipi_dsi_off(struct platform_device *pdev)
 {
 	int ret = 0;
@@ -93,7 +96,11 @@ static int mipi_dsi_off(struct platform_device *pdev)
 	 */
 	mipi_dsi_op_mode_config(DSI_CMD_MODE);
 
+#ifndef CONFIG_FIH_PROJECT_NAN
+	if((mfd->panel_info.type == MIPI_CMD_PANEL) && (isMIPIDSIInit !=0 )) {
+#else
 	if (mfd->panel_info.type == MIPI_CMD_PANEL) {
+#endif
 		if (pinfo->lcd.vsync_enable) {
 			if (pinfo->lcd.hw_vsync_mode && vsync_gpio >= 0) {
 				if (MDP_REV_303 != mdp_rev)
@@ -131,6 +138,9 @@ static int mipi_dsi_off(struct platform_device *pdev)
 
 	pr_debug("%s-:\n", __func__);
 
+#ifndef CONFIG_FIH_PROJECT_NAN
+	isMIPIDSIInit = 0;
+#endif
 	return ret;
 }
 
@@ -147,6 +157,7 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	u32 ystride, bpp, data;
 	u32 dummy_xres, dummy_yres;
 	int target_type = 0;
+	u32 tmp;
 
 	mfd = platform_get_drvdata(pdev);
 	fbi = mfd->fbi;
@@ -245,20 +256,29 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	mipi_dsi_host_init(mipi);
 
 	if (mipi->force_clk_lane_hs) {
-		u32 tmp;
-
 		tmp = MIPI_INP(MIPI_DSI_BASE + 0xA8);
 		tmp |= (1<<28);
 		MIPI_OUTP(MIPI_DSI_BASE + 0xA8, tmp);
 		wmb();
 	}
 
+#ifndef CONFIG_FIH_PROJECT_NAN
+	tmp = MIPI_INP(MIPI_DSI_BASE + 0xF4);
+	tmp |= 0x0000FF00;
+	MIPI_OUTP(MIPI_DSI_BASE + 0xF4, tmp);
+	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_client_reset)
+		mipi_dsi_pdata->dsi_client_reset(0);
+#endif
 	if (mdp_rev >= MDP_REV_41)
 		mutex_lock(&mfd->dma->ov_mutex);
 	else
 		down(&mfd->dma->mutex);
 
 	ret = panel_next_on(pdev);
+#ifndef CONFIG_FIH_PROJECT_NAN
+	if (ret == -EPERM)
+		goto err;
+#endif
 
 	mipi_dsi_op_mode_config(mipi->mode);
 
@@ -306,8 +326,10 @@ static int mipi_dsi_on(struct platform_device *pdev)
 				}
 			}
 			mipi_dsi_set_tear_on(mfd);
+#ifdef CONFIG_FIH_PROJECT_NAN
 			/* Tracy moify-20120829 Enable Tearing function for sometimes TE disable */
 			gpio_tlmm_config(GPIO_CFG(97, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),GPIO_CFG_ENABLE);
+#endif
 		}
 	}
 
@@ -317,11 +339,19 @@ static int mipi_dsi_on(struct platform_device *pdev)
 
 	mdp4_overlay_dsi_state_set(ST_DSI_RESUME);
 
+#ifndef CONFIG_FIH_PROJECT_NAN
+	isMIPIDSIInit = 1;
+err:
+#endif
 	if (mdp_rev >= MDP_REV_41)
 		mutex_unlock(&mfd->dma->ov_mutex);
 	else
 		up(&mfd->dma->mutex);
 
+#ifndef CONFIG_FIH_PROJECT_NAN
+	if ((mipi_dsi_pdata && mipi_dsi_pdata->dsi_power_save) && (ret == -EPERM))
+		mipi_dsi_pdata->dsi_power_save(0);
+#endif
 	pr_debug("%s-:\n", __func__);
 
 	return ret;
@@ -405,6 +435,7 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 			vsync_gpio = mipi_dsi_pdata->vsync_gpio;
 			pr_debug("%s: vsync_gpio=%d\n", __func__, vsync_gpio);
 
+#ifdef CONFIG_FIH_PROJECT_NAN
 			if (mdp_rev == MDP_REV_303 &&
 				mipi_dsi_pdata->dsi_client_reset) {
 				if (mipi_dsi_pdata->dsi_client_reset())
@@ -414,6 +445,7 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 					pr_debug("%s: DSI Client Reset success\n",
 						__func__);
 			}
+#endif
 		}
 
 		if (mipi_dsi_clk_init(pdev))

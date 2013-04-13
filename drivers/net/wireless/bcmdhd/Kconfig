@@ -13,14 +13,14 @@ config BCMDHD
 config BCMDHD_FW_PATH
 	depends on BCMDHD
 	string "Firmware path"
-	default "/system/etc/firmware/fw_bcmdhd.bin"
+	default "/system/etc/bcm4330/sdio_g_pool_pno_pktfilter_keepalive_wapi_wme_idsup_idauth_sta_aoe.bin"
 	---help---
 	  Path to the firmware file.
 
 config BCMDHD_NVRAM_PATH
 	depends on BCMDHD
 	string "NVRAM path"
-	default "/system/etc/wifi/bcmdhd.cal"
+	default "/system/etc/bcm4330/bcm94330wlsdgbphone.txt"
 	---help---
 	  Path to the calibration file.
 
@@ -32,16 +32,9 @@ config BCMDHD_WEXT
 	help
 	  Enables WEXT support
 
-config DHD_USE_STATIC_BUF
-	bool "Enable memory preallocation"
-	depends on BCMDHD
-	default n
-	---help---
-	  Use memory preallocated in platform
-
 config DHD_USE_SCHED_SCAN
 	bool "Use CFG80211 sched scan"
 	depends on BCMDHD && CFG80211
-	default n
+	default y
 	---help---
 	  Use CFG80211 sched scan

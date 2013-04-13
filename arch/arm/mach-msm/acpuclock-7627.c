@@ -491,6 +491,10 @@ static struct pll_freq_tbl_map acpu_freq_tbl_list[] = {
 	{ 0, 0, 0, 0, 0 }
 };
 
+#ifdef CONFIG_FIH_SEMC_S1
+static int vdderror = 0;
+#endif
+
 #ifdef CONFIG_CPU_FREQ_MSM
 static struct cpufreq_frequency_table freq_table[NR_CPUS][20];
 
@@ -574,8 +578,19 @@ static int acpuclk_set_vdd_level(int vdd)
 	mb();
 	udelay(62);
 	if ((readl_relaxed(A11S_VDD_SVS_PLEVEL_ADDR) & 0x7) != vdd) {
+
+#ifdef CONFIG_FIH_SEMC_S1
+		vdderror++;
+		if(vdderror > 50)
+		{
+			pr_err("ACPU VDD set failed\n");
+			vdderror = 0;
+		}
+		return 0;
+#else
 		pr_err("VDD set failed\n");
 		return -EIO;
+#endif
 	}
 
 	pr_debug("VDD switched\n");
@@ -719,12 +734,18 @@ static int acpuclk_7627_set_rate(int cpu, unsigned long rate,
 				 */
 				clk_enable(pll_clk[backup_s->pll].clk);
 				acpuclk_set_div(backup_s);
+#ifdef CONFIG_SEMC_S1
 				update_jiffies(cpu, backup_s->lpj);
+#endif
 			}
 			/* Make sure PLL4 is off before reprogramming */
 			if ((plls_enabled & (1 << tgt_s->pll))) {
 				clk_disable(pll_clk[tgt_s->pll].clk);
+#ifdef CONFIG_SEMC_S1
 				plls_enabled &= ~(1 << tgt_s->pll);
+#else
+				plls_enabled &= (0 << tgt_s->pll);
+#endif
 			}
 			acpuclk_config_pll4(tgt_s->pll_rate);
 			pll_clk[tgt_s->pll].clk->rate = tgt_s->a11clk_khz*1000;
@@ -737,12 +758,18 @@ static int acpuclk_7627_set_rate(int cpu, unsigned long rate,
 				 */
 				clk_enable(pll_clk[backup_s->pll].clk);
 				acpuclk_set_div(backup_s);
+#ifdef CONFIG_SEMC_S1
 				update_jiffies(cpu, backup_s->lpj);
+#endif
 			}
 		}
 
+#ifdef CONFIG_SEMC_S1
 		if ((tgt_s->pll != ACPU_PLL_TCXO) &&
 				!(plls_enabled & (1 << tgt_s->pll))) {
+#else
+		if (!(plls_enabled & (1 << tgt_s->pll))) {
+#endif
 			rc = clk_enable(pll_clk[tgt_s->pll].clk);
 			if (rc < 0) {
 				pr_err("PLL%d enable failed (%d)\n",
@@ -830,8 +857,12 @@ done:
 		goto out;
 
 	/* Change the AXI bus frequency if we can. */
+#ifdef CONFIG_SEMC_S1
 	if (reason != SETRATE_PC &&
 		strt_s->axiclk_khz != tgt_s->axiclk_khz) {
+#else
+	if (strt_s->axiclk_khz != tgt_s->axiclk_khz) {
+#endif
 		res = clk_set_rate(drv_state.ebi1_clk,
 				tgt_s->axiclk_khz * 1000);
 		if (res < 0)
@@ -869,13 +900,11 @@ static void __devinit acpuclk_hw_init(void)
 	uint32_t div, sel, reg_clksel;
 	int res;
 
-	// << FerryWu, 2012/06/14, SoMC S1 boot integration
-	#if defined(CONFIG_SEMC_S1)
+#if defined(CONFIG_SEMC_S1)
 	reg_clksel = readl_relaxed(A11S_CLK_SEL_ADDR);
 	reg_clksel |= (0x1 << 11);
 	writel_relaxed(reg_clksel, A11S_CLK_SEL_ADDR);
-	#endif /*  CONFIG_SEMC_S1 */
-	// >> FerryWu, 2012/06/14, SoMC S1 boot integration
+#endif
 
 	/*
 	 * Prepare all the PLLs because we enable/disable them
@@ -1173,12 +1202,23 @@ static struct acpuclk_data acpuclk_7627_data = {
 	.switch_time_us = 50,
 };
 
+#ifdef CONFIG_FIH_SEMC_S1
+void appsboot_acpu_clock_init(void)
+{
+	writel_relaxed(0x00642123, A11S_CLK_CNTL_ADDR);
+	writel_relaxed(0x00000ff8, A11S_CLK_SEL_ADDR);
+}
+#endif
+
 static int __devinit acpuclk_7627_probe(struct platform_device *pdev)
 {
 	const struct acpuclk_pdata *pdata = pdev->dev.platform_data;
 
 	pr_info("%s()\n", __func__);
 
+#ifdef CONFIG_FIH_SEMC_S1
+	appsboot_acpu_clock_init();
+#endif	
 	drv_state.ebi1_clk = clk_get(NULL, "ebi1_acpu_clk");
 	BUG_ON(IS_ERR(drv_state.ebi1_clk));
 

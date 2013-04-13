@@ -324,6 +324,7 @@ static struct attribute_group gpio_keys_attr_group = {
 	.attrs = gpio_keys_attrs,
 };
 
+#ifdef CONFIG_FIH_PROJECT_NAN
 /*[Arima Edison]  move force crash key sequence from gpio_matrix to here++*/
 #define FORCE_CRASH_TIMEOUT (HZ*2)
 #define VOL_U KEY_VOLUMEUP
@@ -360,6 +361,7 @@ void check_crash_seq(int keycode)
 	}	
 }
 /*[Arima Edison]  force crash key sequence from gpio_matrix to here++*/
+#endif
 
 static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 {
@@ -368,11 +370,13 @@ static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 	unsigned int type = button->type ?: EV_KEY;
 	int state = (gpio_get_value_cansleep(button->gpio) ? 1 : 0) ^ button->active_low;
 
+#ifdef CONFIG_FIH_PROJECT_NAN
 	/*[Arima Edison]add force crash key sequence++*/
 	printk(KERN_EMERG "%s key : (%d) state = (%d)\n",__func__,button->code,state);	
 	if(state)
 		check_crash_seq(button->code);
 	/*[Arima Edison]add force crash key sequence--*/
+#endif
 
 	if (type == EV_ABS) {
 		if (state)
@@ -476,11 +480,13 @@ static int __devinit gpio_keys_setup_key(struct platform_device *pdev,
 	spin_lock_init(&bdata->lock);
 
 	if (gpio_is_valid(button->gpio)) {
+#ifdef CONFIG_FIH_PROJECT_NAN
 		/*Mel - Config GPIO*/
 		error = gpio_tlmm_config(GPIO_CFG(button->gpio, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA), GPIO_CFG_ENABLE);  
 		if (error < 0)
 			printk(KERN_INFO "[GPIO Key] - GPIO %d enable fail \n",button->gpio);
 		/*Mel - Config GPIO*/
+#endif
 
 		error = gpio_request(button->gpio, desc);
 		if (error < 0) {

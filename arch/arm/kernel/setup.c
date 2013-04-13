@@ -65,6 +65,15 @@
 #ifndef MEM_SIZE
 #define MEM_SIZE	(16*1024*1024)
 #endif
+//BSP-AlwaysChen-PortingFrom2045-01+[
+#ifdef CONFIG_FIH_SEMC_S1
+#define SYSTEM_MEMORY_REGION2_SIZE	0x0CD00000
+#define SYSTEM_MEMORY_REGION3_START	0x2D500000
+#define SYSTEM_MEMORY_REGION3_SIZE	0x00100000
+#define SYSTEM_MEMORY_REGION4_START	0x2FB00000
+#define SYSTEM_MEMORY_REGION4_SIZE	0x00500000
+#endif
+//BSP-AlwaysChen-PortingFrom2045-01+]
 
 #if defined(CONFIG_FPE_NWFPE) || defined(CONFIG_FPE_FASTFPE)
 char fpe_type[8];
@@ -541,6 +550,16 @@ int __init arm_add_memory(phys_addr_t start, unsigned long size)
 #endif
 
 	bank->size = size & PAGE_MASK;
+//BSP-AlwaysChen-PortingFrom2045-01+[
+    #ifdef CONFIG_FIH_SEMC_S1
+    if(meminfo.nr_banks==1)
+        bank->size  = SYSTEM_MEMORY_REGION2_SIZE;
+    else
+        bank->size  = size & PAGE_MASK;
+    #else
+        bank->size  = size & PAGE_MASK;
+    #endif
+//BSP-AlwaysChen-PortingFrom2045-01+]
 
 	/*
 	 * Check whether this memory region has non-zero size or
@@ -550,6 +569,24 @@ int __init arm_add_memory(phys_addr_t start, unsigned long size)
 		return -EINVAL;
 
 	meminfo.nr_banks++;
+
+//BSP-AlwaysChen-PortingFrom2045-01+[
+    #ifdef CONFIG_FIH_SEMC_S1
+    if(meminfo.nr_banks==2)
+    {
+        bank = &meminfo.bank[meminfo.nr_banks];
+        bank->start = PAGE_ALIGN(SYSTEM_MEMORY_REGION3_START);
+        bank->size  = SYSTEM_MEMORY_REGION3_SIZE;
+        meminfo.nr_banks++;/*meminfo.nr_banks=3*/
+   
+        bank = &meminfo.bank[meminfo.nr_banks];
+        bank->start = PAGE_ALIGN(SYSTEM_MEMORY_REGION4_START);
+        bank->size  = SYSTEM_MEMORY_REGION4_SIZE;
+        meminfo.nr_banks++;/*meminfo.nr_banks=4*/
+    }    
+    #endif
+//BSP-AlwaysChen-PortingFrom2045-01+]
+
 	return 0;
 }
 

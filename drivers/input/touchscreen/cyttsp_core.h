@@ -1,13 +1,9 @@
-/*
- * Header file for:
- * Cypress TrueTouch(TM) Standard Product (TTSP) touchscreen drivers.
- * For use with Cypress Txx3xx parts.
- * Supported parts include:
- * CY8CTST341
- * CY8CTMA340
+/* Header file for:
+ * Cypress TrueTouch(TM) Standard Product I2C touchscreen driver.
+ * drivers/input/touchscreen/cyttsp_core.h
  *
- * Copyright (C) 2009, 2010, 2011 Cypress Semiconductor, Inc.
- * Copyright (C) 2012 Javier Martinez Canillas <javier@dowhile0.org>
+ * Copyright (C) 2009, 2010 Cypress Semiconductor, Inc.
+ * Copyright(C) 2011-2012 Foxconn International Holdings, Ltd. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,7 +19,11 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * Contact Cypress Semiconductor at www.cypress.com <kev@cypress.com>
+ * Cypress reserves the right to make changes without further notice
+ * to the materials described herein. Cypress does not assume any
+ * liability arising out of the application described herein.
+ *
+ * Contact Cypress Semiconductor at www.cypress.com
  *
  */
 
@@ -32,118 +32,69 @@
 #define __CYTTSP_CORE_H__
 
 #include <linux/kernel.h>
-#include <linux/err.h>
-#include <linux/module.h>
-#include <linux/types.h>
-#include <linux/device.h>
-#include <linux/input/cyttsp.h>
-
-#define CY_NUM_RETRY		16 /* max number of retries for read ops */
-
-struct cyttsp_tch {
-	__be16 x, y;
-	u8 z;
-} __packed;
-
-/* TrueTouch Standard Product Gen3 interface definition */
-struct cyttsp_xydata {
-	u8 hst_mode;
-	u8 tt_mode;
-	u8 tt_stat;
-	struct cyttsp_tch tch1;
-	u8 touch12_id;
-	struct cyttsp_tch tch2;
-	u8 gest_cnt;
-	u8 gest_id;
-	struct cyttsp_tch tch3;
-	u8 touch34_id;
-	struct cyttsp_tch tch4;
-	u8 tt_undef[3];
-	u8 act_dist;
-	u8 tt_reserved;
-} __packed;
-
-
-/* TTSP System Information interface definition */
-struct cyttsp_sysinfo_data {
-	u8 hst_mode;
-	u8 mfg_cmd;
-	u8 mfg_stat;
-	u8 cid[3];
-	u8 tt_undef1;
-	u8 uid[8];
-	u8 bl_verh;
-	u8 bl_verl;
-	u8 tts_verh;
-	u8 tts_verl;
-	u8 app_idh;
-	u8 app_idl;
-	u8 app_verh;
-	u8 app_verl;
-	u8 tt_undef[5];
-	u8 scn_typ;
-	u8 act_intrvl;
-	u8 tch_tmout;
-	u8 lp_intrvl;
-};
-
-/* TTSP Bootloader Register Map interface definition */
-#define CY_BL_CHKSUM_OK 0x01
-struct cyttsp_bootloader_data {
-	u8 bl_file;
-	u8 bl_status;
-	u8 bl_error;
-	u8 blver_hi;
-	u8 blver_lo;
-	u8 bld_blver_hi;
-	u8 bld_blver_lo;
-	u8 ttspver_hi;
-	u8 ttspver_lo;
-	u8 appid_hi;
-	u8 appid_lo;
-	u8 appver_hi;
-	u8 appver_lo;
-	u8 cid_0;
-	u8 cid_1;
-	u8 cid_2;
-};
-
-struct cyttsp;
 
 struct cyttsp_bus_ops {
-	u16 bustype;
-	int (*write)(struct cyttsp *ts,
-		     u8 addr, u8 length, const void *values);
-	int (*read)(struct cyttsp *ts, u8 addr, u8 length, void *values);
+	s32 (*write)(void *handle, u8 addr, u8 length, const void *values);
+	s32 (*read)(void *handle, u8 addr, u8 length, void *values);
+	s32 (*ext)(void *handle, void *values);
 };
 
-enum cyttsp_state {
-	CY_IDLE_STATE,
-	CY_ACTIVE_STATE,
-	CY_BL_STATE,
-};
+void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev);
+void cyttsp_core_release(void *handle);
 
-struct cyttsp {
-	struct device *dev;
-	int irq;
-	struct input_dev *input;
-	char phys[32];
-	const struct cyttsp_platform_data *pdata;
-	const struct cyttsp_bus_ops *bus_ops;
-	struct cyttsp_bootloader_data bl_data;
-	struct cyttsp_sysinfo_data sysinfo_data;
-	struct cyttsp_xydata xy_data;
-	struct completion bl_ready;
-	enum cyttsp_state state;
-	bool suspended;
+/* SW1D3-Peripheral-OH-Cypress(TMA340)_TouchDriver_Porting-00+{ */
+#define DEBUG 0
+#if DEBUG
+#define DBG_MSG(...)	printk(KERN_DEBUG "[CYPRESS_T340_DBG]" __VA_ARGS__)
+#else
+/*FIH-SW3-PERIPHERAL-CH-TAP-02++[*/
+#define DBG_MSG(...)	do { \
+        if (0 < TMA340_debug_level) \
+            printk("[CYPRESS_T340_DBG]" __VA_ARGS__); \
+    } while (0)
+/*FIH-SW3-PERIPHERAL-CH-TAP-02++]*/
+#endif
+#define DBG_INFO(...)	printk(KERN_INFO "[CYPRESS_T340_INFO]" __VA_ARGS__)
+#define DBG_WARN(...)	printk(KERN_WARN "[CYPRESS_T340_WARN]" __VA_ARGS__) 
+#define DBG_ERR(...)	printk(KERN_ERR "[CYPRESS_T340_ERR]" __VA_ARGS__) 
+/* SW1D3-Peripheral-OH-Cypress(TMA340)_TouchDriver_Porting-00+} */
 
-	u8 xfer_buf[] ____cacheline_aligned;
-};
+static int TMA340_debug_level=0;
+module_param(
+    TMA340_debug_level, int, S_IRUGO | S_IWUSR | S_IWGRP
+);
 
-struct cyttsp *cyttsp_probe(const struct cyttsp_bus_ops *bus_ops,
-			    struct device *dev, int irq, size_t xfer_buf_size);
-void cyttsp_remove(struct cyttsp *ts);
+#ifndef AUTO_CALIB
+#define AUTO_CALIB /*owenhuang+*/
+#endif
 
-extern const struct dev_pm_ops cyttsp_pm_ops;
+#ifdef AUTO_CALIB
+#define TEST_REG_BIT(reg, x) (reg & (1<<x))
+#define HST_MODE	0x00
+#define MFG_STAT	0x01
+#define MFG_CMD 	0x02
+#define MFG_REG0	0x03
+#define MFG_REG1	0x04
+#endif
+
+/* FIH-SW1-PERIPHERAL-OH-TAP_TOUCH_TestMode-00+{ */	
+#define TEST_MODE	/*FIH-SW3-PERIPHERAL-CH-TAP-03++*/
+#ifdef TEST_MODE
+#define TEST_MODE_DELAY_TIME	200 /* 200ms default*/
+
+/*Test Mode Register*/
+#define HST_MODE_FOR_TEST_MODE_IDAC	0x60 /*(0110_0000b)*/
+#define HST_MODE_FRO_TEST_MODE_RAWS	0x70 /*(0111_0000b)*/
+#define HST_MODE_FOR_TEST_MODE_DIFF	0x50 /*(0101_0000b) FIH-MTD-PERIPHERAL-CH-DIFF_COUNT-00++*/
+
+#define CHECK_TEST_ENABLE(x)	((x>>4) & 0xF)
+#define GET_NEW_DATA_COUNTER(x) (x>>6)
+/*Test mode type*/
+#define EXIT_TEST_MODE 			0x00
+#define TMODE_IDAC_SETTING		0x10
+#define TMODE_IDAC_RAW_BASELINE	0x20
+#define TMODE_DIFF_COUNTS		0x30 /*FIH-MTD-PERIPHERAL-CH-DIFF_COUNT-00++*/
+#endif
+/* FIH-SW1-PERIPHERAL-OH-TAP_TOUCH_TestMode-00+} */	
 
 #endif /* __CYTTSP_CORE_H__ */

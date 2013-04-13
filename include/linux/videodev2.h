@@ -1118,6 +1118,9 @@ struct v4l2_output {
 struct v4l2_control {
 	__u32		     id;
 	__s32		     value;
+#ifndef CONFIG_FIH_PROJECT_NAN
+    __u16		     focus_roi[6];//FIH-SW-MM-MC-ImplementCameraTouchFocusforIsx006-00+
+#endif
 };
 
 struct v4l2_ext_control {
@@ -1232,6 +1235,7 @@ struct v4l2_querymenu {
 #define V4L2_CID_VCENTER		(V4L2_CID_BASE+23)
 
 #define V4L2_CID_POWER_LINE_FREQUENCY	(V4L2_CID_BASE+24)
+
 enum v4l2_power_line_frequency {
 	V4L2_CID_POWER_LINE_FREQUENCY_DISABLED	= 0,
 	V4L2_CID_POWER_LINE_FREQUENCY_50HZ	= 1,
@@ -1276,6 +1280,15 @@ enum v4l2_colorfx {
 /* last CID + 1 */
 #define V4L2_CID_LASTP1                         (V4L2_CID_BASE+42)
 #define V4L2_CID_SPECIAL_EFFECT			(V4L2_CID_BASE+43)
+
+#define V4L2_CID_BESTSHOT_MODE			(V4L2_CID_BASE+44)//FIH-SW-MM-MC-ImplementCameraSceneModeforIsx006-00+
+#define V4L2_CID_METER_MODE			(V4L2_CID_BASE+45)//FIH-SW-MM-MC-ImplementCameraMeteringforIsx006-00+
+#define V4L2_CID_FOCUS_ROI			(V4L2_CID_BASE+46)//FIH-SW-MM-MC-ImplementCameraTouchFocusforIsx006-00+
+#define V4L2_CID_AF			(V4L2_CID_BASE+47) /*MTD-MM-UW-AddAF-00*{ */
+#define V4L2_CID_AF_MODE			(V4L2_CID_BASE+48) /*MTD-MM-UW-set AF mode-00*{ */
+
+
+
 /* Minimum number of buffer neede by the device */
 
 /*  MPEG-class control IDs defined by V4L2 */

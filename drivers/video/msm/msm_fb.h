@@ -217,8 +217,27 @@ int msm_fb_check_frame_rate(struct msm_fb_data_type *mfd,
 				struct fb_info *info);
 
 #ifdef CONFIG_FB_MSM_LOGO
-#define INIT_IMAGE_FILE "/initlogo.rle"
+#define INIT_IMAGE_FILE "/logo.rle"
 int load_565rle_image(char *filename, bool bf_supported);
+/*MTD-MM-CL-DrawLogo-00+[*/
+typedef enum
+{
+    BATTERY_EMPTY = 0,
+    BATTERY_LEVEL_01,
+    BATTERY_LEVEL_02,
+    BATTERY_LEVEL_03,
+    BATTERY_LEVEL_04,
+    BATTERY_LEVEL_05,
+    BATTERY_FULL,
+    /* Below two items are for display on/off */
+    BATTERY_DISP_ON,
+    BATTERY_DISP_OFF,
+    DISP_LOGO,
+    BATTERY_INVALID_ENUM
+}BATT_ICON_TYPE;
+int fih_load_565rle_image(char *filename);
+int fih_dump_framebuffer(char *filename);
+/*MTD-MM-CL-DrawLogo-00+]*/
 #endif
 
 #endif /* MSM_FB_H */

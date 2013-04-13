@@ -79,6 +79,20 @@ config WEBCAM_OV9726
 	---help---
 	  Omni Vision VGA Bayer Sensor.
 
+config ISX006
+	bool "Sensor ISX006 "
+	depends on MSM_CAMERA && ARCH_MSM7X27A
+	default n
+	---help---
+	  ISX006 Sensor.
+
+config MT9V115
+	bool "Sensor MT9V115"
+	depends on MSM_CAMERA && ARCH_MSM7X27A
+	default n
+	---help---
+	  MT9V115 Sensor.
+
 #++ Peter - 20121004 Add for using
 config S5K5CA_V4L2_BAYER
 	bool "Sensor S5K5CA (3M Bayer)"
@@ -234,7 +248,7 @@ config VB6801
 config MSM_CAMERA_FLASH
 	bool "Qualcomm MSM camera flash support"
 	depends on MSM_CAMERA
-	default y
+	default n
 	---help---
 	  Enable support for LED flash for msm camera
 

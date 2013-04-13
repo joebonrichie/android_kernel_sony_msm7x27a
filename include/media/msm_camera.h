@@ -1,4 +1,5 @@
 /* Copyright (c) 2009-2012, Code Aurora Forum. All rights reserved.
+ * Copyright(C) 2012-2013 Foxconn International Holdings, Ltd. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -820,10 +821,17 @@ struct msm_snapshot_pp_status {
 #define CFG_START_STREAM              44
 #define CFG_STOP_STREAM               45
 #define CFG_GET_CSI_PARAMS            46
+
+#ifndef CONFIG_FIH_PROJECT_NAN
+#define CFG_GET_FLASH_STATE           47 /* MTD-MM-SL-AddEXIF-04+ */
+#define CFG_GET_RC_AF_CHECK           48 /* MTD-MM-SL-SupportAF-00+ */
+#define CFG_MAX			49
+#else
 /*++ PeterShih 20120425 add/modify the camera sensor function ++*/
 #define CFG_SET_SCENE                 47
 #define CFG_MAX                       48
 /*-- PeterShih 20120425 add/modify the camera sensor function --*/
+#endif
 
 #define MOVE_NEAR	0
 #define MOVE_FAR	1
@@ -1001,6 +1009,33 @@ enum msm_v4l2_wb_mode {
 	MSM_V4L2_WB_CLOUDY_DAYLIGHT,
 };
 
+//FIH-SW-MM-MC-ImplementCameraSceneModeforIsx006-00+{
+/* Need SYNC typedef enum "camera_bestshot_mode_type" in camera.h */
+enum msm_v4l2_scene_mode {
+    MSM_V4L2_SCENE_OFF       = 0,
+    MSM_V4L2_SCENE_AUTO      = 1,
+    MSM_V4L2_SCENE_LANDSCAPE = 2,
+    MSM_V4L2_SCENE_SNOW,
+    MSM_V4L2_SCENE_BEACH,
+    MSM_V4L2_SCENE_SUNSET,
+    MSM_V4L2_SCENE_NIGHT,
+    MSM_V4L2_SCENE_PORTRAIT,
+    MSM_V4L2_SCENE_BACKLIGHT,
+    MSM_V4L2_SCENE_SPORTS,
+    MSM_V4L2_SCENE_ANTISHAKE,
+    MSM_V4L2_SCENE_FLOWERS,
+    MSM_V4L2_SCENE_CANDLELIGHT,
+    MSM_V4L2_SCENE_FIREWORKS,
+    MSM_V4L2_SCENE_PARTY,
+    MSM_V4L2_SCENE_NIGHT_PORTRAIT,
+    MSM_V4L2_SCENE_THEATRE,
+    MSM_V4L2_SCENE_ACTION,
+    MSM_V4L2_SCENE_AR,
+    MSM_V4L2_SCENE_DOCUMENT,
+    MSM_V4L2_SCENE_MAX
+};
+//FIH-SW-MM-MC-ImplementCameraSceneModeforIsx006-00+}
+
 enum msm_v4l2_special_effect {
 	MSM_V4L2_EFFECT_OFF,
 	MSM_V4L2_EFFECT_MONO,
@@ -1023,6 +1058,47 @@ enum msm_v4l2_power_line_frequency {
 	MSM_V4L2_POWER_LINE_50HZ,
 	MSM_V4L2_POWER_LINE_AUTO,
 };
+
+/*MTD-MM-SL-AddBrightness-00+{ */
+enum msm_v4l2_brightness_level {
+	MSM_V4L2_BRIGHTNESS_V0 = -6,
+	MSM_V4L2_BRIGHTNESS_V1,
+	MSM_V4L2_BRIGHTNESS_V2,
+	MSM_V4L2_BRIGHTNESS_V3,
+	MSM_V4L2_BRIGHTNESS_V4,
+	MSM_V4L2_BRIGHTNESS_V5,
+	MSM_V4L2_BRIGHTNESS_V6 = 0,
+	MSM_V4L2_BRIGHTNESS_V7,
+	MSM_V4L2_BRIGHTNESS_V8,
+	MSM_V4L2_BRIGHTNESS_V9,
+	MSM_V4L2_BRIGHTNESS_V10,
+	MSM_V4L2_BRIGHTNESS_V11,
+	MSM_V4L2_BRIGHTNESS_V12 = 6,
+};
+/*MTD-MM-SL-AddBrightness-00+} */
+
+/* MTD-MM-SL-SupportAF-00*{ */
+/*MTD-MM-UW-set AF mode-00*{ */
+enum msm_v4l2_af_level { /*MTD-MM-UW-AddAF-00*{ */
+	/*MSM_V4L2_AF_OFF, 
+	MSM_V4L2_AF_ON,
+	MSM_V4L2_AF_CAF, 
+       MSM_V4L2_AF_SAF, 
+	MSM_V4L2_AF_MACRO,
+	MSM_V4L2_AF_INFINITY,*/
+	MSM_V4L2_AF_ON,
+	MSM_V4L2_AF_MACRO,
+	MSM_V4L2_AF_SAF, 
+	MSM_V4L2_AF_CAF, 
+	MSM_V4L2_AF_INFINITY,
+	MSM_V4L2_AF_OFF, 
+	MSM_V4L2_AF_POLLING,
+	MSM_V4L2_AF_GET_STATE,
+	MSM_V4L2_AF_MAX
+};
+/*MTD-MM-UW-set AF mode-00*} */
+/* MTD-MM-SL-SupportAF-00*} */
+
 //Flea++
 enum msm_v4l2_best_shot{
 	msm_v4l2_best_shot_normal = 0,
@@ -1071,7 +1147,9 @@ struct focus_cfg {
 };
 
 struct fps_cfg {
+#ifdef CONFIG_FIH_PROJECT_NAN
 	uint16_t fps_type;//Flea add for driver.
+#endif
 	uint16_t f_mult;
 	uint16_t fps_div;
 	uint32_t pict_fps_div;
@@ -1290,6 +1368,10 @@ struct sensor_cfg_data {
 
 	union {
 		int8_t effect;
+#ifndef CONFIG_FIH_PROJECT_NAN
+		int8_t flash_state; /* MTD-MM-SL-AddEXIF-04+ */
+		int8_t rc_af_check; /* MTD-MM-SL-SupportAF-00+ */
+#endif
 		uint8_t lens_shading;
 		uint16_t prevl_pf;
 		uint16_t prevp_pl;
@@ -1297,6 +1379,9 @@ struct sensor_cfg_data {
 		uint16_t pictp_pl;
 		uint32_t pict_max_exp_lc;
 		uint16_t p_fps;
+#ifndef CONFIG_FIH_PROJECT_NAN
+		uint16_t v_fps;/*MTD-MM-SL-FixMMSRecord-00+ */
+#endif
 		uint8_t iso_type;
 		struct sensor_init_cfg init_info;
 		struct sensor_pict_fps gfps;
@@ -1321,7 +1406,9 @@ struct sensor_cfg_data {
 		struct cord aec_cord;
 		int is_autoflash;
 		struct mirror_flip mirror_flip;
+#ifdef CONFIG_FIH_PROJECT_NAN
 		int8_t iso;//Flea modify 
+#endif
 	} cfg;
 };
 
@@ -1533,9 +1620,11 @@ struct msm_camera_info {
 	uint32_t s_mount_angle[MSM_MAX_CAMERA_SENSORS];
 	const char *video_dev_name[MSM_MAX_CAMERA_SENSORS];
 	enum sensor_type_t sensor_type[MSM_MAX_CAMERA_SENSORS];
+#ifdef CONFIG_FIH_PROJECT_NAN
 	/*++ PeterShih - 20120417 for camera HW version ++*/
 	int hw_version[MSM_MAX_CAMERA_SENSORS];
 	/*-- PeterShih - 20120417 for camera HW version --*/
+#endif
 };
 
 struct msm_cam_config_dev_info {
@@ -1551,6 +1640,9 @@ struct msm_mctl_node_info {
 
 struct flash_ctrl_data {
 	int flashtype;
+#ifndef CONFIG_FIH_PROJECT_NAN
+	int ledmode;/*MTD-MM-SL-SupportFlash-00+ */
+#endif
 	union {
 		int led_state;
 		struct strobe_flash_ctrl_data strobe_ctrl;

@@ -1040,7 +1040,14 @@ void mipi_dsi_mdp_busy_wait(struct msm_fb_data_type *mfd)
 		/* wait until DMA finishes the current job */
 		pr_debug("%s: pending pid=%d\n",
 				__func__, current->pid);
+#ifdef CONFIG_FIH_PROJECT_NAN
 		wait_for_completion(&dsi_mdp_comp);
+#else
+		if(!wait_for_completion_timeout(&dsi_mdp_comp, 20*HZ))	{
+			printk(KERN_INFO "[DISPLAY] %s: Wait for dsi_mdp_comp timeout\n", __func__);
+			complete(&dsi_mdp_comp);
+		}
+#endif
 	}
 	pr_debug("%s: done pid=%d\n",
 				__func__, current->pid);
@@ -1138,6 +1145,10 @@ int mipi_dsi_cmds_tx(struct dsi_buf *tp, struct dsi_cmd_desc *cmds, int cnt)
 	uint32 dsi_ctrl, ctrl;
 	int i, video_mode;
 	unsigned long flag;
+#ifndef CONFIG_FIH_PROJECT_NAN
+	int RetryCount = 0;
+#endif
+	int ret = cnt;
 
 	/* turn on cmd mode
 	* for video mode, do not send cmds more than
@@ -1161,7 +1172,26 @@ int mipi_dsi_cmds_tx(struct dsi_buf *tp, struct dsi_cmd_desc *cmds, int cnt)
 		mipi_dsi_enable_irq(DSI_CMD_TERM);
 		mipi_dsi_buf_init(tp);
 		mipi_dsi_cmd_dma_add(tp, cm);
+#ifdef CONFIG_FIH_PROJECT_NAN
 		mipi_dsi_cmd_dma_tx(tp);
+#else
+		RetryCount = 0;
+		while (RetryCount < 50) {
+			if (mipi_dsi_cmd_dma_tx(tp) >= 0) {
+				if (RetryCount > 0)
+					printk(KERN_ALERT "[DISPLAY] %s: mipi command Retry <%d>\n",
+							__func__, RetryCount);
+				break;
+			}
+			RetryCount ++;
+		}
+		if (RetryCount == 50) {
+			printk(KERN_ERR "[DISPLAY] %s: break mipi dsi tx command buffer\n",
+					__func__);
+			ret = -EPERM;
+			break;
+		}
+#endif
 		if (cm->wait)
 			msleep(cm->wait);
 		cm++;
@@ -1175,7 +1205,7 @@ int mipi_dsi_cmds_tx(struct dsi_buf *tp, struct dsi_cmd_desc *cmds, int cnt)
 	complete(&dsi_mdp_comp);
 	spin_unlock_irqrestore(&dsi_mdp_lock, flag);
 
-	return cnt;
+	return ret;
 }
 
 /* MIPI_DSI_MRPS, Maximum Return Packet Size */
@@ -1252,7 +1282,10 @@ int mipi_dsi_cmds_rx(struct msm_fb_data_type *mfd,
 		mipi_dsi_enable_irq(DSI_CMD_TERM);
 		mipi_dsi_buf_init(tp);
 		mipi_dsi_cmd_dma_add(tp, pkt_size_cmd);
-		mipi_dsi_cmd_dma_tx(tp);
+		if (mipi_dsi_cmd_dma_tx(tp) < 0) {
+			printk(KERN_ERR "[DISPLAY] %s: mipi dsi cmd tx fail\n",__func__);
+			return -EPERM;
+		}
 	}
 
 	mipi_dsi_enable_irq(DSI_CMD_TERM);
@@ -1260,8 +1293,10 @@ int mipi_dsi_cmds_rx(struct msm_fb_data_type *mfd,
 	mipi_dsi_cmd_dma_add(tp, cmds);
 
 	/* transmit read comamnd to client */
-	mipi_dsi_cmd_dma_tx(tp);
-
+	if (mipi_dsi_cmd_dma_tx(tp) < 0) {
+		printk(KERN_ERR "[DISPLAY] %s: mipi_dsi_cmd_dma_tx fail\n",__func__);
+		return -EPERM;
+	}
 	mipi_dsi_disable_irq(DSI_CMD_TERM);
 	/*
 	 * once cmd_dma_done interrupt received,
@@ -1444,6 +1479,9 @@ int mipi_dsi_cmds_rx_new(struct dsi_buf *tp, struct dsi_buf *rp,
 int mipi_dsi_cmd_dma_tx(struct dsi_buf *tp)
 {
 
+#ifndef CONFIG_FIH_PROJECT_NAN
+	int ret = 0;
+#endif
 	unsigned long flags;
 
 #ifdef DSI_HOST_DEBUG
@@ -1481,11 +1519,24 @@ int mipi_dsi_cmd_dma_tx(struct dsi_buf *tp)
 	wmb();
 	spin_unlock_irqrestore(&dsi_mdp_lock, flags);
 
+#ifdef CONFIG_FIH_PROJECT_NAN
 	wait_for_completion(&dsi_dma_comp);
+#else
+	if (!wait_for_completion_timeout(&dsi_dma_comp, 1 * HZ)) {
+		printk(KERN_ALERT "[DISPLAY]%s: Send DSI command timeout\n", __func__);
+		complete(&dsi_dma_comp);
+		ret = -1;
+	}
+#endif
 
 	dma_unmap_single(&dsi_dev, tp->dmap, tp->len, DMA_TO_DEVICE);
 	tp->dmap = 0;
+
+#ifdef CONFIG_FIH_PROJECT_NAN
 	return tp->len;
+#else
+	return (ret == 0) ? tp->len : ret;
+#endif
 }
 
 int mipi_dsi_cmd_dma_rx(struct dsi_buf *rp, int rlen)
