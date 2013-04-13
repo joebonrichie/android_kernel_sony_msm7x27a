@@ -71,7 +71,7 @@ if FIH_CONFIG_GROUP
         config FIH_SEMC_S1
             bool "FIH_SEMC_S1"
             depends on FIH_PROJECT_TAP
-            default n
+            default y
             help
                 Enable/Disable SEMC S1 boot for TAP.
 
@@ -121,7 +121,7 @@ if FIH_CONFIG_GROUP
         config FIH_SW1_FEATURE_BATTERY_THERMAL_VIA_PMIC
             bool "Enable get battery thermal from PMIC. "
             depends on FIH_SW3_BATTERY
-            default n
+            default y
             help
                 Enable the patch which get battery temperature from PMIC.
 
@@ -173,21 +173,21 @@ if FIH_CONFIG_GROUP
         config ISX006
             bool "Sensor isx006 (SOC 5M)"
             depends on FIH_CAMERA 
-            default n
+            default y
             ---help---
-              Sony 5M SOC Sensor 
+              Sony 5M SOC Sensor
 
         config CAMERA_FLASH_LM3561
             bool "Lm3561 flash driver IC of LED"
             depends on FIH_CAMERA && ISX006
-            default n
+            default y
             ---help---
               Led flash driver IC for Camera
 
         config MT9V115
             bool "Sensor mt9v115 (SOC VGA)"
-            depends on FIH_CAMERA 
-            default n
+            depends on FIH_CAMERA
+            default y
             ---help---
               Aptina VGA SOC Sensor
 
@@ -237,21 +237,21 @@ if FIH_CONFIG_GROUP
 
         config FIH_SW_DISPLAY
             bool "FIH display driver"
-            default n
+            default y
             help
                 FIH display driver.
 
         config FIH_FB_MSM_POWER_OFF_CHARGING_ANIMATION
             depends on FIH_SW_DISPLAY
             bool "Support for power off charging animation"
-            default n
+            default y
             help
                 Enable show power off charging pictures.
 
         config FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
             depends on FIH_SW_DISPLAY
             bool "Enable backlight command queue"
-            default n
+            default y
             help
                 Queuing backlight commands before pan display, and send after pan display.
 
@@ -265,7 +265,7 @@ if FIH_CONFIG_GROUP
         config FIH_SW_DISPLAY_LCM_ID_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_TAP
             bool "Enable LCM id check"
-            default n
+            default y
             help
                 Enable LCM id check.
 
@@ -297,6 +297,24 @@ if FIH_CONFIG_GROUP
             help
                 Set DD of 0x53
 
+        config FB_MSM_MIPI_DSI_HIMAX_CMD_HVGA_PT_PANEL
+            bool "Enable FB_MSM_MIPI_DSI_HIMAX_CMD_HVGA_PT_PANEL"
+            default n
+            help
+                Set FB_MSM_MIPI_DSI_HIMAX_CMD_HVGA_PT_PANEL
+
+        config FB_MSM_MIPI_DSI_ILITEK_CMD_HVGA_PT_PANEL
+            bool "Enable FB_MSM_MIPI_DSI_ILITEK_CMD_HVGA_PT_PANEL"
+            default y
+            help
+                Set FB_MSM_MIPI_DSI_ILITEK_CMD_HVGA_PT_PANEL
+
+        config FB_MSM_MIPI_DSI_ORISE_CMD_HVGA_PT_PANEL
+            bool "Enable FB_MSM_MIPI_DSI_ORISE_CMD_HVGA_PT_PANEL"
+            default n
+            help
+                Set FB_MSM_MIPI_DSI_ORISE_CMD_HVGA_PT_PANEL
+
         config FIH_HEADSET
             bool "Enable FIH HEADSET"
             default y
@@ -323,7 +341,7 @@ if FIH_CONFIG_GROUP
         config FIH_SEMC_S1
             bool "FIH_SEMC_S1"
             depends on FIH_PROJECT_MES
-            default n
+            default y
             help
                 Enable/Disable SEMC S1 boot for MES.
 
@@ -383,7 +401,7 @@ if FIH_CONFIG_GROUP
         config FIH_SW1_FEATURE_BATTERY_THERMAL_VIA_PMIC
             bool "Enable get battery thermal from PMIC. "
             depends on FIH_SW3_BATTERY
-            default n
+            default y
             help
                 Enable the patch which get battery temperature from PMIC.
 
@@ -435,21 +453,21 @@ if FIH_CONFIG_GROUP
         config ISX006
             bool "Sensor isx006 (SOC 5M)"
             depends on FIH_CAMERA
-            default n
+            default y
             ---help---
               Sony 5M SOC Sensor
 
         config CAMERA_FLASH_LM3561
             bool "Lm3561 flash driver IC of LED"
             depends on FIH_CAMERA && ISX006
-            default n
+            default y
             ---help---
               Led flash driver IC for Camera
 
         config MT9V115
             bool "Sensor mt9v115 (SOC VGA)"
             depends on FIH_CAMERA
-            default n
+            default y
             ---help---
               Aptina VGA SOC Sensor
 
@@ -493,28 +511,28 @@ if FIH_CONFIG_GROUP
 
         config FIH_SW_DISPLAY
             bool "FIH display driver"
-            default n
+            default y
             help
                 FIH display driver.
 
         config FIH_FB_MSM_POWER_OFF_CHARGING_ANIMATION
             depends on FIH_SW_DISPLAY
             bool "Support for power off charging animation"
-            default n
+            default y
             help
                 Enable show power off charging pictures.
 
         config FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
             depends on FIH_SW_DISPLAY
             bool "Enable backlight command queue"
-            default n
+            default y
             help
                 Queuing backlight commands before pan display, and send after pan display.
 
         config FIH_SW_DISPLAY_CMI_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable CMI LCM healthy check"
-            default n
+            default y
             help
                 Enable MIPI healthy check, retry initial sequence once panel crashed.
 
@@ -528,7 +546,7 @@ if FIH_CONFIG_GROUP
         config FIH_SW_DISPLAY_AUO_LCM_HEALTHY_CHECK
             depends on FIH_SW_DISPLAY && FIH_PROJECT_MES
             bool "Enable AUO LCM healthy check"
-            default n
+            default y
             help
                 Enable AUO LCM healthy check.
 
@@ -552,6 +570,24 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Set DD of 0x53
+
+        config FB_MSM_MIPI_DSI_HIMAX_CMD_HVGA_PT_PANEL
+            bool "Enable FB_MSM_MIPI_DSI_HIMAX_CMD_HVGA_PT_PANEL"
+            default y
+            help
+                Set FB_MSM_MIPI_DSI_HIMAX_CMD_HVGA_PT_PANEL
+
+        config FB_MSM_MIPI_DSI_ILITEK_CMD_HVGA_PT_PANEL
+            bool "Enable FB_MSM_MIPI_DSI_ILITEK_CMD_HVGA_PT_PANEL"
+            default n
+            help
+                Set FB_MSM_MIPI_DSI_ILITEK_CMD_HVGA_PT_PANEL
+
+        config FB_MSM_MIPI_DSI_ORISE_CMD_HVGA_PT_PANEL
+            bool "Enable FB_MSM_MIPI_DSI_ORISE_CMD_HVGA_PT_PANEL"
+            default n
+            help
+                Set FB_MSM_MIPI_DSI_ORISE_CMD_HVGA_PT_PANEL
 
         config FIH_HEADSET
             bool "Enable FIH HEADSET"
@@ -577,7 +613,7 @@ if FIH_CONFIG_GROUP
         config FIH_SEMC_S1
             bool "FIH_SEMC_S1"
             depends on FIH_PROJECT_JLO
-            default n
+            default y
             help
                 Enable/Disable SEMC S1 boot for JLO.
 
@@ -633,7 +669,7 @@ if FIH_CONFIG_GROUP
         config FIH_SW1_FEATURE_BATTERY_THERMAL_VIA_PMIC
             bool "Enable get battery thermal from PMIC. "
             depends on FIH_SW3_BATTERY
-            default n
+            default y
             help
                 Enable the patch which get battery temperature from PMIC.
 
@@ -684,22 +720,22 @@ if FIH_CONFIG_GROUP
 
         config ISX006
             bool "Sensor isx006 (SOC 5M)"
-            depends on FIH_CAMERA 
-            default n
+            depends on FIH_CAMERA
+            default y
             ---help---
-              Sony 5M SOC Sensor 
+              Sony 5M SOC Sensor
 
         config CAMERA_FLASH_LM3561
             bool "Lm3561 flash driver IC of LED"
             depends on FIH_CAMERA && ISX006
-            default n
+            default y
             ---help---
               Led flash driver IC for Camera
 
         config MT9V115
             bool "Sensor mt9v115 (SOC VGA)"
-            depends on FIH_CAMERA 
-            default n
+            depends on FIH_CAMERA
+            default y
             ---help---
               Aptina VGA SOC Sensor
 
@@ -743,21 +779,21 @@ if FIH_CONFIG_GROUP
 
         config FIH_SW_DISPLAY
             bool "FIH display driver"
-            default n
+            default y
             help
                 FIH display driver.
 
         config FIH_FB_MSM_POWER_OFF_CHARGING_ANIMATION
             depends on FIH_SW_DISPLAY
             bool "Support for power off charging animation"
-            default n
+            default y
             help
                 Enable show power off charging pictures.
 
         config FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
             depends on FIH_SW_DISPLAY
             bool "Enable backlight command queue"
-            default n
+            default y
             help
                 Queuing backlight commands before pan display, and send after pan display.
 
@@ -785,14 +821,14 @@ if FIH_CONFIG_GROUP
         config FIH_SW_FWVGA_LOGO
             depends on FIH_SW_DISPLAY && FIH_PROJECT_JLO
             bool "Sony FWVGA Logo"
-            default n
+            default y
             help
                 Select FWVGA Logo.
 
         config FIH_SW_DISPLAY_DSI_BKL_EN
             depends on FIH_SW_DISPLAY && FIH_PROJECT_JLO
             bool "DSI_BKL_EN"
-            default n
+            default y
             help
                 DSI_BKL_EN
 
@@ -802,6 +838,24 @@ if FIH_CONFIG_GROUP
             default n
             help
                 Set DD of 0x53
+
+        config FB_MSM_MIPI_DSI_HIMAX_CMD_HVGA_PT_PANEL
+            bool "Enable FB_MSM_MIPI_DSI_HIMAX_CMD_HVGA_PT_PANEL"
+            default n
+            help
+                Set FB_MSM_MIPI_DSI_HIMAX_CMD_HVGA_PT_PANEL
+
+        config FB_MSM_MIPI_DSI_ILITEK_CMD_HVGA_PT_PANEL
+            bool "Enable FB_MSM_MIPI_DSI_ILITEK_CMD_HVGA_PT_PANEL"
+            default n
+            help
+                Set FB_MSM_MIPI_DSI_ILITEK_CMD_HVGA_PT_PANEL
+
+        config FB_MSM_MIPI_DSI_ORISE_CMD_HVGA_PT_PANEL
+            bool "Enable FB_MSM_MIPI_DSI_ORISE_CMD_HVGA_PT_PANEL"
+            default y
+            help
+                Set FB_MSM_MIPI_DSI_ORISE_CMD_HVGA_PT_PANEL
 
         config FIH_HEADSET
             bool "Enable FIH HEADSET"
