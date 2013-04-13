@@ -118,7 +118,7 @@ struct smsm_state_info {
 	uint32_t intr_mask_clear;
 };
 
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 /* MTD-BSP-VT-SMEM-00+[*/
 struct smem_boot_info
 {
@@ -399,7 +399,7 @@ static inline void smd_write_intr(unsigned int val,
 #define SMEM_SPINLOCK_SMEM_ALLOC       "S:3"
 static remote_spinlock_t remote_spinlock;
 
-#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifdef CONFIG_FIH_PROJECT_NAN
 /*Skies-2012/07/18, Keep a copy of SMEM++*/
 static void *radio_log_base = NULL;
 /*Skies-2012/07/18, Keep a copy of SMEM--*/
@@ -625,7 +625,7 @@ void smd_diag(void)
 {
 	char *x;
 /*Skies-2012/07/18, Keep a copy of SMEM++*/
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 	int size;
 #endif
 /*Skies-2012/07/18, Keep a copy of SMEM--*/
@@ -636,7 +636,7 @@ void smd_diag(void)
 		SMD_INFO("smem: DIAG '%s'\n", x);
 	}
 /*Skies-2012/07/18, Keep a copy of SMEM++*/
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 	x = smem_get_entry(SMEM_ERR_CRASH_LOG, &size);
 	if (x != 0) {
 		x[size - 1] = 0;
@@ -2647,7 +2647,7 @@ restore_snapshot_count:
 	}
 }
 
-#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifdef CONFIG_FIH_PROJECT_NAN
 /*Skies-2012/07/18, Keep a copy of SMEM++*/
 static struct workqueue_struct *modem_save_log_wq = NULL;
 
@@ -2735,7 +2735,7 @@ static irqreturn_t smsm_irq_handler(int irq, void *data)
 				outer_flush_all();
 			}
 			
-#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifdef CONFIG_FIH_PROJECT_NAN
 			/*Skies-2012/07/18, Keep a copy of SMEM++*/
 			modem_queue_start_save_log();
 			/*Skies-2012/07/18, Keep a copy of SMEM--*/
@@ -3152,7 +3152,7 @@ int smsm_state_cb_deregister(uint32_t smsm_entry, uint32_t mask,
 }
 EXPORT_SYMBOL(smsm_state_cb_deregister);
 
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 /* MTD-BSP-VT-INFO-00+[ */
 unsigned int get_boot_info(void)
 {
@@ -3544,7 +3544,7 @@ static int __devinit msm_smd_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifdef CONFIG_FIH_PROJECT_NAN
 	/*Skies-2012/07/18, Keep a copy of SMEM++*/
 	radio_log_base = ioremap(0x2D750000, 0x10000);
 	pr_emerg("smem %s: radio_log_base = 0x%x\n", __func__, (unsigned)radio_log_base);
@@ -3602,7 +3602,7 @@ static int restart_notifier_cb(struct notifier_block *this,
 	return NOTIFY_DONE;
 }
 
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 /* MTD-BSP-VT-SMEM-00+[ */
 void fih_get_oem_info(void)
 {

@@ -822,7 +822,7 @@ struct msm_snapshot_pp_status {
 #define CFG_STOP_STREAM               45
 #define CFG_GET_CSI_PARAMS            46
 
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 #define CFG_GET_FLASH_STATE           47 /* MTD-MM-SL-AddEXIF-04+ */
 #define CFG_GET_RC_AF_CHECK           48 /* MTD-MM-SL-SupportAF-00+ */
 #define CFG_MAX			49
@@ -1147,7 +1147,7 @@ struct focus_cfg {
 };
 
 struct fps_cfg {
-#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifdef CONFIG_FIH_PROJECT_NAN
 	uint16_t fps_type;//Flea add for driver.
 #endif
 	uint16_t f_mult;
@@ -1368,7 +1368,7 @@ struct sensor_cfg_data {
 
 	union {
 		int8_t effect;
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 		int8_t flash_state; /* MTD-MM-SL-AddEXIF-04+ */
 		int8_t rc_af_check; /* MTD-MM-SL-SupportAF-00+ */
 #endif
@@ -1379,7 +1379,7 @@ struct sensor_cfg_data {
 		uint16_t pictp_pl;
 		uint32_t pict_max_exp_lc;
 		uint16_t p_fps;
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 		uint16_t v_fps;/*MTD-MM-SL-FixMMSRecord-00+ */
 #endif
 		uint8_t iso_type;
@@ -1406,7 +1406,7 @@ struct sensor_cfg_data {
 		struct cord aec_cord;
 		int is_autoflash;
 		struct mirror_flip mirror_flip;
-#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifdef CONFIG_FIH_PROJECT_NAN
 		int8_t iso;//Flea modify 
 #endif
 	} cfg;
@@ -1620,7 +1620,7 @@ struct msm_camera_info {
 	uint32_t s_mount_angle[MSM_MAX_CAMERA_SENSORS];
 	const char *video_dev_name[MSM_MAX_CAMERA_SENSORS];
 	enum sensor_type_t sensor_type[MSM_MAX_CAMERA_SENSORS];
-#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifdef CONFIG_FIH_PROJECT_NAN
 	/*++ PeterShih - 20120417 for camera HW version ++*/
 	int hw_version[MSM_MAX_CAMERA_SENSORS];
 	/*-- PeterShih - 20120417 for camera HW version --*/
@@ -1640,7 +1640,7 @@ struct msm_mctl_node_info {
 
 struct flash_ctrl_data {
 	int flashtype;
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 	int ledmode;/*MTD-MM-SL-SupportFlash-00+ */
 #endif
 	union {

@@ -239,7 +239,7 @@ struct msm_camera_i2c_conf {
 
 struct msm_camera_sensor_platform_info {
 	int mount_angle;
-#ifdef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifdef CONFIG_FIH_PROJECT_NAN
 	//Flea++
        int hw_version;
 	//Flea--
@@ -285,7 +285,7 @@ struct msm_camera_sensor_info {
 	int sensor_pwd;
 	int vcm_pwd;
 	int vcm_enable;
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 	/*MTD-MM-SL-ImproveMainCamera-00+{ */
 	int sensor_f_pwd;
 	int sensor_f_reset;
@@ -461,7 +461,7 @@ struct mddi_platform_data {
 struct mipi_dsi_platform_data {
 	int vsync_gpio;
 	int (*dsi_power_save)(int on);
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 	int (*dsi_client_reset)(int hold);
 #else
 	int (*dsi_client_reset)(void);

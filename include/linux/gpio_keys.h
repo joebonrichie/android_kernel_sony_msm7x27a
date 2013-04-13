@@ -11,7 +11,7 @@ struct gpio_keys_button {
 	const char *desc;
 	unsigned int type;	/* input event type (EV_KEY, EV_SW, EV_ABS) */
 	int wakeup;		/* configure the button as a wake-up source */
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 	int wakeup_index;
 #endif
 	int debounce_interval;	/* debounce ticks interval in msecs */

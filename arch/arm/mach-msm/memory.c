@@ -239,7 +239,7 @@ static void __init adjust_reserve_sizes(void)
 
 	mt = &reserve_info->memtype_reserve_table[0];
 	for (i = 0; i < MEMTYPE_MAX; i++, mt++) {
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 		//MTD-SW3-KERNEL-DL-Fix_ioremap-00+[
 		if (i == MEMTYPE_EBI1_FIH) {
 			continue;
@@ -268,7 +268,7 @@ static void __init reserve_memory_for_mempools(void)
 	for (memtype = 0; memtype < MEMTYPE_MAX; memtype++, mt++) {
 		if (mt->flags & MEMTYPE_FLAGS_FIXED || !mt->size)
 		{
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 			ret = memblock_remove(mt->start, mt->size);
 			BUG_ON(ret);
 #endif

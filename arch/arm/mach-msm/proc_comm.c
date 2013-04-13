@@ -157,7 +157,7 @@ end:
 }
 EXPORT_SYMBOL(msm_proc_comm);
 
-#ifndef CONFIG_FIH_MACH_TAMSUI_NAN
+#ifndef CONFIG_FIH_PROJECT_NAN
 //MTD-BSP-VT-PROC-00+[
 int msm_proc_comm_oem(unsigned cmd, unsigned *data1, unsigned *data2, unsigned *cmd_parameter)
 {
