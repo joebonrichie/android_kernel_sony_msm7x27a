@@ -304,6 +304,7 @@ config WCNSS_CORE
 	  Core driver for the Qualcomm WCNSS triple play connectivity subsystem
 
 source "drivers/net/wireless/ath/Kconfig"
+source "drivers/net/wireless/ath6kl/Kconfig"
 source "drivers/net/wireless/b43/Kconfig"
 source "drivers/net/wireless/b43legacy/Kconfig"
 source "drivers/net/wireless/bcmdhd/Kconfig"

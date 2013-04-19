@@ -67,6 +67,4 @@ obj-$(CONFIG_BRCMSMAC)	+= brcm80211/
 obj-$(CONFIG_LIBRA_SDIOIF)	+= libra/
 obj-$(CONFIG_WCNSS_CORE)	+= wcnss/
 
-# /*++ Felex - 20121008 Add for using ++*/
-obj-$(CONFIG_ATH6KL_KOBJECT)    += ath6kl/
-# /*-- Felex - 20121008 Add for using --*/
+obj-$(CONFIG_ATH6KL)    += ath6kl/
