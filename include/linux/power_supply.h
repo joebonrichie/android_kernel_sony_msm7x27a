@@ -132,6 +132,7 @@ enum power_supply_property {
 	/*Edison add ATS & ERROR EVENT 20111122 ++*/
 	POWER_SUPPLY_PROP_ERROR_EVENT,
 	/*Edison add ATS & ERROR EVENT 20111122 --*/
+	POWER_SUPPLY_PROP_CHARGER_IRQ,
 };
 
 enum power_supply_type {

@@ -20,6 +20,10 @@
 #include <linux/ioctl.h>
 
 #define SENSOR_CALIBRATE_JOB_SIZE 4
+#define SENSORS_ACCELEROMETER_HANDLE    0
+#define SENSORS_MAGNETIC_FIELD_HANDLE   1
+#define SENSORS_PROXIMITY_HANDLE        2
+#define SENSORS_ORIENTATION_HANDLE      3
 
 enum Sensor_Calibrate_Job{
 	/* Add events for processing */

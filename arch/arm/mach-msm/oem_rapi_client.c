@@ -194,6 +194,73 @@ int oem_rapi_client_close(void)
 }
 EXPORT_SYMBOL(oem_rapi_client_close);
 
+/*++ Huize - 20130325 Add general API on kernel side for communicating with modem ++*/
+/*
+ * Communicated with modem.
+ *
+ * event: passed current event to client data structure.
+ * input: passed as an input parameter to client 
+ * output: passed as an pointer for receiving data be returned  
+ * bufferSize: limit of the max size
+ *
+ * NOTE that output will need to be freed, if it was not used anymore.
+ * 
+ * Return Value:
+ *        >= 0 Output buffer length (success)
+ *        <  0 (invalid)
+ */
+int oem_rapi_client_rpc(uint32_t event, char* input, char** output, uint32_t buffSize)
+{
+	struct msm_rpc_client *mrc;
+	struct oem_rapi_client_streaming_func_arg arg;
+	struct oem_rapi_client_streaming_func_ret ret;	
+	int out_len = -1;
+
+	if(!input || !output) return -1;
+
+	switch(event){
+		case OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_GET:
+		case OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_SET:
+		case OEM_RAPI_CLIENT_EVENT_PROXIMITY_THRESHOLD_SET :
+		case OEM_RAPI_CLIENT_EVENT_PROXIMITY_THRESHOLD_GET :
+			arg.event = event;
+			break;	
+		default :
+			return -1;
+	}
+	arg.cb_func = NULL;
+	arg.handle = (void *) 0;
+	arg.in_len = strlen(input);
+	arg.input = input;
+	arg.output_valid = 1;
+	arg.out_len_valid = 1;
+	arg.output_size = buffSize;
+
+	ret.output = NULL;
+	ret.out_len = NULL;
+
+	mrc = oem_rapi_client_init();
+	if(!mrc) return -1;
+		
+	oem_rapi_client_streaming_function(mrc, &arg, &ret);
+	oem_rapi_client_close();
+
+	if(*(ret.out_len) >= 0 && *(ret.out_len) <= buffSize){
+		memcpy(&out_len, ret.out_len, sizeof(uint32_t));
+		*output = kzalloc(out_len * sizeof(char), GFP_KERNEL);
+		if(*output){
+			memcpy(*output, ret.output, out_len * sizeof(char));
+		}else{
+			*output = NULL;
+		}	
+	}
+
+	kfree(ret.output);
+	kfree(ret.out_len);
+	return out_len;
+}
+/*-- Huize - 20130325 Add general API on kernel side for communicating with modem --*/
+
 struct msm_rpc_client *oem_rapi_client_init(void)
 {
 	mutex_lock(&oem_rapi_client_lock);

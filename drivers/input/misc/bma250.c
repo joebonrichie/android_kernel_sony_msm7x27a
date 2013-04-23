@@ -29,17 +29,15 @@
 #include <linux/slab.h>
 #include <asm/uaccess.h>
 #include <linux/ioctl.h>
-#include <mach/oem_rapi_client.h>
 #include <mach/vreg.h>
 #include <linux/accelerometer_common.h>
 #include <linux/log2.h>
-
-#define debug 0
 
 #define BMA250_DRIVER_NAME "bma250"
 #define BMA250_INTERRUPT 28
 
 static u8 BMA250_PMU_BW_CAMMAND;
+static unsigned long originalTime;
 
 DEFINE_MUTEX(Bma250_global_lock);
 
@@ -103,111 +101,6 @@ DEFINE_MUTEX(Bma250_global_lock);
    Input device interface
  * ---------------------------------------------------------------------------------------- */
 
-static char* bma250_rpc(AccelerometerAxisOffset* offset, uint32_t event)
-{
-	struct msm_rpc_client* mrc;
-	struct oem_rapi_client_streaming_func_arg arg;
-	struct oem_rapi_client_streaming_func_ret ret;
-	int out_len;
-	char* input = kzalloc(Buff_Size, GFP_KERNEL);
-	char* output = kzalloc(Buff_Size, GFP_KERNEL);
-
-	switch(event){
-		case OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_SET:
-			snprintf(input, Buff_Size, "%hd %hd %hd", offset->X, offset->Y, offset->Z);
-		case OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_GET:
-			arg.event = event;
-			break;
-		default:
-			kfree(input);
-			kfree(output);
-			return NULL;
-	}
-
-	arg.cb_func = NULL;
-	arg.handle = (void *)0;
-	arg.in_len = strlen(input) + 1;
-	arg.input = input;
-	arg.output_valid = 1;
-	arg.out_len_valid = 1;
-	arg.output_size = Buff_Size;
-
-	ret.output = output;
-	ret.out_len = &out_len;
-
-	mrc = oem_rapi_client_init();
-	oem_rapi_client_streaming_function(mrc, &arg, &ret);
-	oem_rapi_client_close();
-
-	#if debug
-	pr_info("BMA250: %s, AXIS %s  .. %s\n", __func__, (event == OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_GET) ? "GET" : "SET", ret.output);
-	#endif
-
-	kfree(input);
-
-	return ret.output;
-}
-
-static char* bma250_resetAxisOffset(s16 x, s16 y, s16 z)
-{
-	Accelerometer* data = i2c_get_clientdata(this_client);
-	AccelerometerAxisOffset offset = {
-		.X = x,
-		.Y = y,
-		.Z = z,
-	};
-	char* result = NULL;
-	mutex_lock(&data->mutex);
-	result = bma250_rpc(&offset, OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_SET);
-	memset(&offset, 0, sizeof(AccelerometerAxisOffset));
-	if(	result != NULL && strcmp(result, "ERROR") != 0 &&
-		sscanf(result, "%hd %hd %hd", &(offset.X), &(offset.Y), &(offset.Z)) == 3){
-		memcpy(&(data->odata), &offset, sizeof(AccelerometerAxisOffset));
-		#if debug
-		printk("resetAxisOffset ===> result : %s\n", result);
-		#endif
-	}else{
-		kfree(result);
-		result = NULL;
-	}
-	mutex_unlock(&data->mutex);
-	
-	return result;
-}
-
-static char* bma250_readAxisOffset(void)
-{
-	Accelerometer* data = i2c_get_clientdata(this_client);
-	char* result = bma250_rpc(0, OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_GET);
-
-	if(result != NULL && strcmp(result, "NV_NOTACTIVE_S") == 0){
-		/**
-		 * Do reset. 
-		 * It means that accelerometer axis offset 
-		 * hasn't been setted yet.
-		 */
-		kfree(result);
-		result = bma250_resetAxisOffset(0, 0, 0);
-	}
-
-	mutex_lock(&data->mutex);
-	{
-		AccelerometerAxisOffset offset;
-		if(result != NULL && strcmp(result, "ERROR") != 0 && 
-			sscanf(result, "%hd %hd %hd", &(offset.X), &(offset.Y), &(offset.Z)) == 3){
-			memcpy(&(data->odata), &(offset), sizeof(AccelerometerAxisOffset));
-			#if debug
-			printk("bma250_readAxisOffset ==========> X : %d, Y : %d, Z : %d\n", data->odata.X, data->odata.Y, data->odata.Z);
-			#endif
-		}else{
-			kfree(result);
-			result = NULL;
-		}
-	}
-	mutex_unlock(&data->mutex);
-	return result;
-}
-
 #ifdef ACCELEROMETER_IRQ_USED
 static irqreturn_t bma250_irq(int irq, void* handle)
 {
@@ -253,7 +146,7 @@ static bool bma250_interrupt_request(Accelerometer* data)
 		return false;
 	}
 
-    mutex_lock(&data->mutex);
+	mutex_lock(&data->mutex);
 	WorkMode = INTERRUPT_MODE;
 	data->irq = gpio_to_irq(BMA250_INTERRUPT);
 	if(request_irq(data->irq, bma250_irq, IRQF_TRIGGER_RISING, "BMA250_SENSOR", data) < 0){
@@ -262,12 +155,12 @@ static bool bma250_interrupt_request(Accelerometer* data)
 		data->irq = -1;
 		free_irq(data->irq, data);
 	}
-    mutex_unlock(&data->mutex);
+	mutex_unlock(&data->mutex);
 
 	if(data->irq == -1) return false;
 
 	#if debug
-	pr_info("BMA250: isl29021_irq:request_irq finished\n");
+	pr_info("BMA250: BMA250_irq:request_irq finished\n");
 	#endif
 	return true;
 }
@@ -277,7 +170,7 @@ static void bma250_interrupt_duration(unsigned long arg)
 	switch(ilog2(arg))
 	{
 		case 3:
-			POWER_MODE_CAMMAND = (arg > 10) ? 0X52 : 0X00;
+			POWER_MODE_CAMMAND = (arg > 10) ? 0X52 : 0X4C;
 			BMA250_PMU_BW_CAMMAND = 0X0B;//Setting Bandwith 62.5 HZ, updated time 8ms
 		break;
 		case 4:
@@ -303,6 +196,19 @@ static void bma250_interrupt_duration(unsigned long arg)
 		break;
 	}
 }
+
+static int bma250_irqSetting(u8 en0, u8 en1, u8 map0, u8 map1)
+{
+	int rc = 0;
+	if(WorkMode == NORMAL_MODE) return rc;
+	rc |= i2c_smbus_write_byte_data(this_client, BMA250_INT_EN_0, en0);
+	rc |= i2c_smbus_write_byte_data(this_client, BMA250_INT_EN_1, en1);
+	rc |= i2c_smbus_write_byte_data(this_client, BMA250_INT_MAP_0, map0);
+	rc |= i2c_smbus_write_byte_data(this_client, BMA250_INT_MAP_1, map1);
+	//Reset Interrupt
+	rc |= i2c_smbus_write_byte_data(this_client, BMA250_INT_RST_LATCH, 0X10);
+	return rc;
+}
 #endif
 
 static int bma250_type_setting(bool open)
@@ -314,6 +220,12 @@ static int bma250_type_setting(bool open)
 		#ifdef ACCELEROMETER_IRQ_USED
 		u8 irq_en[2] = {0, 0};
 		u8 irq_map[2] = {0, 0};
+		#endif
+		//Setting Operation mode
+		rc |= i2c_smbus_write_byte_data(this_client, BMA250_PMU_LPW, POWER_MODE_CAMMAND);
+		//Setting bandwith
+		rc |= i2c_smbus_write_byte_data(this_client, BMA250_PMU_BW, BMA250_PMU_BW_CAMMAND);
+		#ifdef ACCELEROMETER_IRQ_USED
 		switch(WorkMode){
 			case SPECIAL_MODE:
 				irq_en[0] = 0X47;
@@ -324,20 +236,15 @@ static int bma250_type_setting(bool open)
 				irq_map[1] = 0X01;
 				break;
 		}
-		i2c_smbus_write_byte_data(this_client, BMA250_INT_EN_0, irq_en[0]);
-		i2c_smbus_write_byte_data(this_client, BMA250_INT_EN_1, irq_en[1]);
-		i2c_smbus_write_byte_data(this_client, BMA250_INT_MAP_0, irq_map[0]);
-		i2c_smbus_write_byte_data(this_client, BMA250_INT_MAP_1, irq_map[1]);
-		i2c_smbus_write_byte_data(this_client, BMA250_INT_6, (WorkMode != SPECIAL_MODE) ? 0X14 : 0X02);
-		i2c_smbus_write_byte_data(this_client, BMA250_INT_A, (WorkMode != SPECIAL_MODE) ? 0X18 : 0X19);
+		rc |= bma250_irqSetting(irq_en[0], irq_en[1], irq_map[0], irq_map[1]);
+		rc |= i2c_smbus_write_byte_data(this_client, BMA250_INT_6, (WorkMode != SPECIAL_MODE) ? 0X14 : 0X02);
 		#endif
-		//Setting bandwith
-		rc |= i2c_smbus_write_byte_data(this_client, BMA250_PMU_BW, BMA250_PMU_BW_CAMMAND);
-		//Setting Operation mode
-		rc |= i2c_smbus_write_byte_data(this_client, BMA250_PMU_LPW, POWER_MODE_CAMMAND);
 	}else{
+		#ifdef ACCELEROMETER_IRQ_USED
+		rc |= bma250_irqSetting(0, 0, 0, 0);
+		#endif
 		//Setting Suspend mode
-		rc = i2c_smbus_write_byte_data(this_client, BMA250_PMU_LPW, 0X80);
+		rc |= i2c_smbus_write_byte_data(this_client, BMA250_PMU_LPW, 0X80);
 	}
 	return rc;
 }
@@ -360,7 +267,7 @@ static int bma250_enable(void)
 		rc = 1;
 	}
 
-	rc = (rc == 1 && WorkMode == NORMAL_MODE) ? queue_delayed_work(Accelerometer_WorkQueue, &data->dw, msecs_to_jiffies(10)) : -1;
+	rc = (rc == 1 && WorkMode == NORMAL_MODE) ? queue_delayed_work(Accelerometer_WorkQueue, &data->dw, msecs_to_jiffies(20)) : -1;
 	return 0;
 }
 
@@ -386,6 +293,7 @@ static int bma250_disable(void)
 		bma250_type_setting(false);
 		WorkMode = NORMAL_MODE;
 		SleepTime = msecs_to_jiffies(200);
+		originalTime = 200;
 		POWER_MODE_CAMMAND = 0X4C;//Sleep duration 1ms
 		BMA250_PMU_BW_CAMMAND = 0X0B;//Setting Bandwith 62.5 HZ, updated time 8ms
 	}
@@ -420,6 +328,20 @@ static int bma250_release(struct inode *inode, struct file *file)
 	Accelerometer_sensor_opened = 0;
 	mutex_unlock(&Bma250_global_lock);
 	return 0;
+}
+
+static void bma250_commandSet(Accelerometer* data, unsigned long time)
+{
+	#ifdef ACCELEROMETER_IRQ_USED
+	if((time == 16384 || time < 70) && bma250_interrupt_request(data) == true){
+		bma250_interrupt_duration(time);
+	}
+	#endif
+	if(WorkMode == NORMAL_MODE){
+		POWER_MODE_CAMMAND = 0X4C;//lower power enable, sleep duration 1ms
+		BMA250_PMU_BW_CAMMAND = 0X0B;//Setting Bandwith 62.5 HZ, updated time 8ms
+	}
+	SleepTime = msecs_to_jiffies(--time);// To makeure timer is exactly.
 }
 
 static long bma250_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
@@ -458,25 +380,14 @@ static long bma250_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			bool enabled = data->enabled;
 			arg = (arg >= 10) ? arg : 10;
 			(data->enabled) ? bma250_disable() : 0;
-
-			#ifdef ACCELEROMETER_IRQ_USED
-			if((arg == 16384 || arg < 70) && bma250_interrupt_request(data) == true){
-				bma250_interrupt_duration(arg);
-			}
-			#endif
-
-			if(WorkMode == NORMAL_MODE){
-				SleepTime = msecs_to_jiffies(--arg);// To makeure timer is exactly.
-				POWER_MODE_CAMMAND = 0X4C;//lower power enable, sleep duration 1ms
-				BMA250_PMU_BW_CAMMAND = 0X0B;//Setting Bandwith 62.5 HZ, updated time 8ms
-			}
+			originalTime = arg;
+			bma250_commandSet(data, arg);
 			(enabled) ? bma250_enable() : 0;
 	
 			break;
 		}
 		case ACCELEROMETER_IOCTL_SET_AXIS_OFFSET:
 		{
-			char* tmp = NULL;
 			AccelerometerAxisOffset* offset = kzalloc(sizeof(AccelerometerAxisOffset), GFP_KERNEL);
 			rc = copy_from_user(offset, (unsigned long __user *) arg, sizeof(AccelerometerAxisOffset));
 			mutex_lock(&data->mutex);
@@ -484,17 +395,13 @@ static long bma250_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			offset->Y += data->odata.Y;
 			offset->Z += data->odata.Z;
 			mutex_unlock(&data->mutex);
-			tmp = bma250_resetAxisOffset(offset->X, offset->Y, offset->Z);
-			rc = (tmp != NULL) ? 1 : -1;
-			kfree(tmp);
+			rc = (accelerometer_resetAxisOffset(offset->X, offset->Y, offset->Z)) ? 1 : -1;
 			kfree(offset);
 			break;
 		}
 		case ACCELEROMETER_IOCTL_SET_AXIS_OFFSET_INIT:
 		{
-			char* tmp = bma250_resetAxisOffset(0, 0, 0);
-			rc = (tmp != NULL) ? 1 : -1;
-			kfree(tmp);
+			rc = (accelerometer_resetAxisOffset(0, 0, 0)) ? 1 : -1;
 			break;
 		}
 		default:
@@ -519,11 +426,26 @@ struct miscdevice bma250_misc = {
 	.fops = &bma250_fops
 };
 
+static void bma250_swReset(bool reStart, u16 gRange){
+	pr_err("%s: reStart: %d, gRange: %d\n", __func__, reStart, gRange);
+	bma250_type_setting(false);
+	accelerometer_readAxisOffset();
+	i2c_smbus_write_byte_data(this_client, BMA250_BGW_SOFTRESET, 0XB6);
+	msleep(20);
+	//Setting Range
+	i2c_smbus_write_byte_data(this_client, BMA250_PMU_RANGE, gRange);
+	msleep(10);
+	bma250_type_setting(reStart);
+}
+
 // Return true if data ready to report
 static bool bma250_readData(void){
 	memset(i2cData, 0, sizeof(i2cData));
 	memset(&rawData, 0, sizeof(AccelerometerData));
-	i2c_smbus_read_i2c_block_data(this_client, BMA250_ACCD_X_LSB, 6, &i2cData[0]);
+	if(i2c_smbus_read_i2c_block_data(this_client, BMA250_ACCD_X_LSB, 6, &i2cData[0]) != 6){
+		bma250_swReset(true, 0x08);
+		return false;
+	}
 	rawData.Y = (i2cData[1] < 128) ? i2cData[1] : (i2cData[1] - 256);
 	rawData.Y = ((rawData.Y << 2) + (i2cData[0] >> 6)) * 10000 >> 6;
 	rawData.X = (i2cData[3] < 128) ? i2cData[3] : (i2cData[3] - 256);
@@ -532,18 +454,18 @@ static bool bma250_readData(void){
 	rawData.Z = ((rawData.Z << 2) + (i2cData[4] >> 6)) * 10000 >> 6;
 	memcpy(&(queueData[queueIndex]), &rawData, sizeof(AccelerometerData));
 	queueIndex = (queueIndex < FILTER_INDEX) ? queueIndex + 1 : 0;
-	ignoreCount = (ignoreCount < FILTER_INDEX) ? ignoreCount + 1 : FILTER_INDEX;
+	ignoreCount = (ignoreCount < FILTER_SIZE) ? ignoreCount + 1 : FILTER_SIZE;
 	#ifdef ACCELEROMETER_IRQ_USED
 	if(WorkMode == SPECIAL_MODE){
 		while(queueIndex <= FILTER_INDEX){
 			memcpy(&(queueData[queueIndex]), &rawData, sizeof(AccelerometerData));
 			++queueIndex;
 		}	
-		ignoreCount = FILTER_INDEX;
+		ignoreCount = FILTER_SIZE;
 		queueIndex = 0;
 	}
 	#endif
-	return (ignoreCount == FILTER_INDEX);
+	return (ignoreCount == FILTER_SIZE);
 }
 
 static void bma250_reportData(Accelerometer* data){
@@ -574,7 +496,7 @@ static void bma250_work_func(struct work_struct *work)
 	if(data->enabled && !data->suspend){
 		(bma250_readData()) ? bma250_reportData(data) : 0;
 		#if debug
-		printk("BMA250: ACCELEROMETER X: %d, Y: %d, Z: %d\n", data->sdata.X / 1000, data->sdata.Y  / 1000, data->sdata.Z  / 1000);
+		pr_err("BMA250: ACCELEROMETER X: %d, Y: %d, Z: %d\n", data->sdata.X / 1000, data->sdata.Y  / 1000, data->sdata.Z  / 1000);
 		#endif
 	}
 
@@ -666,6 +588,8 @@ static int bma250_probe(struct i2c_client *client, const struct i2c_device_id *i
 	pr_info("BMA250: %s ++\n", __func__);
 	#endif
 
+	msleep(5);
+
 	if(!i2c_check_functionality(client->adapter, I2C_FUNC_SMBUS_READ_WORD_DATA)){
 		return -EIO;
 	}
@@ -706,6 +630,8 @@ static int bma250_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 	//Setting Range +/- 8G
 	i2c_smbus_write_byte_data(client, BMA250_PMU_RANGE, 0X08);
+	//Setting Suspend mode
+	i2c_smbus_write_byte_data(client, BMA250_PMU_LPW, 0X80);
 
 	err = misc_register(&bma250_misc);
     if(err < 0){
@@ -729,6 +655,7 @@ static int bma250_probe(struct i2c_client *client, const struct i2c_device_id *i
 	this_client = client;
 	Accelerometer_WorkQueue = create_singlethread_workqueue(input_dev->name);
 	SleepTime = msecs_to_jiffies(200);
+	originalTime = 200;
 
 	POWER_MODE_CAMMAND = 0X4C;//lower power enable, sleep duration 1ms
 	BMA250_PMU_BW_CAMMAND = 0X0B;//Setting Bandwith 62.5 HZ, updated time 8ms
@@ -737,7 +664,7 @@ static int bma250_probe(struct i2c_client *client, const struct i2c_device_id *i
 	#if debug
 	pr_info("BMA250: %s --\n", __func__);
 	#endif
-	bma250_readAxisOffset();
+	accelerometer_readAxisOffset();
 
 	return 0;
 

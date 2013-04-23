@@ -13,6 +13,9 @@
  *
  */
 
+#undef PROXIMITY_IRQ_USED
+#define PROXIMITY_IRQ_USED
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
@@ -26,11 +29,8 @@
 #include <linux/slab.h>
 #include <asm/uaccess.h>
 #include <linux/ioctl.h>
-#include <mach/oem_rapi_client.h>
 #include <mach/vreg.h>
 #include <linux/proximity_common.h>
-
-#define debug 0
 
 #define ISL29021_INTERRUPT 17
 
@@ -56,90 +56,6 @@ enum{
    Input device interface
  * ---------------------------------------------------------------------------------------- */
 
-static int isl29021_rpc(int threshold, uint32_t event)
-{
-	struct oem_rapi_client_streaming_func_arg arg;
-	struct oem_rapi_client_streaming_func_ret ret;	
-	char* input;
-	char* output;
-	int out_len;
-	int result;
-
-	struct msm_rpc_client *mrc;
-
-	input = kzalloc(Buff_Size, GFP_KERNEL);
-	output = kzalloc(Buff_Size, GFP_KERNEL);
-
-	switch(event){
-		case OEM_RAPI_CLIENT_EVENT_PROXIMITY_THRESHOLD_SET :
-			snprintf(input, Buff_Size, "%d", threshold);
-		case OEM_RAPI_CLIENT_EVENT_PROXIMITY_THRESHOLD_GET :
-			arg.event = event;
-			break;
-		default :
-			kfree(input);
-			kfree(output);
-			return -999;
-	}
-	arg.cb_func = NULL;
-	arg.handle = (void *)0;
-	arg.in_len = strlen(input) + 1;
-	arg.input = input;
-	arg.output_valid = 1;
-	arg.out_len_valid = 1;
-	arg.output_size = Buff_Size;
-
-	ret.output = output;
-	ret.out_len = &out_len;
-
-	mrc = oem_rapi_client_init();
-	oem_rapi_client_streaming_function(mrc, &arg, &ret);
-	oem_rapi_client_close();
-
-	result = (int) simple_strtol(ret.output, NULL, 10);
-
-	kfree(input);
-	kfree(output);
-
-	return result;
-}
-
-static int isl29021_resetThreshold(int threshold)
-{
-	Proximity* data = i2c_get_clientdata(this_client);
-	int result = 0;
-
-	mutex_lock(&data->mutex);
-	result = isl29021_rpc(threshold, OEM_RAPI_CLIENT_EVENT_PROXIMITY_THRESHOLD_SET);
-	data->sdata.Threshold_L = (result >= THRESHOLD_LEVEL) ? (result - (THRESHOLD_LEVEL >> 2)) : data->sdata.Threshold_L;
-	data->sdata.Threshold_H = (result >= THRESHOLD_LEVEL) ? result : data->sdata.Threshold_H;
-	#if debug
-	printk("readThreshold ==========> LOW %d, HIGH %d \n", data->sdata.Threshold_L, data->sdata.Threshold_H);
-	#endif
-	mutex_unlock(&data->mutex);
-	
-	return result;
-}
-
-static int isl29021_readThreshold(void)
-{
-	Proximity* data = i2c_get_clientdata(this_client);
-	int result = isl29021_rpc(0, OEM_RAPI_CLIENT_EVENT_PROXIMITY_THRESHOLD_GET);
-	if(result == -5){
-		/**
-		* Do reset. 
-		* It means that proximity threshold hasn't been setted yet.
-		*/
-		result = isl29021_resetThreshold(DEFAULT_THRESHOLD);
-	}
-
-	mutex_lock(&data->mutex);
-	data->sdata.Threshold_L = (result >= THRESHOLD_LEVEL) ? (result - (THRESHOLD_LEVEL >> 2)) : data->sdata.Threshold_L;
-	data->sdata.Threshold_H = (result >= THRESHOLD_LEVEL) ? result : data->sdata.Threshold_H;
-	mutex_unlock(&data->mutex);
-	return result;
-}
-
 static void isl29021_setThreshold(u16 LOW, u16 HIGH)
 {
 	u8 tmp[4] = {LOW & 0XFF, LOW >> 8, HIGH & 0XFF, HIGH >> 8};
@@ -163,7 +79,7 @@ static int isl29021_enable(void)
 		isl29021_setThreshold(0, 65535);
 		i2c_smbus_write_byte_data(this_client, PROXIMITY_REG_COMMANDII, 0xA0);
 		i2c_smbus_write_byte_data(this_client, PROXIMITY_REG_COMMANDI, 0xE0);
-		input_report_abs(data->input, ABS_DISTANCE, DEFAULT_THRESHOLD);
+		input_report_abs(data->input, ABS_DISTANCE, PROXIMITY_UNDETECTED);
 		input_sync(data->input);
 		i2cIsFine = true;
 		need2Reset = false;
@@ -186,6 +102,8 @@ static int isl29021_disable(void)
 		data->sdata.Value = -1;
 		data->sdata.State = PROXIMITY_STATE_UNKNOWN;
 		mutex_unlock(&data->mutex);
+		cancel_delayed_work_sync(&data->dw);
+		flush_workqueue(Proximity_WorkQueue);
 		i2c_smbus_write_byte_data(this_client, PROXIMITY_REG_COMMANDII, 0x00);
 		i2c_smbus_write_byte_data(this_client, PROXIMITY_REG_COMMANDI, 0x00);
 		i2cIsFine = true;
@@ -228,7 +146,7 @@ static int isl29021_release(struct inode* inode, struct file* file)
 static ssize_t isl29021_read(struct file* f, char* str, size_t length, loff_t* f_pos)
 {
 	Proximity* data = i2c_get_clientdata(this_client);
-	int error = 0;
+	ssize_t error = 0L;
 	#if debug
 	pr_info("ISL29021: %s\n", __func__);
 	#endif
@@ -253,7 +171,7 @@ static ssize_t isl29021_read(struct file* f, char* str, size_t length, loff_t* f
 static ssize_t isl29021_write(struct file* f, const char* str, size_t length, loff_t* f_pos)
 {
 	Proximity* data = i2c_get_clientdata(this_client);
-	int error = 0;
+	ssize_t error = 0L;
 	#if debug
 	pr_info("ISL29021: %s\n", __func__);
 	#endif
@@ -262,7 +180,7 @@ static ssize_t isl29021_write(struct file* f, const char* str, size_t length, lo
 	if(data->enabled && !data->suspend){
 		int result = -1;
 		error = copy_from_user(&result, str, sizeof(int));
-		error = isl29021_resetThreshold(result + THRESHOLD_LEVEL);
+		error = proximity_resetThreshold(result + THRESHOLD_LEVEL, THRESHOLD_LEVEL);
 	}else{
 		error = -1;
 	}
@@ -328,7 +246,7 @@ static irqreturn_t isl29021_irq(int irq, void* handle)
 	pr_info("%s ++\n", __func__);
 	#endif
 	disable_irq_nosync(data->irq);
-	queue_work(Proximity_WorkQueue, &data->work);
+	queue_delayed_work(Proximity_WorkQueue, &data->dw, 0);
 	#if debug
 	pr_info("%s --\n", __func__);
 	#endif
@@ -348,7 +266,7 @@ static int isl29021_reportData(Proximity* data){
 	if(State != data->sdata.State){
 		if(need2ChangeState == true){
 			data->sdata.State = State;
-			input_report_abs(data->input, ABS_DISTANCE, (State) ? 1 : 5000);
+			input_report_abs(data->input, ABS_DISTANCE, (State) ? PROXIMITY_DETECTED : PROXIMITY_UNDETECTED);
 			input_sync(data->input);
 		}
 		need2ChangeState = !need2ChangeState;
@@ -363,12 +281,12 @@ static int isl29021_reportData(Proximity* data){
 	return Value;
 }
 
-static void epl6803_autoCalibrate(Proximity* data, int Value){
+static void isl29021_autoCalibrate(Proximity* data, int Value){
 	// Auto-calibrate
 	if(!i2cIsFine || ((Value + THRESHOLD_RANGE) > data->sdata.Threshold_H)){
 		need2Reset = false;
 	}else{
-		(need2Reset) ? isl29021_resetThreshold(Value + THRESHOLD_LEVEL) : 0;
+		(need2Reset) ? proximity_resetThreshold(Value + THRESHOLD_LEVEL, THRESHOLD_LEVEL) : 0;
 		need2Reset = !need2Reset;
 	}
 }
@@ -381,8 +299,7 @@ static void isl29021_work_func(struct work_struct* work)
 	#if debug
 	pr_info("ISL29021: %s ++\n", __func__);
 	#endif
-
-	mutex_lock(&data->mutex);
+	
 	memset(i2cData, 0, sizeof(i2cData));
 	if(data->enabled && !data->suspend && 
 		(i2cIsFine = (i2c_smbus_read_i2c_block_data(this_client, PROXIMITY_REG_DATA_LSB, 2, &i2cData[0]) == 2))){
@@ -435,6 +352,10 @@ static int isl29021_suspend(struct i2c_client* client, pm_message_t state)
 
 	mutex_lock(&data->mutex);
 	data->suspend = true;
+	mutex_unlock(&data->mutex);
+	cancel_delayed_work_sync(&data->dw);
+	flush_workqueue(Proximity_WorkQueue);
+
 	if(data->enabled){
 		i2c_smbus_write_byte_data(client, PROXIMITY_REG_COMMANDII, 0x00);
 		i2c_smbus_write_byte_data(client, PROXIMITY_REG_COMMANDI, 0x00);
@@ -444,7 +365,6 @@ static int isl29021_suspend(struct i2c_client* client, pm_message_t state)
 		need2Reset = false;
 		need2ChangeState = false;
 	}
-	mutex_unlock(&data->mutex);
 
 	#if debug
 	pr_info("ISL29021: %s --\n", __func__);
@@ -461,6 +381,10 @@ static int isl29021_resume(struct i2c_client* client)
 
 	mutex_lock(&data->mutex);
 	data->suspend = false;
+	mutex_unlock(&data->mutex);
+	cancel_delayed_work_sync(&data->dw);
+	flush_workqueue(Proximity_WorkQueue);
+
 	if(data->enabled){
 		data->sdata.Value = -1;
 		data->sdata.State = PROXIMITY_STATE_UNKNOWN;
@@ -470,7 +394,6 @@ static int isl29021_resume(struct i2c_client* client)
 		need2Reset = false;
 		need2ChangeState = false;
 	}
-	mutex_unlock(&data->mutex);
 
 	#if debug
 	pr_info("ISL29021: %s --\n", __func__);
@@ -501,7 +424,7 @@ static int isl29021_probe(struct i2c_client* client, const struct i2c_device_id*
 		goto err_free_mem;
 	}
 
-	INIT_WORK(&Sensor_device->work, isl29021_work_func);
+	INIT_DELAYED_WORK(&Sensor_device->dw, isl29021_work_func);
 	i2c_set_clientdata(client, Sensor_device);
 
 	err = gpio_request(ISL29021_INTERRUPT, "isl29021_sensor_init");
@@ -576,7 +499,8 @@ static int isl29021_probe(struct i2c_client* client, const struct i2c_device_id*
 
 	this_client = client;
 	Proximity_WorkQueue = create_singlethread_workqueue(input_dev->name);
-	isl29021_readThreshold();// It needs to avoid deadlock.
+	proximity_readThreshold(THRESHOLD_LEVEL);// It needs to avoid deadlock.
+	SleepTime = 0;
 
 	return 0;
 

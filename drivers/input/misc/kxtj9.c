@@ -26,11 +26,8 @@
 #include <linux/slab.h>
 #include <asm/uaccess.h>
 #include <linux/ioctl.h>
-#include <mach/oem_rapi_client.h>
 #include <mach/vreg.h>
 #include <linux/accelerometer_common.h>
-
-#define debug 0
 
 #define KXTJ9_DRIVER_NAME "kxtj9"
 
@@ -60,111 +57,6 @@ DEFINE_MUTEX(Kxtj9_global_lock);
    Input device interface
  * ---------------------------------------------------------------------------------------- */
 
-static char* kxtj9_rpc(AccelerometerAxisOffset* offset, uint32_t event)
-{
-	struct msm_rpc_client* mrc;
-	struct oem_rapi_client_streaming_func_arg arg;
-	struct oem_rapi_client_streaming_func_ret ret;
-	int out_len;
-	char* input = kzalloc(Buff_Size, GFP_KERNEL);
-	char* output = kzalloc(Buff_Size, GFP_KERNEL);
-
-	switch(event){
-		case OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_SET:
-			snprintf(input, Buff_Size, "%hd %hd %hd", offset->X, offset->Y, offset->Z);
-		case OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_GET:
-			arg.event = event;
-			break;
-		default:
-			kfree(input);
-			kfree(output);
-			return NULL;
-	}
-
-	arg.cb_func = NULL;
-	arg.handle = (void *)0;
-	arg.in_len = strlen(input) + 1;
-	arg.input = input;
-	arg.output_valid = 1;
-	arg.out_len_valid = 1;
-	arg.output_size = Buff_Size;
-
-	ret.output = output;
-	ret.out_len = &out_len;
-
-	mrc = oem_rapi_client_init();
-	oem_rapi_client_streaming_function(mrc, &arg, &ret);
-	oem_rapi_client_close();
-
-	#if debug
-	pr_info("KXTJ9: %s, AXIS %s  .. %s\n", __func__, (event == OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_GET) ? "GET" : "SET", ret.output);
-	#endif
-
-	kfree(input);
-
-	return ret.output;
-}
-
-static char* kxtj9_resetAxisOffset(s16 x, s16 y, s16 z)
-{
-	Accelerometer* data = i2c_get_clientdata(this_client);
-	AccelerometerAxisOffset offset = {
-		.X = x,
-		.Y = y,
-		.Z = z,
-	};
-	char* result = NULL;
-	mutex_lock(&data->mutex);
-	result = kxtj9_rpc(&offset, OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_SET);
-	memset(&offset, 0, sizeof(AccelerometerAxisOffset));
-	if(	result != NULL && strcmp(result, "ERROR") != 0 &&
-		sscanf(result, "%hd %hd %hd", &(offset.X), &(offset.Y), &(offset.Z)) == 3){
-		memcpy(&(data->odata), &offset, sizeof(AccelerometerAxisOffset));
-		#if debug
-		printk("resetAxisOffset ===> result : %s\n", result);
-		#endif
-	}else{
-		kfree(result);
-		result = NULL;
-	}
-	mutex_unlock(&data->mutex);
-	
-	return result;
-}
-
-static char* kxtj9_readAxisOffset(void)
-{
-	Accelerometer* data = i2c_get_clientdata(this_client);
-	char* result = kxtj9_rpc(0, OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_GET);
-
-	if(result != NULL && strcmp(result, "NV_NOTACTIVE_S") == 0){
-		/**
-		 * Do reset. 
-		 * It means that accelerometer axis offset 
-		 * hasn't been setted yet.
-		 */
-		kfree(result);
-		result = kxtj9_resetAxisOffset(0, 0, 0);
-	}
-
-	mutex_lock(&data->mutex);
-	{
-		AccelerometerAxisOffset offset;
-		if(result != NULL && strcmp(result, "ERROR") != 0 && 
-			sscanf(result, "%hd %hd %hd", &(offset.X), &(offset.Y), &(offset.Z)) == 3){
-			memcpy(&(data->odata), &(offset), sizeof(AccelerometerAxisOffset));
-			#if debug
-			printk("kxtj9_readAxisOffset ==========> X : %d, Y : %d, Z : %d\n", data->odata.X, data->odata.Y, data->odata.Z);
-			#endif
-		}else{
-			kfree(result);
-			result = NULL;
-		}
-	}
-	mutex_unlock(&data->mutex);
-	return result;
-}
-
 static int kxtj9_type_setting(bool open)
 {
 	int rc = 0;
@@ -172,7 +64,7 @@ static int kxtj9_type_setting(bool open)
 	memset(queueData, 0, sizeof(queueData));
 	if(open){
 		//Setting Operation mode
-		rc |= i2c_smbus_write_byte_data(this_client, KXTJ9_CTRL_REG1, POWER_MODE_CAMMAND);
+		rc = i2c_smbus_write_byte_data(this_client, KXTJ9_CTRL_REG1, POWER_MODE_CAMMAND);
 	}else{
 		//Setting Suspend mode
 		rc = i2c_smbus_write_byte_data(this_client, KXTJ9_CTRL_REG1, 0X00);
@@ -198,7 +90,7 @@ static int kxtj9_enable(void)
 		rc = 1;
 	}
 
-	rc = (rc == 1) ? queue_delayed_work(Accelerometer_WorkQueue, &data->dw, msecs_to_jiffies(10)) : -1;
+	rc = (rc == 1) ? queue_delayed_work(Accelerometer_WorkQueue, &data->dw, msecs_to_jiffies(20)) : -1;
 	return 0;
 }
 
@@ -220,7 +112,7 @@ static int kxtj9_disable(void)
 		kxtj9_type_setting(false);
 		WorkMode = NORMAL_MODE;
 		SleepTime = msecs_to_jiffies(200);
-		POWER_MODE_CAMMAND = D0;
+		POWER_MODE_CAMMAND = 0XD0;
 	}
 
 	return 0;
@@ -294,7 +186,6 @@ static long kxtj9_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		}
 		case ACCELEROMETER_IOCTL_SET_AXIS_OFFSET:
 		{
-			char* tmp = NULL;
 			AccelerometerAxisOffset* offset = kzalloc(sizeof(AccelerometerAxisOffset), GFP_KERNEL);
 			rc = copy_from_user(offset, (unsigned long __user *) arg, sizeof(AccelerometerAxisOffset));
 			mutex_lock(&data->mutex);
@@ -302,17 +193,13 @@ static long kxtj9_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			offset->Y += data->odata.Y;
 			offset->Z += data->odata.Z;
 			mutex_unlock(&data->mutex);
-			tmp = kxtj9_resetAxisOffset(offset->X, offset->Y, offset->Z);
-			rc = (tmp != NULL) ? 1 : -1;
-			kfree(tmp);
+			rc = (accelerometer_resetAxisOffset(offset->X, offset->Y, offset->Z)) ? 1 : -1;
 			kfree(offset);
 			break;
 		}
 		case ACCELEROMETER_IOCTL_SET_AXIS_OFFSET_INIT:
 		{
-			char* tmp = kxtj9_resetAxisOffset(0, 0, 0);
-			rc = (tmp != NULL) ? 1 : -1;
-			kfree(tmp);
+			rc = (accelerometer_resetAxisOffset(0, 0, 0)) ? 1 : -1;
 			break;
 		}
 		default:
@@ -350,8 +237,8 @@ static bool kxtj9_readData(void){
 	rawData.Z = ((rawData.Z << 4) + (i2cData[4] >> 4)) * 10000 >> 8;
 	memcpy(&(queueData[queueIndex]), &rawData, sizeof(AccelerometerData));
 	queueIndex = (queueIndex < FILTER_INDEX) ? queueIndex + 1 : 0;
-	ignoreCount = (ignoreCount < FILTER_INDEX) ? ignoreCount + 1 : ignoreCount;
-	return (ignoreCount == FILTER_INDEX);
+	ignoreCount = (ignoreCount < FILTER_SIZE) ? ignoreCount + 1 : FILTER_SIZE;
+	return (ignoreCount == FILTER_SIZE);
 }
 
 static void kxtj9_reportData(Accelerometer* data){
@@ -434,7 +321,7 @@ static int kxtj9_resume(struct i2c_client *client)
 
 	if(data->enabled){
 		kxtj9_type_setting(true);
-		queue_delayed_work(Accelerometer_WorkQueue, &data->dw, SleepTime) : -1;
+		queue_delayed_work(Accelerometer_WorkQueue, &data->dw, SleepTime);
 	}
 
 	#if debug
@@ -523,7 +410,7 @@ static int kxtj9_probe(struct i2c_client *client, const struct i2c_device_id *id
 	#if debug
 	pr_info("KXTJ9: %s --\n", __func__);
 	#endif
-	kxtj9_readAxisOffset();
+	accelerometer_readAxisOffset();
 
 	return 0;
 

@@ -91,6 +91,10 @@ int oem_rapi_client_streaming_function(
 
 int oem_rapi_client_close(void);
 
+/*++ Huize - 20130325 Add general API on kernel side for communicating with modem ++*/
+int oem_rapi_client_rpc(uint32_t event, char* input, char** output, uint32_t buffSize);
+/*-- Huize - 20130325 Add general API on kernel side for communicating with modem --*/
+
 struct msm_rpc_client *oem_rapi_client_init(void);
 
 #endif

@@ -26,11 +26,8 @@
 #include <linux/slab.h>
 #include <asm/uaccess.h>
 #include <linux/ioctl.h>
-#include <mach/oem_rapi_client.h>
 #include <mach/vreg.h>
 #include <linux/accelerometer_common.h>
-
-#define debug 0
 
 #define LIS3DF_DRIVER_NAME "lis3df"
 
@@ -74,111 +71,6 @@ enum {
    Input device interface
  * ---------------------------------------------------------------------------------------- */
 
-static char* lis3df_rpc(AccelerometerAxisOffset* offset, uint32_t event)
-{
-	struct msm_rpc_client* mrc;
-	struct oem_rapi_client_streaming_func_arg arg;
-	struct oem_rapi_client_streaming_func_ret ret;
-	int out_len;
-	char* input = kzalloc(Buff_Size, GFP_KERNEL);
-	char* output = kzalloc(Buff_Size, GFP_KERNEL);
-
-	switch(event){
-		case OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_SET:
-			snprintf(input, Buff_Size, "%hd %hd %hd", offset->X, offset->Y, offset->Z);
-		case OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_GET:
-			arg.event = event;
-			break;
-		default:
-			kfree(input);
-			kfree(output);
-			return NULL;
-	}
-
-	arg.cb_func = NULL;
-	arg.handle = (void *)0;
-	arg.in_len = strlen(input) + 1;
-	arg.input = input;
-	arg.output_valid = 1;
-	arg.out_len_valid = 1;
-	arg.output_size = Buff_Size;
-
-	ret.output = output;
-	ret.out_len = &out_len;
-
-	mrc = oem_rapi_client_init();
-	oem_rapi_client_streaming_function(mrc, &arg, &ret);
-	oem_rapi_client_close();
-
-	#if debug
-	pr_info("LIS3DF: %s, AXIS %s  .. %s\n", __func__, (event == OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_GET) ? "GET" : "SET", ret.output);
-	#endif
-
-	kfree(input);
-
-	return ret.output;
-}
-
-static char* lis3df_resetAxisOffset(s16 x, s16 y, s16 z)
-{
-	Accelerometer* data = i2c_get_clientdata(this_client);
-	AccelerometerAxisOffset offset = {
-		.X = x,
-		.Y = y,
-		.Z = z,
-	};
-	char* result = NULL;
-	mutex_lock(&data->mutex);
-	result = lis3df_rpc(&offset, OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_SET);
-	memset(&offset, 0, sizeof(AccelerometerAxisOffset));
-	if(	result != NULL && strcmp(result, "ERROR") != 0 &&
-		sscanf(result, "%hd %hd %hd", &(offset.X), &(offset.Y), &(offset.Z)) == 3){
-		memcpy(&(data->odata), &offset, sizeof(AccelerometerAxisOffset));
-		#if debug
-		printk("resetAxisOffset ===> result : %s\n", result);
-		#endif
-	}else{
-		kfree(result);
-		result = NULL;
-	}
-	mutex_unlock(&data->mutex);
-	
-	return result;
-}
-
-static char* lis3df_readAxisOffset(void)
-{
-	Accelerometer* data = i2c_get_clientdata(this_client);
-	char* result = lis3df_rpc(0, OEM_RAPI_CLIENT_EVENT_ACCELEROMETER_AXIS_OFFSET_GET);
-
-	if(result != NULL && strcmp(result, "NV_NOTACTIVE_S") == 0){
-		/**
-		 * Do reset. 
-		 * It means that accelerometer axis offset 
-		 * hasn't been setted yet.
-		 */
-		kfree(result);
-		result = lis3df_resetAxisOffset(0, 0, 0);
-	}
-
-	mutex_lock(&data->mutex);
-	{
-		AccelerometerAxisOffset offset;
-		if(result != NULL && strcmp(result, "ERROR") != 0 && 
-			sscanf(result, "%hd %hd %hd", &(offset.X), &(offset.Y), &(offset.Z)) == 3){
-			memcpy(&(data->odata), &(offset), sizeof(AccelerometerAxisOffset));
-			#if debug
-			printk("lis3df_readAxisOffset ==========> X : %d, Y : %d, Z : %d\n", data->odata.X, data->odata.Y, data->odata.Z);
-			#endif
-		}else{
-			kfree(result);
-			result = NULL;
-		}
-	}
-	mutex_unlock(&data->mutex);
-	return result;
-}
-
 static int lis3df_type_setting(bool open)
 {
 	int rc = 0;
@@ -212,7 +104,7 @@ static int lis3df_enable(void)
 		rc = 1;
 	}
 
-	rc = (rc == 1) ? queue_delayed_work(Accelerometer_WorkQueue, &data->dw, msecs_to_jiffies(10)) : -1;
+	rc = (rc == 1) ? queue_delayed_work(Accelerometer_WorkQueue, &data->dw, msecs_to_jiffies(20)) : -1;
 	return 0;
 }
 
@@ -308,7 +200,6 @@ static long lis3df_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		}
 		case ACCELEROMETER_IOCTL_SET_AXIS_OFFSET:
 		{
-			char* tmp = NULL;
 			AccelerometerAxisOffset* offset = kzalloc(sizeof(AccelerometerAxisOffset), GFP_KERNEL);
 			rc = copy_from_user(offset, (unsigned long __user *) arg, sizeof(AccelerometerAxisOffset));
 			mutex_lock(&data->mutex);
@@ -316,17 +207,13 @@ static long lis3df_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			offset->Y += data->odata.Y;
 			offset->Z += data->odata.Z;
 			mutex_unlock(&data->mutex);
-			tmp = lis3df_resetAxisOffset(offset->X, offset->Y, offset->Z);
-			rc = (tmp != NULL) ? 1 : -1;
-			kfree(tmp);
+			rc = (accelerometer_resetAxisOffset(offset->X, offset->Y, offset->Z)) ? 1 : -1;
 			kfree(offset);
 			break;
 		}
 		case ACCELEROMETER_IOCTL_SET_AXIS_OFFSET_INIT:
 		{
-			char* tmp = lis3df_resetAxisOffset(0, 0, 0);
-			rc = (tmp != NULL) ? 1 : -1;
-			kfree(tmp);
+			rc = (accelerometer_resetAxisOffset(0, 0, 0)) ? 1 : -1;
 			break;
 		}
 		default:
@@ -353,6 +240,7 @@ struct miscdevice lis3df_misc = {
 
 // Return true if data ready to report
 static bool lis3df_readData(void){
+	memset(i2cData, 0, sizeof(i2cData));
 	memset(&rawData, 0, sizeof(AccelerometerData));
 	rawData.Y = i2c_smbus_read_byte_data(this_client, ACCELEROMETER_REG_OUT_X);
 	rawData.Y = (rawData.Y < 128) ? rawData.Y : (rawData.Y - 256);
@@ -365,8 +253,8 @@ static bool lis3df_readData(void){
 	rawData.Z = (rawData.Z * 10000) >> 6;
 	memcpy(&(queueData[queueIndex]), &rawData, sizeof(AccelerometerData));
 	queueIndex = (queueIndex < FILTER_INDEX) ? queueIndex + 1 : 0;
-	ignoreCount = (ignoreCount < FILTER_INDEX) ? ignoreCount + 1 : ignoreCount;
-	return (ignoreCount == FILTER_INDEX);
+	ignoreCount = (ignoreCount < FILTER_SIZE) ? ignoreCount + 1 : FILTER_SIZE;
+	return (ignoreCount == FILTER_SIZE);
 }
 
 static void lis3df_reportData(Accelerometer* data){
@@ -449,7 +337,7 @@ static int lis3df_resume(struct i2c_client *client)
 
 	if(data->enabled){
 		lis3df_type_setting(true);
-		queue_delayed_work(Accelerometer_WorkQueue, &data->dw, SleepTime) : -1;
+		queue_delayed_work(Accelerometer_WorkQueue, &data->dw, SleepTime);
 	}
 
 	#if debug
@@ -521,7 +409,6 @@ static int lis3df_probe(struct i2c_client *client, const struct i2c_device_id *i
 	mutex_init(&Sensor_device->mutex);
 
 	Accelerometer_sensor_opened = 0;
-    memset(i2cData, 0, sizeof(i2cData));
 
 	i2c_smbus_write_byte_data(client, ACCELEROMETER_REG_CTRL_REG1, 0x00);
 	i2c_smbus_write_byte_data(client, ACCELEROMETER_REG_CTRL_REG2, 0x00);
@@ -540,7 +427,7 @@ static int lis3df_probe(struct i2c_client *client, const struct i2c_device_id *i
 	#if debug
 	pr_info("LIS3DF: %s --\n", __func__);
 	#endif
-	lis3df_readAxisOffset();
+	accelerometer_readAxisOffset();
 
 	return 0;
 

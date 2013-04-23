@@ -80,12 +80,21 @@ int marimba_read_bahama_ver(struct marimba *marimba)
 	rc = marimba_read_bit_mask(marimba, 0x00,  &bahama_version, 1, 0x1F);
 	if (rc < 0)
 		return rc;
+	pr_debug("%s: Bahama version: 0x%x\n", __func__, bahama_version);
+
+#ifdef CONFIG_ARIMA_BT_DBG_INFO
+    printk(KERN_INFO "[BT_DBG] - marimba_read_bahama_ver(), bahama_version = %d \n", bahama_version);
+#endif
+
 	switch (bahama_version) {
 	case 0x08: /* varient of bahama v1 */
 	case 0x10:
 	case 0x00:
 		return BAHAMA_VER_1_0;
 	case 0x09: /* variant of bahama v2 */
+	case 0x0a: /* variant of bahama v2.1 */
+	/* Falling through because initialization */
+	/* and configuration for 2.0 and 2.1 are same */
 		return BAHAMA_VER_2_0;
 	default:
 		return BAHAMA_VER_UNSUPPORTED;
@@ -173,12 +182,13 @@ int marimba_write_bit_mask(struct marimba *marimba, u8 reg, u8 *value,
 	u8 data[num_bytes + 1];
 	u8 mask_value[num_bytes];
 
+	memset(mask_value, 0, sizeof(mask_value));
+
 	marimba = &marimba_modules[marimba->mod_id];
 	if (marimba == NULL) {
 		pr_err("%s: Unable to access Marimba core\n", __func__);
 		return -ENODEV;
 	}
-
 
 	mutex_lock(&marimba->xfer_lock);
 

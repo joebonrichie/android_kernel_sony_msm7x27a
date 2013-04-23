@@ -22,7 +22,7 @@
 #include <mach/rpc_pmapp.h>
 #include <mach/socinfo.h>
 
-#include "board-nanhu.h"
+#include "board-msm7627a.h"
 #include "devices-msm7x2xa.h"
 
 //+ murphy 2011.11.07
@@ -147,11 +147,11 @@ static int bt_set_gpio(int on)
 #endif
 
 	if (on) {
+		if (machine_is_msm7627a_evb() || machine_is_msm8625_qrd7()) {
 		//+ murphy 2011.09.19
 		#if 1  //re-configure GPIO setting in case AMSS part is not executed okay
 		printk(KERN_INFO "[BT_DBG] - bt_set_gpio(), on = %d, if cond exec \n", on);
 
-		if (machine_is_msm7627a_evb() || machine_is_msm8625_qrd7()) {
 		rc = gpio_tlmm_config(GPIO_CFG(gpio_bt_sys_rest_en, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA),
 		                      GPIO_CFG_ENABLE);
 		if (rc < 0)
@@ -649,10 +649,10 @@ static int bahama_bt(int on)
 				__func__, (p+i)->reg,
 				value, (p+i)->mask);
 		value = 0;
-		rc = marimba_read_bit_mask(&config,
+		/* Ignoring the read failure as it is only for check */
+		if (marimba_read_bit_mask(&config,
 				(p+i)->reg, &value,
-				sizeof((p+i)->value), (p+i)->mask);
-		if (rc < 0)
+				sizeof((p+i)->value), (p+i)->mask) < 0)
 			dev_err(&msm_bt_power_device.dev,
 				"%s marimba_read_bit_mask- error",
 				__func__);

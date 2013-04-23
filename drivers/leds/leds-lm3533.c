@@ -681,7 +681,7 @@ static int lm3533_configure(struct i2c_client *client,
 	LM3533_data[0]=0xAF;
 	LM3533_data[1]=0xAF;
 	LM3533_data[2]=0xAF;
-	LM3533_data[3]=0xAF;  // [Arima Edison] modify brightness 08/08 
+	LM3533_data[3]=0xD7;  // [Arima Edison] modify brightness 08/08 
 	// brightness
 	i2c_smbus_write_i2c_block_data(lm3533_client,LM3533_BRIGHTNESS_REGISTER_C,4,LM3533_data);
 	

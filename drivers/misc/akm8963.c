@@ -1342,10 +1342,10 @@ int akm8963_probe(struct i2c_client *client, const struct i2c_device_id *id)
 
     /***** Set Reset ***************/
 	if (!gpio_request(s_akm->rstn, "AKM8963_RESET")) {
-		  if (gpio_tlmm_config(GPIO_CFG(s_akm->rstn, 0, GPIO_CFG_OUTPUT,
+		if (gpio_tlmm_config(GPIO_CFG(s_akm->rstn, 0, GPIO_CFG_OUTPUT,
 								GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_ENABLE))
 			dev_info(&client->dev, "AKM8963 s_akm->rstn Config Fail !");
-		  else
+		else
 			dev_info(&client->dev, "AKM8963 s_akm->rstn OK !");
 	} else {
 		dev_info(&client->dev, "AKM8963 s_akm->rstn Fail !");
@@ -1394,10 +1394,16 @@ int akm8963_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	/***** IRQ setup *****/
 	s_akm->irq = client->irq;
 
-  //<< Mel - configure interrupt pin.
-	gpio_direction_input(18);
-	gpio_tlmm_config(GPIO_CFG(18, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
-  //>> Mel - configure interrupt pin.
+	//<< Mel - configure interrupt pin.
+	err = gpio_direction_input(18);
+	if (err < 0) {
+		dev_err(&client->dev,"%s: unable to set direction for gpio.", __func__);
+	}
+	err = gpio_tlmm_config(GPIO_CFG(18, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+	if (err < 0) {
+		dev_err(&client->dev,"%s: unable to config gpio.", __func__);
+	}
+	//>> Mel - configure interrupt pin.
 
 	if (s_akm->irq == 0) {
 		dev_dbg(&client->dev, "%s: IRQ is not set.", __func__);

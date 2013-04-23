@@ -16,7 +16,7 @@
 #include <linux/android_pmem.h>
 #include <mach/board.h>
 
-#include "board-nanhu.h"
+#include "board-msm7627a.h"
 
 #define SND(desc, num) { .name = #desc, .id = num }
 static struct snd_endpoint snd_endpoints_list[] = {
@@ -37,9 +37,9 @@ static struct snd_endpoint snd_endpoints_list[] = {
 	SND(CURRENT, 0x7FFFFFFE),
 	SND(FM_ANALOG_STEREO_HEADSET, 35),
 	SND(FM_ANALOG_STEREO_HEADSET_CODEC, 36),
-	/*++ Kevin Shiu - 20120320 To fix audio path can't change when plug in headphone during a call ++*/
-	SND(NO_MIC_HEADSET, 3),		/* Headphone's adie config is different form headset */
-	/*-- Kevin Shiu - 20120320 To fix audio path can't change when plug in headphone during a call --*/
+	/*++ Kevin Shiu - 20130130 Added a audio path for Headphone ++*/
+	SND(NO_MIC_HEADSET, 38),		/* Headphone's adie config is different form headset */
+	/*-- Kevin Shiu - 20130130 Added a audio path for Headphone --*/
 	/*++ Kevin Shiu - 20120710 implement HAC feature ++*/
 	SND(HANDSET_HAC, 37),
 	/*-- Kevin Shiu - 20120710 implement HAC feature --*/
