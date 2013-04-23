@@ -323,10 +323,6 @@ static ssize_t display_show_battery(struct device *dev,
 #endif
 			break;
 
-		case DISP_LOGO:
-			draw_logo(fbi);
-			break;
-
 		default:
 			printk(KERN_ERR "[DISPLAY] Invalid battery state\n");
 			break;
@@ -1777,8 +1773,12 @@ static int msm_fb_register(struct msm_fb_data_type *mfd)
 	/* Flip buffer */
 	if (!load_565rle_image(INIT_IMAGE_FILE, bf_supported));
 #else
-	/*MTD-MM-CL-DrawLogo-00+[*/
-	fih_load_565rle_image(INIT_IMAGE_FILE);
+
+	draw_logo(fbi);
+	mdp_set_dma_pan_info(fbi, NULL, TRUE);
+	msm_fb_blank_sub(FB_BLANK_UNBLANK, fbi, mfd->op_enable);
+	mdp_dma_pan_update(fbi);
+	msm_fb_set_backlight(mfd,9);
 
 	/* File node: /sys/class/graphics/fb?/display_battery */
 	ret = device_create_file(fbi->dev, &dev_attr_display_battery);
