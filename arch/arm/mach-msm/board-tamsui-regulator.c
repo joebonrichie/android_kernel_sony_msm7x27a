@@ -13,7 +13,7 @@
  */
 
 #include <linux/kernel.h>
-#include "board-msm7x27a-regulator.h"
+#include "board-tamsui-regulator.h"
 
 #define VOLTAGE_RANGE(min_uV, max_uV, step_uV)	((max_uV - min_uV) / step_uV)
 
