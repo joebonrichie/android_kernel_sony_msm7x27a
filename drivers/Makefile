@@ -11,7 +11,9 @@ obj-y				+= gpio/
 obj-$(CONFIG_PCI)		+= pci/
 obj-$(CONFIG_PARISC)		+= parisc/
 obj-$(CONFIG_RAPIDIO)		+= rapidio/
+ifdef CONFIG_FIH_PROJECT_NAN
 obj-y				+= leds/
+endif
 obj-y				+= video/
 obj-y				+= idle/
 obj-$(CONFIG_ACPI)		+= acpi/
@@ -102,6 +104,9 @@ obj-$(CONFIG_CPU_FREQ)		+= cpufreq/
 obj-$(CONFIG_CPU_IDLE)		+= cpuidle/
 obj-y				+= mmc/
 obj-$(CONFIG_MEMSTICK)		+= memstick/
+ifndef CONFIG_FIH_PROJECT_NAN
+obj-y				+= leds/
+endif
 obj-$(CONFIG_SWITCH)		+= switch/
 obj-$(CONFIG_INFINIBAND)	+= infiniband/
 obj-$(CONFIG_SGI_SN)		+= sn/
