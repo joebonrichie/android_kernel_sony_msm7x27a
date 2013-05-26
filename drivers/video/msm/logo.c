@@ -140,7 +140,12 @@ int fih_load_565rle_image(char *filename)
 	struct fb_info *info  = NULL;
 	struct file    *filp  = NULL;
 	unsigned short *ptr  = NULL;
+//	unsigned short *bits = NULL;
+#ifdef CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888
+	unsigned char *bits = NULL;
+#else
 	unsigned short *bits = NULL;
+#endif
 	unsigned char  *data = NULL;
 	unsigned max = 0;
 	int count = 0, err = 0;
@@ -180,8 +185,11 @@ int fih_load_565rle_image(char *filename)
 
 	max = fb_width(info) * fb_height(info);
 	ptr = (unsigned short *)data;
+#ifdef CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888
+	bits = (unsigned char *)(info->screen_base);
+#else
 	bits = (unsigned short *)(info->screen_base);
-
+#endif
 	while (count > 3) {
 		unsigned n = ptr[0];
 #ifdef CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888
