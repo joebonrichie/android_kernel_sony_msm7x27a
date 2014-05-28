@@ -1106,9 +1106,7 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 #endif
 			ret = pdata->on(mfd->pdev);
 			if (ret == 0) {
-				down(&mfd->sem);
 				mfd->panel_power_on = TRUE;
-				up(&mfd->sem);
 
 /* ToDo: possible conflict with android which doesn't expect sw refresher */
 /*
@@ -1143,7 +1141,6 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 */
 			mfd->op_enable = FALSE;
 			curr_pwr_state = mfd->panel_power_on;
-			down(&mfd->sem);
 			mfd->panel_power_on = FALSE;
 #ifdef CONFIG_FIH_SW_DISPLAY_BACKLIGHT_CMD_QUEUE
 			down(&bkl_sem);
@@ -1151,8 +1148,6 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 			up(&bkl_sem);
 #else
 			bl_updated = 0;
-			up(&mfd->sem);
-			cancel_delayed_work_sync(&mfd->backlight_worker);
 #endif
 #ifndef CONFIG_FIH_PROJECT_NAN
 #ifdef CONFIG_FB_MSM_LCDC
@@ -2128,9 +2123,7 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 			pdata = (struct msm_fb_panel_data *)mfd->pdev->
 				dev.platform_data;
 
-			down(&mfd->sem);
-			if ((pdata) && (pdata->set_backlight) && (!bl_updated)
-					&& mfd->panel_power_on) {
+			if ((pdata) && (pdata->set_backlight)) {
 				mdelay(50);
 				pdata->set_backlight(mfd);
 			}
