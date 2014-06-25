@@ -1010,8 +1010,7 @@ static void msm_fb_scale_bl(__u32 *bl_lvl)
 void msm_fb_set_backlight(struct msm_fb_data_type *mfd, __u32 bkl_lvl)
 {
 	struct msm_fb_panel_data *pdata;
-	int i, ret;
-
+	
 	pr_info("[DISPLAY] %s: bkl_lvl = %d\r\n", __func__, bkl_lvl);
 	down(&bkl_sem);
 
@@ -2060,6 +2059,8 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 #ifndef CONFIG_FIH_PROJECT_NAN
 	struct msm_fb_panel_data *pdata = NULL;
 #endif
+	int i, ret;
+	
 	/*
 	 * If framebuffer is 2, io pen display is not allowed.
 	 */
@@ -4095,17 +4096,7 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		ret = -EINVAL;
 #endif
 		break;
-	case MSMFB_BUFFER_SYNC:
-		ret = copy_from_user(&buf_sync, argp, sizeof(buf_sync));
-		if (ret)
-			return ret;
-
-		ret = msmfb_handle_buf_sync_ioctl(mfd, &buf_sync);
-
-		if (!ret)
-			ret = copy_to_user(argp, &buf_sync, sizeof(buf_sync));
-		break;
-
+	
 	case MSMFB_MDP_PP:
 		ret = copy_from_user(&mdp_pp, argp, sizeof(mdp_pp));
 		if (ret)
@@ -4119,6 +4110,17 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		if (ret)
 			return ret;
 		ret = msmfb_handle_metadata_ioctl(mfd, &mdp_metadata);
+		break;
+
+	case MSMFB_BUFFER_SYNC:
+		ret = copy_from_user(&buf_sync, argp, sizeof(buf_sync));
+		if (ret)
+			return ret;
+
+		ret = msmfb_handle_buf_sync_ioctl(mfd, &buf_sync);
+
+		if (!ret)
+			ret = copy_to_user(argp, &buf_sync, sizeof(buf_sync));
 		break;
 
 	default:
