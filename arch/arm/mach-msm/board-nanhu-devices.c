@@ -13,7 +13,6 @@
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/dma-mapping.h>
-#include <linux/msm_kgsl.h>
 #include <linux/regulator/machine.h>
 #include <linux/init.h>
 #include <linux/irq.h>
@@ -23,6 +22,7 @@
 #include <mach/board.h>
 #include <mach/dma.h>
 #include <mach/dal_axi.h>
+#include <mach/kgsl.h> 
 #include <asm/mach/flash.h>
 #include <asm/hardware/gic.h>
 #include <asm/hardware/cache-l2x0.h>
