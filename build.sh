@@ -24,7 +24,14 @@ export COMPILER_DIR=~/cm-11.0/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-
 export ARCH=arm
 export CROSS_COMPILE=${COMPILER_DIR}/arm-linux-androideabi-
 
-echo "cleaning..."; make clean mrproper
+if [ -z "$clean" ]; then
+    read -p "do make clean mrproper?(y/n)" clean
+fi # [ -z "$clean" ]
+case "$clean" in
+    y|Y ) echo "cleaning..."; make clean mrproper;;
+    n|N ) echo "continuing...";;
+    * ) echo "invalid option"; sleep 2 ; build.sh;;
+esac
 
 echo "building the kernel"
 
