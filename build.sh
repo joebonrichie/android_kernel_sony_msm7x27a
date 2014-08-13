@@ -24,6 +24,8 @@ export COMPILER_DIR=~/cm-11.0/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-
 export ARCH=arm
 export CROSS_COMPILE=${COMPILER_DIR}/arm-linux-androideabi-
 
+# TODO: always make clean mrproper if the last compiled
+# zImage was for a different device 
 if [ -z "$clean" ]; then
     read -p "do make clean mrproper?(y/n)" clean
 fi # [ -z "$clean" ]
@@ -41,11 +43,13 @@ make -j `cat /proc/cpuinfo | grep "^processor" | wc -l` "$@"
 if [ -f arch/arm/boot/zImage ]; then
 
 	mkdir -p OUT
-	rm OUT/zImage
 	cp arch/arm/boot/zImage OUT/zImage
+    rm -r OUT/zImage
 
 fi # [ -f arch/arm/boot/zImage ]
 
+# TODO: add addresses to build kernel.elf
+# and create ramdisk from android ROM directory
 export MKELF_PY=~/cm-11.0/device/sony/tamsui-common/tools/mkelf.py
 
 
