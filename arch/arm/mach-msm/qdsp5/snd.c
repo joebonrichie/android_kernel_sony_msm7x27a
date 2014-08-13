@@ -3,7 +3,7 @@
  * interface to "snd" service on the baseband cpu
  *
  * Copyright (C) 2008 HTC Corporation
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009, The Linux Foundation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -185,7 +185,7 @@ static long snd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	struct msm_snd_device_config dev;
 	struct msm_snd_volume_config vol;
-	/*++ Kevin Shiu - 20120612 implement secondary mic test ++*/
+/*++ Kevin Shiu - 20120612 implement secondary mic test ++*/
 	struct msm_snd_info_config info;
 	struct snd_set_info_msg imsg;
 	/*-- Kevin Shiu - 20120612 implement secondary mic test --*/
@@ -193,8 +193,8 @@ static long snd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	struct msm_snd_tty_config tty;
 	struct snd_set_tty_msg ttymsg;
 	/*-- Kvein Shiu - 20121103 always enable hesd bias when TTY turn on --*/
-	
 	struct snd_ctxt *snd = file->private_data;
+
 	int rc = 0;
 
 	uint32_t avc, agc;
@@ -333,7 +333,7 @@ static long snd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			rc = -EFAULT;
 			break;
 		}
-
+ 
 		ttymsg.args.tty_mode = cpu_to_be32(tty.tty_mode);
 		ttymsg.args.cb_func = -1;
 		ttymsg.args.client_data = 0x0;
@@ -344,7 +344,7 @@ static long snd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			SND_SET_TTY_PROC,&ttymsg, 
 			sizeof(ttymsg), 5 * HZ);
 		break;
-/*-- Kvein Shiu - 20121103 always enable hesd bias when TTY turn on --*/	
+/*-- Kvein Shiu - 20121103 always enable hesd bias when TTY turn on --*/
 	default:
 		MM_ERR("unknown command\n");
 		rc = -EINVAL;

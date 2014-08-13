@@ -928,7 +928,7 @@ static void audio_mvs_process_rpc_request(uint32_t procedure,
 
 				MM_DBG("UL AMR frame_type %d\n",
 					 be32_to_cpu(*args));
-#if 0 //QCOM_patch Kevin Shiu, To fix voip sound on Rx path is fuzzy 			
+#if 0 //QCOM_patch Kevin Shiu, To fix voip sound on Rx path is fuzzy
 			} else if (frame_mode == MVS_FRAME_MODE_PCM_UL) {
 #else
 			} else if ((frame_mode == MVS_FRAME_MODE_PCM_UL) ||
@@ -1060,7 +1060,7 @@ static void audio_mvs_process_rpc_request(uint32_t procedure,
 							cpu_to_be32(0x00000001);
 				dl_reply.cdc_param.gnr_arg.pkt_status =
 					cpu_to_be32(AUDIO_MVS_PKT_NORMAL);
-#if 0 //QCOM_patch Kevin Shiu, To fix voip sound on Rx path is fuzzy 			
+#if 0 //QCOM_patch Kevin Shiu, To fix voip sound on Rx path is fuzzy
 			} else if (frame_mode == MVS_FRAME_MODE_PCM_DL) {
 #else
 			} else if ((frame_mode == MVS_FRAME_MODE_PCM_DL) ||
@@ -1526,7 +1526,7 @@ static long audio_mvs_ioctl(struct file *file,
 	switch (cmd) {
 	case AUDIO_GET_MVS_CONFIG: {
 		struct msm_audio_mvs_config config;
-
+		memset(&config, 0, sizeof(config));
 		MM_DBG("GET_MVS_CONFIG mvs_mode %d rate_type %d\n",
 			config.mvs_mode, config.rate_type);
 
@@ -1626,6 +1626,19 @@ static int audio_mvs_open(struct inode *inode, struct file *file)
 
 	MM_DBG("\n");
 
+	mutex_lock(&audio_mvs_info.lock);
+
+	if (audio_mvs_info.state != AUDIO_MVS_CLOSED) {
+		MM_ERR("MVS driver exists, state %d\n",
+				audio_mvs_info.state);
+
+		rc = -EBUSY;
+		mutex_unlock(&audio_mvs_info.lock);
+		goto done;
+	}
+
+	mutex_unlock(&audio_mvs_info.lock);
+
 	audio_mvs_info.rpc_endpt = msm_rpc_connect_compatible(MVS_PROG,
 					MVS_VERS_COMP_VER2,
 					MSM_RPC_UNINTERRUPTIBLE);
@@ -1665,26 +1678,18 @@ static int audio_mvs_open(struct inode *inode, struct file *file)
 
 	mutex_lock(&audio_mvs_info.lock);
 
-	if (audio_mvs_info.state == AUDIO_MVS_CLOSED) {
-
-		if (audio_mvs_info.task != NULL ||
+	if (audio_mvs_info.task != NULL ||
 			audio_mvs_info.rpc_endpt != NULL) {
-			rc = audio_mvs_alloc_buf(&audio_mvs_info);
+		rc = audio_mvs_alloc_buf(&audio_mvs_info);
 
-			if (rc == 0) {
-				audio_mvs_info.state = AUDIO_MVS_OPENED;
-				file->private_data = &audio_mvs_info;
-			}
-		}  else {
-			MM_ERR("MVS thread and RPC end point do not exist\n");
-
-			rc = -ENODEV;
+		if (rc == 0) {
+			audio_mvs_info.state = AUDIO_MVS_OPENED;
+			file->private_data = &audio_mvs_info;
 		}
-	} else {
-		MM_ERR("MVS driver exists, state %d\n",
-		       audio_mvs_info.state);
+	}  else {
+		MM_ERR("MVS thread and RPC end point do not exist\n");
 
-		rc = -EBUSY;
+		rc = -ENODEV;
 	}
 
 	mutex_unlock(&audio_mvs_info.lock);
@@ -1739,6 +1744,7 @@ static void __exit audio_mvs_exit(void)
 {
 	MM_DBG("\n");
 
+	wake_lock_destroy(&audio_mvs_info.suspend_lock);
 	misc_deregister(&audio_mvs_misc);
 }
 

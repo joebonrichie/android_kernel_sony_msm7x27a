@@ -3,7 +3,7 @@
  * Register/Interrupt access for userspace aDSP library.
  *
  * Copyright (C) 2008 Google, Inc.
- * Copyright (c) 2008-2012, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2008-2012, The Linux Foundation. All rights reserved.
  * Author: Iliyan Malchev <ibm@android.com>
  *
  * This software is licensed under the terms of the GNU General Public
@@ -723,11 +723,22 @@ static void handle_adsp_rtos_mtoa_app(struct rpc_request_hdr *req)
 	mutex_lock(&module->lock);
 	switch (event) {
 	case RPC_ADSP_RTOS_MOD_READY:
-		MM_INFO("module %s: READY\n", module->name);
-		module->state = ADSP_STATE_ENABLED;
-		wake_up(&module->state_wait);
-		adsp_set_image(module->info, image);
-		break;
+		if (module->state == ADSP_STATE_ENABLING) {
+			MM_INFO("module %s: READY\n", module->name);
+			module->state = ADSP_STATE_ENABLED;
+			wake_up(&module->state_wait);
+			adsp_set_image(module->info, image);
+			break;
+		} else {
+			MM_ERR("module %s got READY event in state[%d]\n",
+								module->name,
+								module->state);
+			rpc_send_accepted_void_reply(rpc_cb_server_client,
+						req->xid,
+						RPC_ACCEPTSTAT_GARBAGE_ARGS);
+			mutex_unlock(&module->lock);
+			return;
+		}
 	case RPC_ADSP_RTOS_MOD_DISABLE:
 		MM_INFO("module %s: DISABLED\n", module->name);
 		module->state = ADSP_STATE_DISABLED;
@@ -1072,6 +1083,21 @@ int msm_adsp_generate_event(void *data,
 	return 0;
 }
 
+int msm_adsp_dump(struct msm_adsp_module *module)
+{
+	int rc = 0;
+	if (!module) {
+		MM_INFO("Invalid module. Dumps are not collected\n");
+		return -EINVAL;
+	}
+	MM_INFO("starting DSP DUMP\n");
+	rc = rpc_adsp_rtos_app_to_modem(RPC_ADSP_RTOS_CMD_CORE_DUMP,
+			module->id, module);
+	MM_INFO("DSP DUMP done rc =%d\n", rc);
+	return rc;
+}
+EXPORT_SYMBOL(msm_adsp_dump);
+
 int msm_adsp_enable(struct msm_adsp_module *module)
 {
 	int rc = 0;
@@ -1082,9 +1108,9 @@ int msm_adsp_enable(struct msm_adsp_module *module)
 
 	MM_INFO("enable '%s'state[%d] id[%d]\n",
 				module->name, module->state, module->id);
-	if (!strncmp(module->name, "JPEGTASK", sizeof(module->name)))
+	if (!strncmp(module->name, "JPEGTASK", sizeof(*module->name)))
 		module_en = find_adsp_module_by_name(&adsp_info, "VIDEOTASK");
-	else if (!strncmp(module->name, "VIDEOTASK", sizeof(module->name)))
+	else if (!strncmp(module->name, "VIDEOTASK", sizeof(*module->name)))
 		module_en = find_adsp_module_by_name(&adsp_info, "JPEGTASK");
 	if (module_en) {
 		mutex_lock(&module_en->lock);
@@ -1115,6 +1141,7 @@ int msm_adsp_enable(struct msm_adsp_module *module)
 			rc = 0;
 		} else {
 			MM_ERR("module '%s' enable timed out\n", module->name);
+			msm_adsp_dump(module);
 			rc = -ETIMEDOUT;
 		}
 		if (module->open_count++ == 0 && module->clk)
@@ -1479,11 +1506,11 @@ static int __init adsp_init(void)
 	msm_adsp_driver.driver.name = msm_adsp_driver_name;
 	rc = platform_driver_register(&msm_adsp_driver);
 	MM_INFO("%s -- %d\n", msm_adsp_driver_name, rc);
-	
+
 	/*++ Kevin Shiu - 20111026 Avoid conflict with other APPs ++*/
 	APPs_count = &adsp_open_count;
 	/*++ Kevin Shiu - 20111026 Avoid conflict with other APPs ++*/
-	
+
 	return rc;
 }
 
