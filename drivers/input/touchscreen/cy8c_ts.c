@@ -50,7 +50,7 @@
 #include <linux/miscdevice.h>
 #include <linux/uaccess.h>
 #define CYPRESS_AUTO_FW_UPDATE 1
-#include <cypress_tma340_fw.h>
+#include "cypress_tma340_fw.h"
 #endif
 
 #if defined(CONFIG_HAS_EARLYSUSPEND)
