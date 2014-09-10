@@ -186,7 +186,7 @@ static struct clkctl_acpu_speed pll0_960_pll1_196_pll2_800_pll4_0[] = {
 	{ 0 }
 };
 
-/* 7627a PLL2 @ 1200MHz with GSM capable modem */
+/* 7627a PLL2 @ 1200MHz with GSM capable modem */ //tapioca & mesona
 static struct clkctl_acpu_speed pll0_960_pll1_245_pll2_1200_pll4_800[] = {
 	{ 0, 19200, ACPU_PLL_TCXO, 0, 0, 2400, 3, 0, 30720 },
 	{ 0, 61440, ACPU_PLL_1, 1, 3,  7680, 3, 1,  61440 },
@@ -198,6 +198,11 @@ static struct clkctl_acpu_speed pll0_960_pll1_245_pll2_1200_pll4_800[] = {
 	{ 1, 480000, ACPU_PLL_0, 4, 1, 60000, 3, 5, 122880 },
 	{ 1, 600000, ACPU_PLL_2, 2, 1, 75000, 3, 6, 160000 },
 	{ 1, 800000, ACPU_PLL_4, 6, 0, 100000, 3, 7, 200000 },
+	{ 1, 900000, ACPU_PLL_4, 6, 0, 110000, 3, 7, 200000 },
+	{ 1, 1008000, ACPU_PLL_4, 6, 0, 126000, 3, 7, 200000 },
+	{ 1, 1113600, ACPU_PLL_4, 6, 0, 139200, 3, 7, 200000 },
+	{ 1, 1228800, ACPU_PLL_4, 6, 0, 153600, 3, 7, 200000 },
+	{ 1, 1305600, ACPU_PLL_4, 6, 0, 163200, 3, 7, 200000 },
 	{ 0 }
 };
 
